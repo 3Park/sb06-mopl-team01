@@ -5,7 +5,6 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
 import org.example.mopl.user.entity.basic.BasicUserUUIDEntity;
-import org.example.mopl.user.entity.listener.UserEntityListener;
 import org.springframework.data.annotation.LastModifiedDate;
 
 import java.time.Instant;
@@ -22,9 +21,4 @@ public class Role extends BasicUserUUIDEntity {
     @NotNull
     @Column(name = "is_admin", nullable = false)
     private Boolean isAdmin = false;
-
-    @LastModifiedDate
-    @Column(name = "updated_at")
-    private Instant updatedAt;
-
 }

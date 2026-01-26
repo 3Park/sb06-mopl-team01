@@ -5,7 +5,6 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
 import org.example.mopl.user.entity.basic.BasicUserUUIDEntity;
-import org.example.mopl.user.entity.listener.UserEntityListener;
 import org.springframework.data.annotation.LastModifiedDate;
 
 import java.time.Instant;
@@ -26,8 +25,4 @@ public class User extends BasicUserUUIDEntity {
 
     @Column(name = "locked")
     private Boolean locked = false;
-
-    @LastModifiedDate
-    @Column(name = "updated_at")
-    private Instant updatedAt;
 }

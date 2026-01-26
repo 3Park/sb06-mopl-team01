@@ -1,23 +1,27 @@
 package org.example.mopl.user.entity.basic;
 
 import jakarta.persistence.Column;
-import jakarta.persistence.EntityListeners;
 import jakarta.persistence.MappedSuperclass;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
-import org.example.mopl.user.entity.listener.UserEntityListener;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+import org.hibernate.annotations.UuidGenerator;
+import org.springframework.data.annotation.LastModifiedDate;
 
+import java.time.Instant;
 import java.util.UUID;
 
 @Getter
 @Setter
 @MappedSuperclass
-@EntityListeners(UserEntityListener.class)
 public class BasicUserUUIDEntity extends BasicUserEntity{
 
     @NotNull
+    @UuidGenerator
     @Column(name = "uuid", nullable = false, unique = true)
     private UUID uuid;
+
+    @LastModifiedDate
+    @Column(name = "updated_at")
+    private Instant updatedAt;
 }
