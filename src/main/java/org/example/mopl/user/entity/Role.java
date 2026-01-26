@@ -13,21 +13,18 @@ import java.time.Instant;
 @Getter
 @Setter
 @Entity
-@Table(name = "users")
-public class User extends BasicUserUUIDEntity {
+@Table(name = "roles")
+public class Role extends BasicUserUUIDEntity {
+    @NotNull
+    @Column(name = "name", nullable = false, length = Integer.MAX_VALUE)
+    private String name;
 
     @NotNull
-    @Column(name = "email", nullable = false, length = Integer.MAX_VALUE, unique = true)
-    private String email;
-
-    @NotNull
-    @Column(name = "password", nullable = false, length = Integer.MAX_VALUE)
-    private String password;
-
-    @Column(name = "locked")
-    private Boolean locked = false;
+    @Column(name = "is_admin", nullable = false)
+    private Boolean isAdmin = false;
 
     @LastModifiedDate
     @Column(name = "updated_at")
     private Instant updatedAt;
+
 }

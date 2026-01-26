@@ -7,27 +7,30 @@ import lombok.Setter;
 import org.example.mopl.user.entity.basic.BasicUserUUIDEntity;
 import org.example.mopl.user.entity.listener.UserEntityListener;
 import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.Instant;
 
 @Getter
 @Setter
 @Entity
-@Table(name = "users")
-public class User extends BasicUserUUIDEntity {
+@Table(name = "profiles")
+public class Profile extends BasicUserUUIDEntity {
 
     @NotNull
-    @Column(name = "email", nullable = false, length = Integer.MAX_VALUE, unique = true)
-    private String email;
+    @OneToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
+
+    @Column(name = "profile_image_url", length = Integer.MAX_VALUE)
+    private String profileImageUrl;
 
     @NotNull
-    @Column(name = "password", nullable = false, length = Integer.MAX_VALUE)
-    private String password;
-
-    @Column(name = "locked")
-    private Boolean locked = false;
+    @Column(name = "name", nullable = false, length = Integer.MAX_VALUE)
+    private String name;
 
     @LastModifiedDate
     @Column(name = "updated_at")
     private Instant updatedAt;
+
 }
