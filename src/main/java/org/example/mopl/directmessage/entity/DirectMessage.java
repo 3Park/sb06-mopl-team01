@@ -1,10 +1,11 @@
-package org.example.mopl.notification.entity;
+package org.example.mopl.directmessage.entity;
 
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.example.mopl.conversation.entity.Conversation;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
@@ -15,41 +16,47 @@ import java.util.UUID;
 @Getter
 @Entity
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@Table(name = "notifications")
-public class Notification {
+@Table(name = "direct_messages")
+public class DirectMessage {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, updatable = false, unique = true)
+    @Column(nullable = false, unique = true, updatable = false)
     private UUID uuid;
 
     @CreatedDate
-    @Column(name = "created_at", nullable = false, updatable = false)
+    @Column(name = "created_at", updatable = false, nullable = false) // 이거 따로 지정할 필요 없나?
     private LocalDateTime createdAt;
 
 
-    @Column(nullable = false, updatable = false)
-    private String level;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "conversation_id", nullable = false, updatable = false)
+    private Conversation conversation;
+
+    @Column(name = "sender_id", nullable = false, updatable = false)
+    private Long senderId;
 
     @Column(name = "receiver_id", nullable = false, updatable = false)
     private Long receiverId;
 
     @Column(nullable = false, updatable = false)
-    private String title;
-
-    @Column(updatable = false)
     private String content;
+
+    @Column(name = "read_status", nullable = false)
+    private boolean readStatus;
 
 
     @Builder
-    public Notification(String level, Long receiverId, String title, String content) {
+    public DirectMessage(Conversation conversation, Long senderId, Long receiverId, String content) {
         this.uuid = UUID.randomUUID();
+        this.readStatus = false;
 
-        this.level = level;
+        this.conversation = conversation;
+        this.senderId = senderId;
         this.receiverId = receiverId;
-        this.title = title;
         this.content = content;
     }
+
 }

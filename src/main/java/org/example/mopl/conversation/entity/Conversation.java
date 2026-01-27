@@ -1,4 +1,4 @@
-package org.example.mopl.notification.entity;
+package org.example.mopl.conversation.entity;
 
 import jakarta.persistence.*;
 import lombok.AccessLevel;
@@ -15,8 +15,8 @@ import java.util.UUID;
 @Getter
 @Entity
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@Table(name = "notifications")
-public class Notification {
+@Table(name = "direct_conversations")
+public class Conversation {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -25,31 +25,23 @@ public class Notification {
     @Column(nullable = false, updatable = false, unique = true)
     private UUID uuid;
 
+
     @CreatedDate
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
+    @Column(name = "creator_id", nullable = false, updatable = false)
+    private Long creatorId;
 
-    @Column(nullable = false, updatable = false)
-    private String level;
-
-    @Column(name = "receiver_id", nullable = false, updatable = false)
-    private Long receiverId;
-
-    @Column(nullable = false, updatable = false)
-    private String title;
-
-    @Column(updatable = false)
-    private String content;
+    @Column(name = "join_id", nullable = false, updatable = false)
+    private Long joinId;
 
 
     @Builder
-    public Notification(String level, Long receiverId, String title, String content) {
+    public Conversation(Long creatorId, Long joinId) {
         this.uuid = UUID.randomUUID();
 
-        this.level = level;
-        this.receiverId = receiverId;
-        this.title = title;
-        this.content = content;
+        this.creatorId = creatorId;
+        this.joinId = joinId;
     }
 }
