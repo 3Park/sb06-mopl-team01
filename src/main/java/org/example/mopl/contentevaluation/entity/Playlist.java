@@ -11,6 +11,7 @@ import jakarta.persistence.Table;
 import java.time.Instant;
 import java.util.UUID;
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.example.mopl.user.entity.User;
@@ -44,5 +45,16 @@ public class Playlist {
   @LastModifiedDate
   @Column(name = "updated_at")
   private Instant updatedAt;
+
+  @Builder(access = AccessLevel.PROTECTED)
+  public Playlist(User user) {
+    this.user = user;
+  }
+
+  public static Playlist of(User user) {
+    return Playlist.builder()
+        .user(user)
+        .build();
+  }
 
 }
