@@ -15,7 +15,7 @@ import org.springframework.data.annotation.LastModifiedDate;
 @Getter
 @Entity
 @Table(name = "contents")
-public class Content {
+public class Tags {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -25,18 +25,6 @@ public class Content {
   @Column(name = "uuid", nullable = false, unique = true)
   private UUID uuid;
 
-  @Column(name = "type", nullable = false)
-  private String type;
-
-  @Column(name = "title", nullable = false)
-  private String title;
-
-  @Column(name = "description", nullable = false)
-  private String description;
-
-  @Column(name = "thumbnail_url", nullable = false)
-  private String thumbnailUrl;
-
   @CreatedDate
   @Column(name = "created_at", nullable = false)
   private Instant createdAt;
@@ -44,7 +32,5 @@ public class Content {
   @LastModifiedDate
   @Column(name = "updated_at")
   private Instant updatedAt;
-
-
 
 }
