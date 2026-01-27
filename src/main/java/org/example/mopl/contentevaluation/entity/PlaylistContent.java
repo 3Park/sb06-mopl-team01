@@ -10,6 +10,7 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import java.time.Instant;
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.example.mopl.content.entity.Content;
@@ -19,7 +20,7 @@ import org.springframework.data.annotation.CreatedDate;
 @Entity
 @RequiredArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(name = "playlist_contents")
-public class PlaylistContents {
+public class PlaylistContent {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -30,8 +31,25 @@ public class PlaylistContents {
   @ManyToOne(optional = false)
   private Content content;
 
+  @JoinColumn(name = "playlist_id", nullable = false)
+  @ManyToOne(optional = false)
+  private Playlist playlist;
+
   @CreatedDate
   @Column(name = "created_at", nullable = false)
   private Instant createdAt;
+
+  @Builder(access = AccessLevel.PROTECTED)
+  public PlaylistContent(Content content, Playlist playlist) {
+    this.content = content;
+    this.playlist = playlist;
+  }
+
+  public static PlaylistContent of(Content content, Playlist playlist) {
+    return PlaylistContent.builder()
+        .content(content)
+        .playlist(playlist)
+        .build();
+  }
 
 }
