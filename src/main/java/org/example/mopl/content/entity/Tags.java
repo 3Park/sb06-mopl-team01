@@ -14,7 +14,7 @@ import org.springframework.data.annotation.LastModifiedDate;
 
 @Getter
 @Entity
-@Table(name = "contents")
+@Table(name = "tags")
 public class Tags {
 
   @Id
@@ -24,6 +24,9 @@ public class Tags {
 
   @Column(name = "uuid", nullable = false, unique = true)
   private UUID uuid;
+
+  @Column(name = "name", nullable = false)
+  private String name;
 
   @CreatedDate
   @Column(name = "created_at", nullable = false)
