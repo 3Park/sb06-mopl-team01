@@ -1,9 +1,7 @@
 package org.example.mopl.content.entity.dto.request;
 
 import java.util.List;
-import lombok.Builder;
 
-@Builder
 public record CursorRequestContentDto(
     String typeEqual,
     String keywordLike,
