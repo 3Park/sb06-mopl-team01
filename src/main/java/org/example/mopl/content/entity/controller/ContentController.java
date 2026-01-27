@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -36,13 +37,17 @@ public class ContentController {
 
   // 콘텐츠 수정
   @PatchMapping("/{contentId}")
-  public ResponseEntity<ContentDto> updateContentById() {
+  public ResponseEntity<ContentDto> updateContentById(
+      @PathVariable String contentId
+  ) {
     return ResponseEntity.ok().build();
   }
 
   // 콘텐츠 삭제
   @DeleteMapping("/{contentId}")
-  public ResponseEntity<Void> deleteContentById() {
+  public ResponseEntity<Void> deleteContentById(
+      @PathVariable String contentId
+  ) {
     return ResponseEntity.ok().build();
   }
 

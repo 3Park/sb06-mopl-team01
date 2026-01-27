@@ -1,14 +1,12 @@
-package org.example.mopl.content.entity.dto.response;
+package org.example.mopl.contentevaluation.entity.dto.response;
 
 import java.util.List;
-import java.util.UUID;
 import lombok.Builder;
 
 @Builder
-public record CursorResponseReviewDto(
-    List<ReviewDto> data,
+public record CursorResponsePlaylistDto(
+    List<PlaylistDto> data,
     String nextCursor,
-    UUID nextIdAfter,
     Boolean hasNext,
     Long totalCount,
     String sortBy,
