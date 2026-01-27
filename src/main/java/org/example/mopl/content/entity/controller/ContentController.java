@@ -24,7 +24,7 @@ public class ContentController {
   // 콘텐츠 목록 조회 (커서 기반 페이지네이션)
   @GetMapping
   public  ResponseEntity<CursorResponseContentDto> getAllContentsByCursor(@Valid @ModelAttribute
-      CursorRequestContentDto cursorRequestContentDto) {
+      CursorRequestContentDto request) {
     return ResponseEntity.ok().build();
   }
 
