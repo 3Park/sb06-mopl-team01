@@ -1,6 +1,8 @@
 package org.example.mopl.content.entity.controller;
 
 import jakarta.validation.Valid;
+import org.example.mopl.content.entity.dto.request.ContentCreateRequest;
+import org.example.mopl.content.entity.dto.request.ContentUpdateRequest;
 import org.example.mopl.content.entity.dto.request.CursorRequestContentDto;
 import org.example.mopl.content.entity.dto.response.ContentDto;
 import org.example.mopl.content.entity.dto.response.CursorResponseContentDto;
@@ -31,14 +33,16 @@ public class ContentController {
 
   // 콘텐츠 생성
   @PostMapping
-  public ResponseEntity<ContentDto> createContent() {
+  public ResponseEntity<ContentDto> createContent(
+      @Valid @ModelAttribute ContentCreateRequest request
+  ) {
     return ResponseEntity.ok().build();
   }
 
   // 콘텐츠 수정
   @PatchMapping("/{contentId}")
   public ResponseEntity<ContentDto> updateContentById(
-      @PathVariable String contentId
+      @PathVariable String contentId, @Valid @ModelAttribute ContentUpdateRequest request
   ) {
     return ResponseEntity.ok().build();
   }

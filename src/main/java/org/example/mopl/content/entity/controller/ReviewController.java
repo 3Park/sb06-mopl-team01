@@ -2,6 +2,8 @@ package org.example.mopl.content.entity.controller;
 
 import jakarta.validation.Valid;
 import org.example.mopl.content.entity.dto.request.CursorRequestReviewDto;
+import org.example.mopl.content.entity.dto.request.ReviewCreateRequest;
+import org.example.mopl.content.entity.dto.request.ReviewUpdateRequest;
 import org.example.mopl.content.entity.dto.response.CursorResponseReviewDto;
 import org.example.mopl.content.entity.dto.response.ReviewDto;
 import org.springframework.http.ResponseEntity;
@@ -26,14 +28,17 @@ public class ReviewController {
 
   // 리뷰 생성
   @PostMapping
-  public ResponseEntity<ReviewDto> createReview() {
+  public ResponseEntity<ReviewDto> createReview(
+      @Valid @ModelAttribute ReviewCreateRequest request
+  ) {
     return ResponseEntity.ok().build();
   }
 
   // 리뷰 수정
   @PatchMapping("/{reviewId}")
   public ResponseEntity<ReviewDto> updateReviewById(
-      @PathVariable String reviewId
+      @PathVariable String reviewId,
+      @Valid @ModelAttribute ReviewUpdateRequest request
   ) {
     return ResponseEntity.ok().build();
   }
