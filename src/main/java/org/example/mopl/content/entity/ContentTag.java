@@ -2,6 +2,7 @@ package org.example.mopl.content.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -27,11 +28,11 @@ public class ContentTag {
   private Long id;
 
   @JoinColumn(name = "content_id", nullable = false)
-  @ManyToOne(optional = false)
+  @ManyToOne(optional = false, fetch = FetchType.LAZY)
   private Content content;
 
   @JoinColumn(name = "tag_id", nullable = false)
-  @ManyToOne(optional = false)
+  @ManyToOne(optional = false, fetch = FetchType.LAZY)
   private Tag tag;
 
   @CreatedDate
