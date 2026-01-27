@@ -34,7 +34,7 @@ public class Content {
   @Column(name = "description", nullable = false)
   private String description;
 
-  @Column(name = "thumbnail_url", nullable = false)
+  @Column(name = "thumbnail_url", nullable = true)
   private String thumbnailUrl;
 
   @CreatedDate
