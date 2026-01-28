@@ -1,0 +1,18 @@
+package org.example.mopl.content.dto.response;
+
+import java.util.List;
+import java.util.UUID;
+import lombok.Builder;
+
+@Builder
+public record CursorResponseReviewDto(
+    List<ReviewDto> data,
+    String nextCursor,
+    UUID nextIdAfter,
+    Boolean hasNext,
+    Long totalCount,
+    String sortBy,
+    String sortDirection
+) {
+
+}
