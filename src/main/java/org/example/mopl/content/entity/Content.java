@@ -2,6 +2,8 @@ package org.example.mopl.content.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -31,8 +33,12 @@ public class Content {
   @Column(name = "uuid", nullable = false, unique = true)
   private UUID uuid;
 
+  @Column(name = "external_id", nullable = true, unique = true)
+  private String externalId;
+
   @Column(name = "type", nullable = false)
-  private String type;
+  @Enumerated(EnumType.STRING)
+  private Type type;
 
   @Column(name = "title", nullable = false)
   private String title;
@@ -53,7 +59,7 @@ public class Content {
 
   @Builder(access = AccessLevel.PROTECTED)
   public Content(String type, String title, String description, String thumbnailUrl) {
-    this.type = type;
+    this.type = Type.fromValue(type);
     this.title = title;
     this.description = description;
     this.thumbnailUrl = thumbnailUrl;
@@ -66,6 +72,16 @@ public class Content {
         .description(description)
         .thumbnailUrl(thumbnailUrl)
         .build();
+  }
+
+  public void update(
+      String title,
+      String description,
+      String thumbnailUrl
+  ) {
+    this.title = title;
+    this.description = description;
+    this.thumbnailUrl = thumbnailUrl;
   }
 
 }

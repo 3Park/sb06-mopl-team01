@@ -12,4 +12,13 @@ public enum Type {
 
   private final String value;
 
+  public static Type fromValue(String value) {
+    for (Type type : Type.values()) {
+      if (type.getValue().equalsIgnoreCase(value)) {
+        return type;
+      }
+    }
+    throw new IllegalArgumentException("Unknown Type value: " + value);
+  }
+
 }
