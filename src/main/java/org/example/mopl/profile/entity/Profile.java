@@ -10,15 +10,10 @@ import org.example.mopl.user.entity.User;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
- // User와 1:1 관계 (논의 예정)
 
 @Entity
 @Table(
     name = "profiles",
-    indexes = {
-        @Index(name = "idx_profiles_uuid", columnList = "uuid"),
-        @Index(name = "idx_profiles_user_id", columnList = "user_id")
-    },
     uniqueConstraints = {
         @UniqueConstraint(name = "uk_profiles_user_id", columnNames = "user_id")
     }
