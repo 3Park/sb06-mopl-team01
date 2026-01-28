@@ -73,7 +73,7 @@ public class ContentCommandService {
             .filter(t -> t.getName().equals(tagName))
             .findFirst()
             .orElseThrow(() ->
-                new NoSuchTagException("태그가 존재하지 않습니다: " + tagName));
+                new NoSuchTagException(tagName));
       }
       contentTagList.add(
           ContentTag.of(savedContent, tag)
@@ -104,7 +104,7 @@ public class ContentCommandService {
 
     // content 업데이트
     Content content = contentQueryRepository.findByUuid(contentId)
-        .orElseThrow(() -> new NoSuchContentException("존재하지 않는 콘텐츠입니다: " + contentId));
+        .orElseThrow(() -> new NoSuchContentException(contentId.toString()));
     content.update(request.title(), request.description(), request.thumbnailUrl());
 
     //태그 매핑 일괄 삭제
@@ -138,7 +138,7 @@ public class ContentCommandService {
             .filter(t -> t.getName().equals(tagName))
             .findFirst()
             .orElseThrow(() ->
-                new NoSuchTagException("태그가 존재하지 않습니다: " + tagName));
+                new NoSuchTagException(tagName));
       }
       contentTagList.add(
           ContentTag.of(content, tag)
@@ -152,7 +152,7 @@ public class ContentCommandService {
     contentCommandRepository.save(content);
 
     return contentQueryRepository.findByUuidWithContentTag(contentId)
-        .orElseThrow(() -> new NoSuchContentException("존재하지 않는 콘텐츠입니다: " + contentId));
+        .orElseThrow(() -> new NoSuchContentException(contentId.toString()));
 
   }
 
@@ -160,7 +160,7 @@ public class ContentCommandService {
   public void deleteContentByUuid(UUID contentUuid) {
 
     Content content = contentQueryRepository.findByUuid(contentUuid)
-        .orElseThrow(() -> new NoSuchContentException("존재하지 않는 콘텐츠입니다: " + contentUuid));
+        .orElseThrow(() -> new NoSuchContentException(contentUuid.toString()));
 
     contentTagCommandRepository.deleteByContent_Id(content.getId());
 

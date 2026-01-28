@@ -29,7 +29,7 @@ public class ReviewCommandService {
   public ReviewDto createReview(ReviewCreateRequest request) {
 
     Content content = contentQueryRepository.findByUuid(request.contentId())
-        .orElseThrow(() -> new NoSuchContentException("존재하지 않는 콘텐츠입니다. UUID: " + request.contentId()));
+        .orElseThrow(() -> new NoSuchContentException(request.contentId().toString()));
 
     return null;
 
@@ -40,7 +40,7 @@ public class ReviewCommandService {
   public ReviewDto updateReview(UUID reviewId, ReviewUpdateRequest request) {
 
     Review review = reviewQueryRepository.findByUuid(reviewId)
-        .orElseThrow(() -> new NoSuchReviewException("존재하지 않는 리뷰입니다. UUID: " + reviewId));
+        .orElseThrow(() -> new NoSuchReviewException(reviewId.toString()));
 
     review.update(request.text(), request.rating());
 
@@ -58,7 +58,7 @@ public class ReviewCommandService {
   public void deleteReview(UUID reviewId) {
 
     if (!reviewQueryRepository.existsByUuid(reviewId)) {
-      throw new NoSuchReviewException("존재하지 않는 리뷰입니다. UUID: " + reviewId);
+      throw new NoSuchReviewException(reviewId.toString());
     }
 
     reviewCommandRepository.deleteByUuid(reviewId);
