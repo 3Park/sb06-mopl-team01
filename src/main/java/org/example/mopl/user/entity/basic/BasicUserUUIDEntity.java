@@ -19,9 +19,9 @@ public class BasicUserUUIDEntity extends BasicUserEntity{
     @NotNull
     @UuidGenerator
     @Column(name = "uuid", nullable = false, unique = true)
-    private UUID uuid;
+    protected UUID uuid;
 
     @LastModifiedDate
     @Column(name = "updated_at")
-    private Instant updatedAt;
+    protected Instant updatedAt;
 }

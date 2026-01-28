@@ -13,7 +13,7 @@ import org.example.mopl.user.entity.basic.BasicUserEntity;
 public class TemporaryPassword extends BasicUserEntity {
 
     @NotNull
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @OneToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
