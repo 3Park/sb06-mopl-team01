@@ -33,9 +33,6 @@ public class User extends BasicUserUUIDEntity {
     @OneToMany(mappedBy = "user",  fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     private List<UserRole> userRoles;
 
-    @OneToOne(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL,  orphanRemoval = true)
-    private TemporaryPassword temporaryPassword;
-
     @Builder
     public User(String email, String password) {
         this.email = email;

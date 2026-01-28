@@ -49,7 +49,7 @@ public class SecurityConfig {
                         .configurationSource(request -> {
                             CorsConfiguration config = new CorsConfiguration();
                             config.setAllowCredentials(true);
-                            config.setAllowedOrigins(
+                            config.setAllowedOriginPatterns(
                                     List.of("*")
                             );
                             config.setAllowedHeaders(
@@ -69,6 +69,7 @@ public class SecurityConfig {
                                     , "/api/auth/refresh"))
                 .authorizeHttpRequests( authorizeRequests ->
                         authorizeRequests
+                                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                                 .requestMatchers(
                                         "/api/auth/csrf-token",
                                         "/api/auth/sign-in",

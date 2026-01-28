@@ -13,7 +13,6 @@ public interface UserRepository extends JpaRepository<User,Long> {
 
     @Query("""
         select distinct u from User u
-            join fetch u.temporaryPassword tp
             join fetch u.userRoles ur
             join fetch ur.role
                 where u.email = :email

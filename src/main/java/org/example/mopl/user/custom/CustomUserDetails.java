@@ -44,7 +44,7 @@ public class CustomUserDetails implements UserDetails {
         if(userDto == null)
             return UserDetails.super.isAccountNonLocked();
 
-        return userDto.isLocked();
+        return !userDto.isLocked();
     }
 
     @Override
