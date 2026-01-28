@@ -5,7 +5,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.example.mopl.content.dto.request.ContentCreateRequest;
 import org.example.mopl.content.dto.request.ContentUpdateRequest;
 import org.example.mopl.content.dto.response.ContentDto;
@@ -25,7 +24,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
-@Slf4j
 public class ContentCommandService {
 
   private final ContentCommandRepository contentCommandRepository;
@@ -87,14 +85,14 @@ public class ContentCommandService {
 
     return ContentDto.of(
         savedContent.getUuid(),
-        savedContent.getType().getValue(),
+        savedContent.getContentType().getValue(),
         savedContent.getTitle(),
         savedContent.getDescription(),
         savedContent.getThumbnailUrl(),
         contentTagList.stream()
             .map(contentTag -> contentTag.getTag().getName())
             .toList(),
-        0.0,
+        0.1,
         0,
         0L
     );
@@ -151,21 +149,10 @@ public class ContentCommandService {
     contentTagCommandRepository.saveAll(contentTagList);
 
     // 콘텐츠 저장
-    Content savedContent = contentCommandRepository.save(content);
+    contentCommandRepository.save(content);
 
-    return ContentDto.of(
-        savedContent.getUuid(),
-        savedContent.getType().getValue(),
-        savedContent.getTitle(),
-        savedContent.getDescription(),
-        savedContent.getThumbnailUrl(),
-        contentTagList.stream()
-            .map(contentTag -> contentTag.getTag().getName())
-            .toList(),
-        0.0,
-        0,
-        0L
-    );
+    return contentQueryRepository.findByUuidWithContentTag(contentId)
+        .orElseThrow(() -> new NoSuchContentException("존재하지 않는 콘텐츠입니다: " + contentId));
 
   }
 

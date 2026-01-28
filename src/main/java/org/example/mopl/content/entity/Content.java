@@ -38,7 +38,7 @@ public class Content {
 
   @Column(name = "type", nullable = false)
   @Enumerated(EnumType.STRING)
-  private Type type;
+  private ContentType contentType;
 
   @Column(name = "title", nullable = false)
   private String title;
@@ -59,7 +59,7 @@ public class Content {
 
   @Builder(access = AccessLevel.PROTECTED)
   public Content(String type, String title, String description, String thumbnailUrl) {
-    this.type = Type.fromValue(type);
+    this.contentType = ContentType.fromValue(type);
     this.title = title;
     this.description = description;
     this.thumbnailUrl = thumbnailUrl;
