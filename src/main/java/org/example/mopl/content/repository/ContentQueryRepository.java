@@ -1,7 +1,9 @@
 package org.example.mopl.content.repository;
 
+import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.Projections;
 import com.querydsl.jpa.impl.JPAQueryFactory;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -10,6 +12,7 @@ import org.example.mopl.content.dto.request.CursorRequestContentDto;
 import org.example.mopl.content.dto.response.ContentDto;
 import org.example.mopl.content.entity.Content;
 import org.example.mopl.content.entity.ContentTag;
+import org.example.mopl.content.entity.ContentType;
 import org.example.mopl.content.entity.QContent;
 import org.example.mopl.content.entity.QContentTag;
 import org.example.mopl.content.entity.QReview;
@@ -91,6 +94,42 @@ public class ContentQueryRepository {
   @Transactional(readOnly = true)
   public Page<ContentDto> findAllByCursor(CursorRequestContentDto request) {
     return null;
+  }
+
+  private BooleanBuilder buildDynamicQueryByCursor(CursorRequestContentDto request) {
+
+    BooleanBuilder builder = new BooleanBuilder();
+
+    // 콘텐츠 타입
+    if (request.typeEqual() != null) {
+      builder.and(QContent.content.contentType.eq(ContentType.valueOf(request.typeEqual())));
+    }
+
+    // 검색 키워드
+    builder.and(QContent.content.title.like(request.keywordLike()));
+
+    // 정렬 방향 & 정렬 기준
+
+    if (request.sortBy().equals("watcherCount")) {
+
+    } else if (request.sortBy().equals("rate")) {
+
+    } else {
+
+      if (request.sortDirection().equals("DESCENDING")) {
+        builder.and(QContent.content.createdAt.lt(Instant.parse(request.cursor())));
+      } else {
+        builder.and(QContent.content.createdAt.gt(Instant.parse(request.cursor())));
+      }
+
+    }
+
+    // 커서
+
+    // 보조 커서 UUID
+
+    return builder;
+
   }
 
   private record ReviewStat(
