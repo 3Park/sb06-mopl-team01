@@ -42,6 +42,9 @@ public class Review {
   @JoinColumn(name = "content_id", nullable = false)
   private Content content;
 
+  @Column(name = "rating", nullable = false)
+  private Double rating;
+
   @CreatedDate
   @Column(name = "created_at", nullable = false)
   private Instant createdAt;
