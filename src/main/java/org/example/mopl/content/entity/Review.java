@@ -45,6 +45,9 @@ public class Review {
   @Column(name = "rating", nullable = false)
   private Double rating;
 
+  @Column(name = "text", columnDefinition = "TEXT", nullable = false)
+  private String text;
+
   @CreatedDate
   @Column(name = "created_at", nullable = false)
   private Instant createdAt;
@@ -52,5 +55,10 @@ public class Review {
   @LastModifiedDate
   @Column(name = "updated_at")
   private Instant updatedAt;
+
+  public void update(String text, Double rating) {
+    this.text = text;
+    this.rating = rating;
+  }
 
 }

@@ -1,7 +1,9 @@
 package org.example.mopl.content.dto.request;
 
+import java.util.UUID;
+
 public record ReviewCreateRequest(
-    String contentId,
+    UUID contentId,
     String text,
     Double rating
 ) {
