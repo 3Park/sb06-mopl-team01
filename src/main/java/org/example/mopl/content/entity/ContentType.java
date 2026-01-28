@@ -6,16 +6,16 @@ import lombok.RequiredArgsConstructor;
 
 @Getter
 @RequiredArgsConstructor(access = AccessLevel.PROTECTED)
-public enum Type {
+public enum ContentType {
 
   MOVIE("movie"),TVSERIES("tvSeries"),SPORT("sport");
 
   private final String value;
 
-  public static Type fromValue(String value) {
-    for (Type type : Type.values()) {
-      if (type.getValue().equalsIgnoreCase(value)) {
-        return type;
+  public static ContentType fromValue(String value) {
+    for (ContentType contentType : ContentType.values()) {
+      if (contentType.getValue().equalsIgnoreCase(value)) {
+        return contentType;
       }
     }
     throw new IllegalArgumentException("Unknown Type value: " + value);
