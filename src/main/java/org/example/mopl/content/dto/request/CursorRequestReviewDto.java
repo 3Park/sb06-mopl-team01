@@ -5,7 +5,7 @@ import java.util.UUID;
 public record CursorRequestReviewDto(
     UUID contentId,
     String cursor,
-    String idAfter,
+    UUID idAfter,
     Integer limit,
     String sortDirection,
     String sortBy
