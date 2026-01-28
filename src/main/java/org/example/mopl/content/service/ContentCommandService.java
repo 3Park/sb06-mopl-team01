@@ -51,11 +51,9 @@ public class ContentCommandService {
 
     request.tags().stream()
         .filter(tagName -> tagMap.get(tagName) == null)
-        .forEach(tagName -> {
-          newTagList.add(
-              Tag.of(tagName)
-          );
-        });
+        .forEach(tagName -> newTagList.add(
+            Tag.of(tagName)
+        ));
 
     // 없는 태그 일괄 저장
     List<Tag> savedTagList = tagCommandReposiotry.saveAll(newTagList);
@@ -122,14 +120,35 @@ public class ContentCommandService {
 
     request.tags().stream()
         .filter(tagName -> tagMap.get(tagName) == null)
-        .forEach(tagName -> {
-          newTagList.add(
-              Tag.of(tagName)
-          );
-        });
+        .forEach(tagName -> newTagList.add(
+            Tag.of(tagName)
+        ));
 
     // 없는 태그 일괄 저장
     List<Tag> savedTagList = tagCommandReposiotry.saveAll(newTagList);
+
+    //태그 매핑
+    List<ContentTag> contentTagList = new ArrayList<>();
+
+    request.tags().forEach(tagName -> {
+      Tag tag;
+      //기존 태그인 경우
+      if(tagMap.get(tagName) != null) {
+        tag = tagMap.get(tagName);
+      } else { //새로 생성된 태그인 경우
+        tag = savedTagList.stream()
+            .filter(t -> t.getName().equals(tagName))
+            .findFirst()
+            .orElseThrow(() ->
+                new NoSuchTagException("태그가 존재하지 않습니다: " + tagName));
+      }
+      contentTagList.add(
+          ContentTag.of(content, tag)
+      );
+    });
+
+    // 태그 매핑 저장
+    contentTagCommandRepository.saveAll(contentTagList);
 
     // 콘텐츠 저장
     Content savedContent = contentCommandRepository.save(content);
@@ -140,7 +159,9 @@ public class ContentCommandService {
         savedContent.getTitle(),
         savedContent.getDescription(),
         savedContent.getThumbnailUrl(),
-        List.of(),
+        contentTagList.stream()
+            .map(contentTag -> contentTag.getTag().getName())
+            .toList(),
         0.0,
         0,
         0L
