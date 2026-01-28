@@ -127,6 +127,15 @@ public class ContentQueryRepository {
     // 커서
 
     // 보조 커서 UUID
+    if (request.idAfter() != null) {
+
+      if (request.sortDirection().equals("DESCENDING")) {
+        builder.and(QContent.content.uuid.lt(request.idAfter()));
+      } else {
+        builder.and(QContent.content.uuid.gt(request.idAfter()));
+      }
+
+    }
 
     return builder;
 
