@@ -98,10 +98,20 @@ public class ReviewCommandService {
   }
 
   @Transactional
-  public void deleteReview(UUID reviewId) {
+  public void deleteReview(String email, UUID reviewId) {
 
-    if (!reviewQueryRepository.existsByUuid(reviewId)) {
-      throw new NoSuchReviewException(reviewId.toString());
+    Review review = reviewQueryRepository.findByUuid(reviewId)
+        .orElseThrow(() -> new NoSuchReviewException(reviewId.toString()));
+
+    // Todo : 예외 클래스 변경 필요
+    User user = userRepository.findByEmail(email)
+        .orElseThrow(() -> new RuntimeException("No such user with email: " + email));
+
+    boolean isAdmin = user.getUserRoles().stream()
+        .anyMatch(role -> role.getRole().getIsAdmin());
+
+    if (!isAdmin && !review.getUser().getUuid().equals(user.getUuid())) {
+      throw new UnauthorizedReviewException(email);
     }
 
     reviewCommandRepository.deleteByUuid(reviewId);
