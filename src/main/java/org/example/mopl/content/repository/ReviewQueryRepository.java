@@ -72,7 +72,9 @@ public class ReviewQueryRepository {
     BooleanBuilder builder = new BooleanBuilder();
 
     // 콘텐츠 id
-    builder.and(QReview.review.content.uuid.eq(request.contentId()));
+    if (request.contentId() != null) {
+      builder.and(QReview.review.content.uuid.eq(request.contentId()));
+    }
 
     // 커서 : createdAt, rating
     // 보조 커서 : uuid
