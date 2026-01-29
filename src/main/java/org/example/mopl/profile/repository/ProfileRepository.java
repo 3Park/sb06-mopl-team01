@@ -12,12 +12,13 @@ import java.util.UUID;
 @Repository
 public interface ProfileRepository extends JpaRepository<Profile, Long> {
 
-    @Query(value = "SELECT * FROM profiles WHERE user_id = :userId", nativeQuery = true)
+    @Query("SELECT p FROM Profile p WHERE p.user.id = :userId")
     Optional<Profile> findByUserId(@Param("userId") Long userId);
+
 
     Optional<Profile> findByUuid(UUID uuid);
 
-    @Query(value = "SELECT COUNT(*) FROM profiles WHERE user_id = :userId", nativeQuery = true)
+    @Query("SELECT COUNT(p) FROM Profile p WHERE p.user.id = :userId")
     long countByUserId(@Param("userId") Long userId);
 
     default boolean existsByUserId(Long userId) {
