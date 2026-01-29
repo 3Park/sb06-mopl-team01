@@ -1,4 +1,7 @@
+# 빌드 실패해서 수정하였다. User 도메인 연동 후 제거 할 예정.
 spring:
+  flyway:
+    enabled: false
   datasource:
     url: jdbc:h2:mem:test;MODE=PostgreSQL;
     driver-class-name: org.h2.Driver
