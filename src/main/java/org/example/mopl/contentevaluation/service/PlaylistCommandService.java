@@ -73,7 +73,7 @@ public class PlaylistCommandService {
         .anyMatch(role -> role.getRole().getIsAdmin());
 
     if (!isAdmin && !playlist.getUser().getId().equals(user.getId())) {
-      throw new UnauthorizedPlaylistException(email);
+      throw new UnauthorizedPlaylistException(email, playlistId);
     }
 
     PlaylistsStat playlistsStat = playlistStatQueryRepository.findByPlaylistId(playlist.getId())
@@ -112,7 +112,7 @@ public class PlaylistCommandService {
         .anyMatch(role -> role.getRole().getIsAdmin());
 
     if (!isAdmin && !playlist.getUser().getId().equals(user.getId())) {
-      throw new UnauthorizedPlaylistException(email);
+      throw new UnauthorizedPlaylistException(email, playlistId);
     }
 
     playlistContentCommandRepository.deleteByPlaylist_Id(playlist.getId());
