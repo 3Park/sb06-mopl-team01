@@ -10,6 +10,7 @@ import org.example.mopl.content.dto.request.ContentUpdateRequest;
 import org.example.mopl.content.dto.response.ContentDto;
 import org.example.mopl.content.entity.Content;
 import org.example.mopl.content.entity.ContentTag;
+import org.example.mopl.content.entity.ContentsStat;
 import org.example.mopl.content.entity.Tag;
 import org.example.mopl.content.exception.NoSuchContentException;
 import org.example.mopl.content.exception.NoSuchTagException;
@@ -17,6 +18,7 @@ import org.example.mopl.content.mapper.ContentMapper;
 import org.example.mopl.content.repository.ContentCommandRepository;
 import org.example.mopl.content.repository.ContentQueryRepository;
 import org.example.mopl.content.repository.ContentTagCommandRepository;
+import org.example.mopl.content.repository.ContentsStatCommandRepository;
 import org.example.mopl.content.repository.TagCommandReposiotry;
 import org.example.mopl.content.repository.TagQueryRepository;
 import org.springframework.stereotype.Service;
@@ -31,6 +33,7 @@ public class ContentCommandService {
   private final TagCommandReposiotry tagCommandReposiotry;
   private final TagQueryRepository tagQueryRepository;
   private final ContentTagCommandRepository contentTagCommandRepository;
+  private final ContentsStatCommandRepository contentsStatCommandRepository;
   private final ContentMapper contentMapper;
 
   @Transactional
@@ -58,6 +61,11 @@ public class ContentCommandService {
 
     // 콘텐츠 저장
     Content savedContent = contentCommandRepository.save(content);
+
+    // 통계 테이블 저장
+    contentsStatCommandRepository.save(
+        ContentsStat.of(savedContent)
+    );
 
     //ContentTag 매핑 저장
     List<ContentTag> contentTagList = new ArrayList<>();
@@ -148,7 +156,7 @@ public class ContentCommandService {
     // 태그 매핑 저장
     contentTagCommandRepository.saveAll(contentTagList);
 
-    // 콘텐츠 저장
+    // 콘텐츠 & 통계 테이블 저장
     contentCommandRepository.save(content);
 
     return contentQueryRepository.findByUuidWithContentTag(contentId)
