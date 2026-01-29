@@ -6,3 +6,8 @@ spring:
   profiles:
     active:
       - dev
+jwt:
+  secret: ${JWT_SECRET_KEY}
+  access_key_expiration: 600000
+  refresh_key_expiration: 1209600000
+  issuer: "mopl-server"
