@@ -41,14 +41,4 @@ public class TokenRedisConfig {
 
         return new LettuceConnectionFactory(config, clientConfig);
     }
-
-    @Bean(name = "tokenRedisTemplate")
-    public RedisTemplate<String,String> tokenRedisTemplate(RedisConnectionFactory redisConnectionFactory) {
-        RedisTemplate<String,String> redisTemplate = new RedisTemplate<>();
-        redisTemplate.setConnectionFactory(redisConnectionFactory);
-        redisTemplate.setKeySerializer(new StringRedisSerializer());
-        redisTemplate.setValueSerializer(new StringRedisSerializer());
-
-        return redisTemplate;
-    }
 }
