@@ -52,9 +52,7 @@ dependencies {
 
     implementation 'software.amazon.awssdk:s3:2.31.7'
 
-    implementation 'io.jsonwebtoken:jjwt-api:0.12.7'
-    implementation 'io.jsonwebtoken:jjwt-impl:0.12.7'
-    implementation 'io.jsonwebtoken:jjwt-jackson:0.12.7'
+    implementation 'com.nimbusds:nimbus-jose-jwt:10.6'
 
     implementation 'com.querydsl:querydsl-jpa:5.1.0:jakarta'
 
