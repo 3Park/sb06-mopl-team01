@@ -18,6 +18,11 @@ public class UnauthorizedPlaylistException extends MoplException {
     addDetail("email", email);
   }
 
+  public UnauthorizedPlaylistException(UUID playlistId) {
+    super(new UnauthorizedPlaylistErrorCode());
+    addDetail("playlistId", playlistId.toString());
+  }
+
   public UnauthorizedPlaylistException(String email, Throwable cause) {
     super(new UnauthorizedPlaylistErrorCode(), cause);
     addDetail("email", email);
