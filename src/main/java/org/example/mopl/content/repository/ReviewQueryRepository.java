@@ -95,7 +95,7 @@ public class ReviewQueryRepository {
 
   }
 
-  public BooleanBuilder buildDynamicQueryByCursor(CursorRequestReviewDto request) {
+  private BooleanBuilder buildDynamicQueryByCursor(CursorRequestReviewDto request) {
 
     BooleanBuilder builder = new BooleanBuilder();
 
