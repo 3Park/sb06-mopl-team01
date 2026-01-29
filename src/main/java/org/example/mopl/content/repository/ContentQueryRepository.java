@@ -26,6 +26,7 @@ import org.example.mopl.content.entity.QTag;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -114,7 +115,7 @@ public class ContentQueryRepository {
 
     return new PageImpl<>(
         contentList,
-        PageRequest.of(0, request.limit()),
+        Pageable.ofSize(request.limit()),
         hasNext ? request.limit() + 1 : contentList.size()
     );
   }

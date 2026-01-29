@@ -17,7 +17,12 @@ import org.example.mopl.content.dto.response.ReviewDto;
 import org.example.mopl.content.entity.QContent;
 import org.example.mopl.content.entity.QReview;
 import org.example.mopl.content.entity.Review;
+import org.example.mopl.profile.entity.QProfile;
+import org.example.mopl.user.entity.QUser;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -62,19 +67,31 @@ public class ReviewQueryRepository {
 
   }
 
-  @Transactional(readOnly = true)
-  public Page<ReviewDto> findAllByCursor(CursorRequestReviewDto request) {
+  public Page<Review> findAllByCursor(CursorRequestReviewDto request) {
 
     List<Review> reviewList = queryFactory.selectFrom(QReview.review)
         .join(QReview.review.content, QContent.content)
         .fetchJoin()
-        // Todo : User join 추가
+        .join(QReview.review.user, QUser.user)
+        .fetchJoin()
+        .join(QReview.review.user.profile, QProfile.profile)
+        .fetchJoin()
         .where(buildDynamicQueryByCursor(request))
         .orderBy(buildOrderBy(request).toArray(OrderSpecifier[]::new))
         .limit(request.limit() + 1)
         .fetch();
 
-    return null;
+    boolean hasNext = reviewList.size() > request.limit();
+
+    if  (hasNext) {
+      reviewList.remove(reviewList.size() - 1);
+    }
+
+    return new PageImpl<>(
+        reviewList,
+        Pageable.ofSize(request.limit()),
+        hasNext ? reviewList.size() + 1 : reviewList.size()
+    );
 
   }
 
