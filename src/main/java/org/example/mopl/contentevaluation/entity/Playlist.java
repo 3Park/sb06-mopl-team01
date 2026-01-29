@@ -35,6 +35,9 @@ public class Playlist {
   @Column(name = "uuid", nullable = false, unique = true)
   private UUID uuid;
 
+  @Column(name = "title", nullable = false)
+  private String title;
+
   @JoinColumn(name = "user_id", nullable = false)
   @ManyToOne(optional = false, fetch = FetchType.LAZY)
   private User user;
@@ -48,12 +51,14 @@ public class Playlist {
   private Instant updatedAt;
 
   @Builder(access = AccessLevel.PROTECTED)
-  public Playlist(User user) {
+  public Playlist(String title, User user) {
+    this.title = title;
     this.user = user;
   }
 
-  public static Playlist of(User user) {
+  public static Playlist of(String title, User user) {
     return Playlist.builder()
+        .title(title)
         .user(user)
         .build();
   }
