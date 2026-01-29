@@ -42,4 +42,14 @@ public class PlaylistsStat {
     return new PlaylistsStat(playlist);
   }
 
+  public void incrementSubscribeCount() {
+    this.subscribeCount++;
+  }
+
+  public void decrementSubscribeCount() {
+    if (this.subscribeCount > 0) {
+      this.subscribeCount--;
+    }
+  }
+
 }
