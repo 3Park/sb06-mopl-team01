@@ -136,9 +136,10 @@ public class ReviewQueryRepository {
   }
 
   private List<OrderSpecifier<?>> buildOrderBy(CursorRequestReviewDto request) {
+
     List<OrderSpecifier<?>> orders = new ArrayList<>();
 
-    // 1차 정렬: rating 또는 createdAt
+    // 1차 정렬: rating, createdAt
     if (request.sortDirection().equals("DESCENDING")) {
       orders.add(request.sortBy().equals("rating") ?
           QReview.review.rating.desc() :
