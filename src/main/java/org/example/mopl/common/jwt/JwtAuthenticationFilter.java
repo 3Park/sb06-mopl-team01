@@ -6,10 +6,8 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
-import org.example.mopl.common.jwt.service.RefreshTokenService;
+import org.example.mopl.common.jwt.service.AuthService;
 import org.example.mopl.user.custom.CustomUserDetails;
-import org.example.mopl.user.exception.UserErrorCode;
-import org.example.mopl.user.exception.UserException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
@@ -25,7 +23,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtTokenProvider jwtTokenProvider;
     private final TokenUtils tokenUtils;
-    private final RefreshTokenService refreshTokenService;
+    private final AuthService authService;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
@@ -44,7 +42,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                         .filter(cookie -> cookie.getName().equals(TokenUtils.REFRESH_TOKEN))
                         .findFirst()
                         .ifPresent(cookie -> {
-                            if(refreshTokenService.validateToken(customUserDetails.getUserDto().getEmail(),
+                            if(authService.validateToken(customUserDetails.getUserDto().getEmail(),
                                     cookie.getValue())){
                                 SecurityContextHolder.getContext().setAuthentication(authentication);
                             }

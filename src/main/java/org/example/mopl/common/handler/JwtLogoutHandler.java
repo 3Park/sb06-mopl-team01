@@ -4,7 +4,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.example.mopl.common.jwt.TokenUtils;
-import org.example.mopl.common.jwt.service.RefreshTokenService;
+import org.example.mopl.common.jwt.service.AuthService;
 import org.example.mopl.user.custom.CustomUserDetails;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.authentication.logout.LogoutHandler;
@@ -17,7 +17,7 @@ import java.util.Arrays;
 @RequiredArgsConstructor
 public class JwtLogoutHandler implements LogoutHandler {
 
-    private final RefreshTokenService refreshTokenService;
+    private final AuthService authService;
     private final TokenUtils tokenUtils;
 
     @Override
@@ -31,7 +31,7 @@ public class JwtLogoutHandler implements LogoutHandler {
                     if(details != null
                             && details.getUserDto() != null
                             && StringUtils.isEmpty(details.getUserDto().getEmail()) == false){
-                        refreshTokenService.delete(details.getUserDto().getEmail());
+                        authService.deleteRefreshToken(details.getUserDto().getEmail());
                     }
                 });
 
