@@ -95,7 +95,7 @@ public class ReviewQueryRepository {
           }
           break;
         default:
-          throw new IllegalArgumentException("Invalid sortBy field: " + request.sortBy());
+          throw new IllegalArgumentException("잘못된 검색 조건입니다: " + request.sortBy());
       }
 
     } else {
