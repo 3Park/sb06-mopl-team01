@@ -171,6 +171,7 @@ public class ContentCommandService {
         .orElseThrow(() -> new NoSuchContentException(contentUuid.toString()));
 
     contentTagCommandRepository.deleteByContent_Id(content.getId());
+    contentsStatCommandRepository.deleteByContent_id(content.getId());
 
     contentCommandRepository.delete(content);
 

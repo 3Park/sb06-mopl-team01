@@ -7,4 +7,6 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface ContentsStatCommandRepository extends JpaRepository<ContentsStat, Long> {
 
+  void deleteByContent_id(Long contentId);
+
 }
