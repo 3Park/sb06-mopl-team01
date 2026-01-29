@@ -71,19 +71,27 @@ public class ReviewQueryRepository {
 
       switch (request.sortBy()) {
         case "rating":
-          if (request.cursor() != null) {
+          if (request.cursor() != null && request.idAfter() != null) {
+            builder.and(
+                QReview.review.rating.lt(Double.parseDouble(request.cursor()))
+                    .or(QReview.review.rating.eq(Double.parseDouble(request.cursor()))
+                        .and(QReview.review.uuid.lt(request.idAfter())))
+            );
+          } else if (request.cursor() != null) {
+            // 첫 페이지
             builder.and(QReview.review.rating.lt(Double.parseDouble(request.cursor())));
-          }
-          if (request.idAfter() != null) {
-            builder.and(QReview.review.uuid.lt(request.idAfter()));
           }
           break;
         case "createdAt":
-          if (request.cursor() != null) {
+          if  (request.cursor() != null && request.idAfter() != null) {
+            builder.and(
+                QReview.review.createdAt.lt(Instant.parse(request.cursor()))
+                    .or(QReview.review.createdAt.eq(Instant.parse(request.cursor()))
+                        .and(QReview.review.uuid.lt(request.idAfter())))
+            );
+          } else if (request.cursor() != null) {
+            // 첫 페이지
             builder.and(QReview.review.createdAt.lt(Instant.parse(request.cursor())));
-          }
-          if (request.idAfter() != null) {
-            builder.and(QReview.review.uuid.lt(request.idAfter()));
           }
           break;
         default:
@@ -94,19 +102,27 @@ public class ReviewQueryRepository {
 
       switch (request.sortBy()) {
         case "rating":
-          if (request.cursor() != null) {
+          if  (request.cursor() != null && request.idAfter() != null) {
+            builder.and(
+                QReview.review.rating.gt(Double.parseDouble(request.cursor()))
+                    .or(QReview.review.rating.eq(Double.parseDouble(request.cursor()))
+                        .and(QReview.review.uuid.gt(request.idAfter())))
+            );
+          } else if (request.cursor() != null) {
+            // 첫 페이지
             builder.and(QReview.review.rating.gt(Double.parseDouble(request.cursor())));
-          }
-          if (request.idAfter() != null) {
-            builder.and(QReview.review.uuid.gt(request.idAfter()));
           }
           break;
         case "createdAt":
-          if (request.cursor() != null) {
+          if (request.cursor() != null && request.idAfter() != null) {
+            builder.and(
+                QReview.review.createdAt.gt(Instant.parse(request.cursor()))
+                    .or(QReview.review.createdAt.eq(Instant.parse(request.cursor()))
+                        .and(QReview.review.uuid.gt(request.idAfter())))
+            );
+          } else if (request.cursor() != null) {
+            // 첫 페이지
             builder.and(QReview.review.createdAt.gt(Instant.parse(request.cursor())));
-          }
-          if (request.idAfter() != null) {
-            builder.and(QReview.review.uuid.gt(request.idAfter()));
           }
           break;
         default:
