@@ -134,12 +134,9 @@ public class ReviewQueryRepository {
     }
 
     // 2차 정렬: 항상 uuid
-
-    if (request.idAfter() != null) {
-      orders.add(request.sortDirection().equals("DESCENDING") ?
-          QReview.review.uuid.desc() :
-          QReview.review.uuid.asc());
-    }
+    orders.add(request.sortDirection().equals("DESCENDING") ?
+        QReview.review.uuid.desc() :
+        QReview.review.uuid.asc());
 
     return orders;
 
