@@ -15,6 +15,7 @@ import org.example.mopl.contentevaluation.repository.PlaylistQueryRepository;
 import org.example.mopl.user.entity.User;
 import org.example.mopl.user.repository.UserRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -26,6 +27,7 @@ public class PlaylistContentCommandService {
   private final PlaylistContentQueryRepository playlistContentQueryRepository;
   private final UserRepository userRepository;
 
+  @Transactional
   public void addContentToPlaylist(String email, UUID playlistId, UUID contentId) {
 
     Content content = contentQueryRepository.findByUuid(contentId)
@@ -56,6 +58,7 @@ public class PlaylistContentCommandService {
 
   }
 
+  @Transactional
   public void removeContentFromPlaylist(String email, UUID playlistId, UUID contentId) {
 
     Playlist playlist = playlistQueryRepository.findByUuid(playlistId)

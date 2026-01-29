@@ -21,6 +21,7 @@ import org.example.mopl.contentevaluation.repository.PlaylistStatQueryRepository
 import org.example.mopl.user.entity.User;
 import org.example.mopl.user.repository.UserRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -33,6 +34,7 @@ public class PlaylistCommandService {
   private final PlaylistStatQueryRepository playlistStatQueryRepository;
   private final UserRepository userRepository;
 
+  @Transactional
   public PlaylistDto createPlaylist(String email, PlaylistCreateRequest request) {
 
     // Todo : 예외 클래스 변경 필요
@@ -60,6 +62,7 @@ public class PlaylistCommandService {
 
   }
 
+  @Transactional
   public PlaylistDto updatePlaylist(String email, UUID playlistId, PlaylistUpdateRequest request) {
 
     Playlist playlist = playlistQueryRepository.findByUuid(playlistId)
@@ -98,7 +101,7 @@ public class PlaylistCommandService {
 
   }
 
-  //플레이리스트 삭제
+  @Transactional
   public void deletePlaylistByUuid(String email, UUID playlistId) {
 
     Playlist playlist = playlistQueryRepository.findByUuid(playlistId)
