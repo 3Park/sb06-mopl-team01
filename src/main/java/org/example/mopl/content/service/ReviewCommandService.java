@@ -98,7 +98,7 @@ public class ReviewCommandService {
   }
 
   @Transactional
-  public void deleteReview(String email, UUID reviewId) {
+  public void deleteReviewByUuid(String email, UUID reviewId) {
 
     Review review = reviewQueryRepository.findByUuid(reviewId)
         .orElseThrow(() -> new NoSuchReviewException(reviewId.toString()));

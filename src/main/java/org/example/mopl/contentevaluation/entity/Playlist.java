@@ -42,6 +42,9 @@ public class Playlist {
   @ManyToOne(optional = false, fetch = FetchType.LAZY)
   private User user;
 
+  @Column(name = "description", columnDefinition = "TEXT", nullable = false)
+  private String description;
+
   @CreatedDate
   @Column(name = "created_at", nullable = false)
   private Instant createdAt;
@@ -51,16 +54,23 @@ public class Playlist {
   private Instant updatedAt;
 
   @Builder(access = AccessLevel.PROTECTED)
-  public Playlist(String title, User user) {
+  public Playlist(String title, User user, String description) {
     this.title = title;
     this.user = user;
+    this.description = description;
   }
 
-  public static Playlist of(String title, User user) {
+  public static Playlist of(String title, User user, String description) {
     return Playlist.builder()
         .title(title)
         .user(user)
+        .description(description)
         .build();
+  }
+
+  public void update(String title, String description) {
+    this.title = title;
+    this.description = description;
   }
 
 }

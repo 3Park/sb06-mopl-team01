@@ -3,13 +3,16 @@ package org.example.mopl.contentevaluation.repository;
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import java.time.Instant;
+import java.util.Optional;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.example.mopl.contentevaluation.dto.request.CursorRequestPlaylistDto;
 import org.example.mopl.contentevaluation.dto.response.PlaylistDto;
+import org.example.mopl.contentevaluation.entity.Playlist;
 import org.example.mopl.contentevaluation.entity.QPlaylist;
+import org.example.mopl.user.entity.QUser;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Repository;
-import org.springframework.transaction.annotation.Transactional;
 
 @Repository
 @RequiredArgsConstructor
@@ -17,7 +20,14 @@ public class PlaylistQueryRepository {
 
   private final JPAQueryFactory queryFactory;
 
-  @Transactional(readOnly = true)
+  public Optional<Playlist> findByUuid(UUID uuid) {
+    return Optional.ofNullable(queryFactory.selectFrom(QPlaylist.playlist)
+        .join(QPlaylist.playlist.user, QUser.user)
+        .fetchJoin()
+        .where(QPlaylist.playlist.uuid.eq(uuid))
+        .fetchOne());
+  }
+
   public Page<PlaylistDto> findAllByCursor(CursorRequestPlaylistDto request) {
     return null;
   }
