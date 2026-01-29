@@ -5,6 +5,7 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.example.mopl.notification.enums.Level;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
@@ -31,10 +32,10 @@ public class Notification {
 
 
     @Column(nullable = false, updatable = false)
-    private String level;
+    private Level level;
 
     @Column(name = "receiver_id", nullable = false, updatable = false)
-    private Long receiverId;
+    private UUID receiverId;
 
     @Column(nullable = false, updatable = false)
     private String title;
@@ -43,13 +44,22 @@ public class Notification {
     private String content;
 
 
+    public static Notification of(UUID receiverId, String title, String content, Level level) {
+        return Notification.builder().receiverId(receiverId)
+                .title(title).content(content).level(level).build();
+    }
+
     @Builder
-    public Notification(String level, Long receiverId, String title, String content) {
+    private Notification(Level level, UUID receiverId, String title, String content) {
         this.uuid = UUID.randomUUID();
 
         this.level = level;
         this.receiverId = receiverId;
         this.title = title;
         this.content = content;
+    }
+
+    public boolean isSameReceiverId(UUID userId) {
+        return receiverId.equals(userId);
     }
 }
