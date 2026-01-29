@@ -6,6 +6,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.example.mopl.profile.entity.Profile;
 import org.example.mopl.user.entity.basic.BasicUserUUIDEntity;
 import java.util.List;
 
@@ -27,8 +28,8 @@ public class User extends BasicUserUUIDEntity {
     @Column(name = "locked")
     private Boolean locked = false;
 
-//PJG    @OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL,  orphanRemoval = true, mappedBy = "user")
-//    private Profile profile;
+    @OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL,  orphanRemoval = true, mappedBy = "user")
+    private Profile profile;
 
     @OneToMany(mappedBy = "user",  fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     private List<UserRole> userRoles;

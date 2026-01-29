@@ -13,8 +13,9 @@ public interface UserRepository extends JpaRepository<User,Long> {
 
     @Query("""
         select distinct u from User u
-            join fetch u.userRoles ur
-            join fetch ur.role
+                join fetch u.userRoles ur
+                join fetch u.profile p
+                join fetch ur.role
                 where u.email = :email
     """)
     Optional<User> findByEmail(String email);
