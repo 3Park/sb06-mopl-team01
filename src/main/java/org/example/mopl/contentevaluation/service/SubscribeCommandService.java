@@ -1,0 +1,57 @@
+package org.example.mopl.contentevaluation.service;
+
+import java.util.UUID;
+import lombok.RequiredArgsConstructor;
+import org.example.mopl.contentevaluation.entity.Playlist;
+import org.example.mopl.contentevaluation.entity.Subscribe;
+import org.example.mopl.contentevaluation.exception.NoSuchPlaylistException;
+import org.example.mopl.contentevaluation.repository.PlaylistQueryRepository;
+import org.example.mopl.contentevaluation.repository.SubscribeCommandRepository;
+import org.example.mopl.user.entity.User;
+import org.example.mopl.user.repository.UserRepository;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+@Service
+@RequiredArgsConstructor
+public class SubscribeCommandService {
+
+  private final PlaylistQueryRepository playlistQueryRepository;
+  private final SubscribeCommandRepository subscribeCommandRepository;
+  private final UserRepository userRepository;
+
+  @Transactional
+  public void subscribePlaylist(String email, UUID playlistId) {
+
+    // Todo : 예외 클래스 변경 필요
+    User user = userRepository.findByEmail(email)
+        .orElseThrow(() -> new IllegalArgumentException("User not found with email: " + email));
+
+    Playlist playlist = playlistQueryRepository.findByUuid(playlistId)
+        .orElseThrow(() -> new NoSuchPlaylistException(playlistId));
+
+    subscribeCommandRepository.save(
+        Subscribe.of(user, playlist)
+    );
+
+    // Todo : SubscribeStat 증가 이벤트 발행
+
+  }
+
+  @Transactional
+  public void unsubscribePlaylist(String email, UUID playlistId) {
+
+    // Todo : 예외 클래스 변경 필요
+    User user = userRepository.findByEmail(email)
+        .orElseThrow(() -> new IllegalArgumentException("User not found with email: " + email));
+
+    Playlist playlist = playlistQueryRepository.findByUuid(playlistId)
+        .orElseThrow(() -> new NoSuchPlaylistException(playlistId));
+
+    subscribeCommandRepository.deleteByUser_IdAndPlaylist_Id(user.getId(), playlist.getId());
+
+    // Todo : SubscribeStat 감소 이벤트 발행
+
+  }
+
+}
