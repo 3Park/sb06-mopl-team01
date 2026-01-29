@@ -52,6 +52,8 @@ public class PlaylistContentCommandService {
       )
     );
 
+    // Todo : 구독 중인 사용자에게 알림 전송 이벤트 발행
+
   }
 
   public void removeContentFromPlaylist(String email, UUID playlistId, UUID contentId) {
