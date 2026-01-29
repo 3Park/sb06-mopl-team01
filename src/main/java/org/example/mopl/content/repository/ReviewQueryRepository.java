@@ -7,6 +7,7 @@ import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.example.mopl.content.dto.request.CursorRequestReviewDto;
+import org.example.mopl.content.dto.response.ReviewDto;
 import org.example.mopl.content.entity.QContent;
 import org.example.mopl.content.entity.QReview;
 import org.example.mopl.content.entity.Review;
@@ -37,7 +38,7 @@ public class ReviewQueryRepository {
   }
 
   @Transactional(readOnly = true)
-  public Page<Review> findAllByCursor(CursorRequestReviewDto request) {
+  public Page<ReviewDto> findAllByCursor(CursorRequestReviewDto request) {
 
     return null;
 
@@ -69,6 +70,8 @@ public class ReviewQueryRepository {
       }
 
     }
+
+    // 커서
 
     // 보조 커서 UUID
     if (request.idAfter() != null) {
