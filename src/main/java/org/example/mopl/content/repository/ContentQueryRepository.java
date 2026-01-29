@@ -106,7 +106,7 @@ public class ContentQueryRepository {
     }
 
     // 검색 키워드
-    builder.and(QContent.content.title.like(request.keywordLike()));
+    builder.and(QContent.content.title.containsIgnoreCase(request.keywordLike()));
 
     // 정렬 방향 & 정렬 기준
 
