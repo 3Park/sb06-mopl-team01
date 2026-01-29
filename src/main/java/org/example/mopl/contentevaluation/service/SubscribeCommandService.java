@@ -36,6 +36,8 @@ public class SubscribeCommandService {
 
     // Todo : PlaylistStat 증가 이벤트 발행
 
+    // Todo : 플레이리스트 소유자에게 알림 전송 이벤트 발행
+
   }
 
   @Transactional
