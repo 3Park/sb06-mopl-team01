@@ -22,9 +22,6 @@ public class DataInitializer {
         return args -> {
             roleService.addDefaultRole();
             userService.addAdmin(passwordEncoder.encode(ADMIN_PASSWORD), roleService.getAdminRole());
-            //PJG Profile 추가 코드 필요
-
-
         };
     }
 }

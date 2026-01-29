@@ -21,7 +21,6 @@ public class UserDto {
     @Builder
     public UserDto(User user)
     {
-        //PJG 프로필 관련 설정 추가 필요
         if(user == null
                 || user.getProfile() ==null
                 || user.getUserRoles() ==null
