@@ -3,6 +3,7 @@ package org.example.mopl.common.jwt;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import org.example.mopl.common.config.property.JwtProperties;
 import org.springframework.http.server.ServerHttpRequest;
 import org.springframework.stereotype.Component;
 

@@ -7,6 +7,7 @@ import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
+import org.example.mopl.common.config.property.JwtProperties;
 import org.example.mopl.user.custom.CustomUserDetailService;
 import org.example.mopl.user.custom.CustomUserDetails;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;

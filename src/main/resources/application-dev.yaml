@@ -14,7 +14,19 @@ spring:
     properties:
       hibernate:
         format_sql: true
-
+#캐시용 설정
+  data:
+    redis:
+      host: ${REDIS_HOST}
+      port: 6379
+      lettuce:
+        pool:
+          max-active: 8
+          max-idle: 8
+          min-idle: 2
+          max-wait: 1s
+      connect-timeout: 2s
+      database: 0
 
 logging:
   level:
