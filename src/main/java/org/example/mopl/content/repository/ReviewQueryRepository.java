@@ -1,8 +1,10 @@
 package org.example.mopl.content.repository;
 
 import com.querydsl.core.BooleanBuilder;
+import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -46,20 +48,7 @@ public class ReviewQueryRepository {
         .fetchJoin()
         // Todo : User join 추가
         .where(buildDynamicQueryByCursor(request))
-        .orderBy(
-            request.sortDirection().equals("DESCENDING") ?
-                (request.sortBy().equals("rating") ?
-                    QReview.review.rating.desc() :
-                    QReview.review.createdAt.desc()
-                ) :
-                (request.sortBy().equals("rating") ?
-                    QReview.review.rating.asc() :
-                    QReview.review.createdAt.asc()
-                ),
-            request.sortDirection().equals("DESCENDING") ?
-                QReview.review.uuid.desc() :
-                QReview.review.uuid.asc()
-        )
+        .orderBy(buildOrderBy(request).toArray(OrderSpecifier[]::new))
         .limit(request.limit() + 1)
         .fetch();
 
@@ -129,4 +118,31 @@ public class ReviewQueryRepository {
     return builder;
 
   }
+
+  private List<OrderSpecifier<?>> buildOrderBy(CursorRequestReviewDto request) {
+    List<OrderSpecifier<?>> orders = new ArrayList<>();
+
+    // 1차 정렬: rating 또는 createdAt
+    if (request.sortDirection().equals("DESCENDING")) {
+      orders.add(request.sortBy().equals("rating") ?
+          QReview.review.rating.desc() :
+          QReview.review.createdAt.desc());
+    } else {
+      orders.add(request.sortBy().equals("rating") ?
+          QReview.review.rating.asc() :
+          QReview.review.createdAt.asc());
+    }
+
+    // 2차 정렬: 항상 uuid
+
+    if (request.idAfter() != null) {
+      orders.add(request.sortDirection().equals("DESCENDING") ?
+          QReview.review.uuid.desc() :
+          QReview.review.uuid.asc());
+    }
+
+    return orders;
+
+  }
+
 }
