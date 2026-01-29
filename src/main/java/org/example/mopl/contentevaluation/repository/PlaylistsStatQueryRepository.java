@@ -9,7 +9,7 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 @RequiredArgsConstructor
-public class PlaylistStatQueryRepository {
+public class PlaylistsStatQueryRepository {
 
   private final JPAQueryFactory queryFactory;
 

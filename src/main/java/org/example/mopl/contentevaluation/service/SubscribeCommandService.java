@@ -34,7 +34,7 @@ public class SubscribeCommandService {
         Subscribe.of(user, playlist)
     );
 
-    // Todo : SubscribeStat 증가 이벤트 발행
+    // Todo : PlaylistStat 증가 이벤트 발행
 
   }
 
@@ -50,7 +50,7 @@ public class SubscribeCommandService {
 
     subscribeCommandRepository.deleteByUser_IdAndPlaylist_Id(user.getId(), playlist.getId());
 
-    // Todo : SubscribeStat 감소 이벤트 발행
+    // Todo : PlaylistStat 감소 이벤트 발행
 
   }
 

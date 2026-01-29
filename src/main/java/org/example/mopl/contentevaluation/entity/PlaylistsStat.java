@@ -11,6 +11,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
@@ -31,5 +32,14 @@ public class PlaylistsStat {
 
   @Column(name = "subscribe_count", nullable = false)
   private Long subscribeCount = 0L;
+
+  @Builder(access = AccessLevel.PROTECTED)
+  public PlaylistsStat(Playlist playlist) {
+    this.playlist = playlist;
+  }
+
+  public static PlaylistsStat of(Playlist playlist) {
+    return new PlaylistsStat(playlist);
+  }
 
 }

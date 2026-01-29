@@ -5,7 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface PlaylistStatCommandRepository extends JpaRepository<PlaylistsStat, Long> {
+public interface PlaylistsStatCommandRepository extends JpaRepository<PlaylistsStat, Long> {
 
   void deleteByPlaylist_Id(Long playlistId);
 

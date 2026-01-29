@@ -9,15 +9,13 @@ import org.example.mopl.contentevaluation.dto.response.OwnerDto;
 import org.example.mopl.contentevaluation.dto.response.PlaylistDto;
 import org.example.mopl.contentevaluation.entity.Playlist;
 import org.example.mopl.contentevaluation.entity.PlaylistsStat;
-import org.example.mopl.contentevaluation.entity.QSubscribe;
-import org.example.mopl.contentevaluation.entity.Subscribe;
 import org.example.mopl.contentevaluation.exception.NoSuchPlaylistException;
 import org.example.mopl.contentevaluation.exception.UnauthorizedPlaylistException;
 import org.example.mopl.contentevaluation.repository.PlaylistCommandRepository;
 import org.example.mopl.contentevaluation.repository.PlaylistContentCommandRepository;
 import org.example.mopl.contentevaluation.repository.PlaylistQueryRepository;
-import org.example.mopl.contentevaluation.repository.PlaylistStatCommandRepository;
-import org.example.mopl.contentevaluation.repository.PlaylistStatQueryRepository;
+import org.example.mopl.contentevaluation.repository.PlaylistsStatCommandRepository;
+import org.example.mopl.contentevaluation.repository.PlaylistsStatQueryRepository;
 import org.example.mopl.user.entity.User;
 import org.example.mopl.user.repository.UserRepository;
 import org.springframework.stereotype.Service;
@@ -30,8 +28,8 @@ public class PlaylistCommandService {
   private final PlaylistCommandRepository playlistCommandRepository;
   private final PlaylistQueryRepository playlistQueryRepository;
   private final PlaylistContentCommandRepository playlistContentCommandRepository;
-  private final PlaylistStatCommandRepository playlistStatCommandRepository;
-  private final PlaylistStatQueryRepository playlistStatQueryRepository;
+  private final PlaylistsStatCommandRepository playlistsStatCommandRepository;
+  private final PlaylistsStatQueryRepository playlistsStatQueryRepository;
   private final UserRepository userRepository;
 
   @Transactional
@@ -44,6 +42,10 @@ public class PlaylistCommandService {
     Playlist playlist = Playlist.of(request.title(), user, request.description());
 
     Playlist savedPlaylist = playlistCommandRepository.save(playlist);
+
+    playlistsStatCommandRepository.save(
+        PlaylistsStat.of(playlist)
+    );
 
     return PlaylistDto.of(
         playlist.getUuid(),
@@ -79,7 +81,7 @@ public class PlaylistCommandService {
       throw new UnauthorizedPlaylistException(email, playlistId);
     }
 
-    PlaylistsStat playlistsStat = playlistStatQueryRepository.findByPlaylistId(playlist.getId())
+    PlaylistsStat playlistsStat = playlistsStatQueryRepository.findByPlaylistId(playlist.getId())
         .orElseThrow(() -> new NoSuchPlaylistException(playlistId));
 
     playlist.update(request.title(), request.description());
@@ -119,7 +121,7 @@ public class PlaylistCommandService {
     }
 
     playlistContentCommandRepository.deleteByPlaylist_Id(playlist.getId());
-    playlistStatCommandRepository.deleteByPlaylist_Id(playlist.getId());
+    playlistsStatCommandRepository.deleteByPlaylist_Id(playlist.getId());
     playlistCommandRepository.deleteById(playlist.getId());
 
   }
