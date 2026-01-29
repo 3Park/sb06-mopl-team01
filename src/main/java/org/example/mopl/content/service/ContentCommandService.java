@@ -156,7 +156,7 @@ public class ContentCommandService {
     // 태그 매핑 저장
     contentTagCommandRepository.saveAll(contentTagList);
 
-    // 콘텐츠 & 통계 테이블 저장
+    // 콘텐츠 저장
     contentCommandRepository.save(content);
 
     return contentQueryRepository.findByUuidWithContentTag(contentId)
