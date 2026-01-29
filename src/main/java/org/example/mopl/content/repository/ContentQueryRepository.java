@@ -243,7 +243,7 @@ public class ContentQueryRepository {
 
     }
 
-    // 2차 정렬: 항상 uuid
+    // 2차 정렬: uuid
     if (request.sortDirection().equals("DESCENDING")) {
       orders.add(QContent.content.uuid.desc());
     } else {

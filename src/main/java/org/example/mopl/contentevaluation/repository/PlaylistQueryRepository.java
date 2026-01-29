@@ -1,17 +1,22 @@
 package org.example.mopl.contentevaluation.repository;
 
 import com.querydsl.core.BooleanBuilder;
+import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.example.mopl.contentevaluation.dto.request.CursorRequestPlaylistDto;
-import org.example.mopl.contentevaluation.dto.response.PlaylistDto;
 import org.example.mopl.contentevaluation.entity.Playlist;
 import org.example.mopl.contentevaluation.entity.QPlaylist;
+import org.example.mopl.contentevaluation.entity.QPlaylistsStat;
 import org.example.mopl.user.entity.QUser;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 
 @Repository
@@ -28,8 +33,28 @@ public class PlaylistQueryRepository {
         .fetchOne());
   }
 
-  public Page<PlaylistDto> findAllByCursor(CursorRequestPlaylistDto request) {
-    return null;
+  public Page<Playlist> findAllByCursor(CursorRequestPlaylistDto request) {
+
+    List<Playlist> playlists = queryFactory.selectFrom(QPlaylist.playlist)
+        .leftJoin(QPlaylist.playlist.user, QUser.user)
+        .fetchJoin()
+        .where(buildDynamicQueryByCursor(request))
+        .orderBy(buildOrderBy(request).toArray(new OrderSpecifier<?>[0]))
+        .limit(request.limit() + 1)
+        .fetch();
+
+    boolean hasNext = playlists.size() > request.limit();
+
+    if (hasNext) {
+      playlists.remove(playlists.size() - 1);
+    }
+
+    return new PageImpl<>(
+        playlists,
+        Pageable.ofSize(request.limit()),
+        hasNext ? request.limit() + 1 : playlists.size()
+    );
+
   }
 
   public BooleanBuilder buildDynamicQueryByCursor(CursorRequestPlaylistDto request) {
@@ -43,45 +68,97 @@ public class PlaylistQueryRepository {
 
     // 소유자 ID
     if (request.ownerIdEqual() != null) {
-      //builder.and(QPlaylist.playlist.user);
+      builder.and(QPlaylist.playlist.user.uuid.eq(request.ownerIdEqual()));
     }
 
     // 구독자 ID
-
-    // 커서
-
-    // 보조 커서
-    if (request.idAfter() != null) {
-
-      if (request.sortDirection().equals("DESCENDING")) {
-        builder.and(QPlaylist.playlist.uuid.lt(request.idAfter()));
-      } else {
-        builder.and(QPlaylist.playlist.uuid.gt(request.idAfter()));
-      }
-
+    if (request.subscriberIdEqual() != null) {
+      builder.and(QPlaylist.playlist.user.uuid.eq(request.subscriberIdEqual()));
     }
 
-    // 정렬 방향 & 정렬 기준 : updatedAt, subscribeCount
-    if (request.sortBy().equals("updatedAt")) {
-
-      if (request.sortDirection().equals("DESCENDING")) {
-        builder.and(QPlaylist.playlist.updatedAt.lt(Instant.parse(request.cursor())));
-      } else {
-        builder.and(QPlaylist.playlist.updatedAt.gt(Instant.parse(request.cursor())));
+    // 커서 : updatedAt, subscribeCount
+    // 보조 커서 : uuid
+    if (request.sortDirection().equals("DESCENDING")) {
+      switch (request.sortBy()) {
+        case "updatedAt" :
+          builder.and(
+              QPlaylist.playlist.updatedAt.lt(Instant.parse(request.cursor()))
+                  .or(QPlaylist.playlist.updatedAt.eq(Instant.parse(request.cursor()))
+                      .and(QPlaylist.playlist.uuid.lt(request.idAfter())))
+          );
+          break;
+        case "subscribeCount" :
+          builder.and(
+              QPlaylistsStat.playlistsStat.subscribeCount.lt(Long.parseLong(request.cursor()))
+                  .or(QPlaylistsStat.playlistsStat.subscribeCount.eq(Long.parseLong(request.cursor()))
+                      .and(QPlaylist.playlist.uuid.lt(request.idAfter())))
+          );
+          break;
+        default :
+          throw new IllegalArgumentException("잘못된 검색 조건입니다: " + request.sortBy());
       }
-
-    } else if (request.sortBy().equals("subscribeCount")) {
-
-      if (request.sortDirection().equals("DESCENDING")) {
-        // Todo : 구독자 수 기준 정렬
-      } else {
-        // Todo : 구독자 수 기준 정렬
+    } else {
+      switch (request.sortBy()) {
+        case "updatedAt" :
+          builder.and(
+              QPlaylist.playlist.updatedAt.gt(Instant.parse(request.cursor()))
+                  .or(QPlaylist.playlist.updatedAt.eq(Instant.parse(request.cursor()))
+                      .and(QPlaylist.playlist.uuid.gt(request.idAfter())))
+          );
+          break;
+        case "subscribeCount" :
+          builder.and(
+              QPlaylistsStat.playlistsStat.subscribeCount.gt(Long.parseLong(request.cursor()))
+                  .or(QPlaylistsStat.playlistsStat.subscribeCount.eq(Long.parseLong(request.cursor()))
+                      .and(QPlaylist.playlist.uuid.gt(request.idAfter())))
+          );
+          break;
+        default :
+          throw new IllegalArgumentException("잘못된 검색 조건입니다: " + request.sortBy());
       }
-
     }
-
 
     return builder;
+
+  }
+
+  private List<OrderSpecifier<?>> buildOrderBy(CursorRequestPlaylistDto request) {
+
+    List<OrderSpecifier<?>> orders = new ArrayList<>();
+
+    // 1차 정렬: updatedAt, subscribeCount
+    if (request.sortDirection().equals("DESCENDING")) {
+      switch (request.sortBy()) {
+        case "updatedAt" :
+          orders.add(QPlaylist.playlist.updatedAt.desc());
+          break;
+        case "subscribeCount" :
+          orders.add(QPlaylistsStat.playlistsStat.subscribeCount.desc());
+          break;
+        default :
+          throw new IllegalArgumentException("잘못된 검색 조건입니다: " + request.sortBy());
+      }
+    } else {
+      switch (request.sortBy()) {
+        case "updatedAt" :
+          orders.add(QPlaylist.playlist.updatedAt.asc());
+          break;
+        case "subscribeCount" :
+          orders.add(QPlaylistsStat.playlistsStat.subscribeCount.asc());
+          break;
+        default :
+          throw new IllegalArgumentException("잘못된 검색 조건입니다: " + request.sortBy());
+      }
+    }
+
+    // 2차 정렬: uuid
+    if (request.sortDirection().equals("DESCENDING")) {
+      orders.add(QPlaylist.playlist.uuid.desc());
+    } else {
+      orders.add(QPlaylist.playlist.uuid.asc());
+    }
+
+    return orders;
 
   }
 
