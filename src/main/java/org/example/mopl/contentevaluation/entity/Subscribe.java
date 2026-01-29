@@ -38,23 +38,24 @@ public class Subscribe {
   @ManyToOne(optional = false, fetch = FetchType.LAZY)
   private User user;
 
-  @Column(name = "playlist_id", nullable = false)
-  private Long playlistId;
+  @JoinColumn(name = "playlist_id", nullable = false)
+  @ManyToOne(optional = false, fetch = FetchType.LAZY)
+  private Playlist playlist;
 
   @CreatedDate
   @Column(name = "created_at", nullable = false)
   private Instant createdAt;
 
   @Builder(access = AccessLevel.PROTECTED)
-  public Subscribe(User user, Long playlistId) {
+  public Subscribe(User user, Playlist playlist) {
     this.user = user;
-    this.playlistId = playlistId;
+    this.playlist = playlist;
   }
 
-  public static Subscribe of(User user, Long playlistId) {
+  public static Subscribe of(User user, Playlist playlist) {
     return Subscribe.builder()
         .user(user)
-        .playlistId(playlistId)
+        .playlist(playlist)
         .build();
   }
 
