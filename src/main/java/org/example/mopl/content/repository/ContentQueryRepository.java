@@ -1,12 +1,17 @@
 package org.example.mopl.content.repository;
 
 import com.querydsl.core.BooleanBuilder;
+import com.querydsl.core.Tuple;
+import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.core.types.Projections;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.example.mopl.content.dto.request.CursorRequestContentDto;
 import org.example.mopl.content.dto.response.ContentDto;
@@ -15,9 +20,12 @@ import org.example.mopl.content.entity.ContentTag;
 import org.example.mopl.content.entity.ContentType;
 import org.example.mopl.content.entity.QContent;
 import org.example.mopl.content.entity.QContentTag;
+import org.example.mopl.content.entity.QContentsStat;
 import org.example.mopl.content.entity.QReview;
 import org.example.mopl.content.entity.QTag;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -66,10 +74,6 @@ public class ContentQueryRepository {
         .where(QReview.review.content.uuid.eq(uuid))
         .fetchOne();
 
-    /*long countWatcher = queryFactory.selectFrom(QPlaylistContent.playlistContent)
-        .where(QPlaylistContent.playlistContent.content.uuid.eq(uuid))
-        .fetch().size();*/
-
     if (content == null || reviewStat == null) {
       return Optional.empty();
     }
@@ -92,8 +96,27 @@ public class ContentQueryRepository {
   }
 
   @Transactional(readOnly = true)
-  public Page<ContentDto> findAllByCursor(CursorRequestContentDto request) {
-    return null;
+  public Page<Content> findAllByCursor(CursorRequestContentDto request) {
+
+    List<Content> contentList = queryFactory.selectFrom(QContent.content)
+        .join(QContentsStat.contentsStat)
+        .on(QContentsStat.contentsStat.content.id.eq(QContent.content.id))
+        .where(buildDynamicQueryByCursor(request))
+        .orderBy(buildOrderBy(request).toArray(OrderSpecifier[]::new))
+        .limit(request.limit() + 1)
+        .fetch();
+
+    boolean hasNext = contentList.size() > request.limit();
+
+    if (hasNext) {
+      contentList.remove(contentList.size() - 1);
+    }
+
+    return new PageImpl<>(
+        contentList,
+        PageRequest.of(0, request.limit()),
+        hasNext ? request.limit() + 1 : contentList.size()
+    );
   }
 
   private BooleanBuilder buildDynamicQueryByCursor(CursorRequestContentDto request) {
@@ -108,36 +131,125 @@ public class ContentQueryRepository {
     // 검색 키워드
     builder.and(QContent.content.title.containsIgnoreCase(request.keywordLike()));
 
-    // 정렬 방향 & 정렬 기준
-
-    if (request.sortBy().equals("watcherCount")) {
-
-    } else if (request.sortBy().equals("rate")) {
-
+    // 커서 : createdAt, watcherCount, rate
+    // 보조 커서 : uuid
+    if (request.sortDirection().equals("DESCENDING")) {
+      switch (request.sortBy()) {
+        case "watcherCount":
+          // ToDo: 구현 필요
+          break;
+        case "rate":
+          if (request.cursor() != null && request.idAfter() != null) {
+            builder.and(
+                QContentsStat.contentsStat.ratingAverage.lt(Double.parseDouble(request.cursor()))
+                    .or(QContentsStat.contentsStat.ratingAverage.eq(
+                            Double.parseDouble(request.cursor()))
+                        .and(QContent.content.uuid.lt(request.idAfter())))
+            );
+          } else if (request.cursor() != null) {
+            // 첫 페이지
+            builder.and(
+                QContentsStat.contentsStat.ratingAverage.lt(Double.parseDouble(request.cursor())));
+          }
+          break;
+        case "createdAt":
+          if (request.cursor() != null && request.idAfter() != null) {
+            builder.and(
+                QContent.content.createdAt.lt(Instant.parse(request.cursor()))
+                    .or(QContent.content.createdAt.eq(Instant.parse(request.cursor()))
+                        .and(QContent.content.uuid.lt(request.idAfter())))
+            );
+          } else if (request.cursor() != null) {
+            // 첫 페이지
+            builder.and(QContent.content.createdAt.lt(Instant.parse(request.cursor())));
+          }
+          break;
+        default:
+          throw new IllegalArgumentException("잘못된 검색 조건입니다: " + request.sortBy());
+      }
     } else {
-
-      if (request.sortDirection().equals("DESCENDING")) {
-        builder.and(QContent.content.createdAt.lt(Instant.parse(request.cursor())));
-      } else {
-        builder.and(QContent.content.createdAt.gt(Instant.parse(request.cursor())));
+      switch (request.sortBy()) {
+        case "watcherCount":
+          // ToDo: 구현 필요
+          break;
+        case "rate":
+          if (request.cursor() != null && request.idAfter() != null) {
+            builder.and(
+                QContentsStat.contentsStat.ratingAverage.gt(Double.parseDouble(request.cursor()))
+                    .or(QContentsStat.contentsStat.ratingAverage.eq(
+                            Double.parseDouble(request.cursor()))
+                        .and(QContent.content.uuid.gt(request.idAfter())))
+            );
+          } else if (request.cursor() != null) {
+            // 첫 페이지
+            builder.and(
+                QContentsStat.contentsStat.ratingAverage.gt(Double.parseDouble(request.cursor())));
+          }
+          break;
+        case "createdAt":
+          if (request.cursor() != null && request.idAfter() != null) {
+            builder.and(
+                QContent.content.createdAt.gt(Instant.parse(request.cursor()))
+                    .or(QContent.content.createdAt.eq(Instant.parse(request.cursor()))
+                        .and(QContent.content.uuid.gt(request.idAfter())))
+            );
+          } else if (request.cursor() != null) {
+            // 첫 페이지
+            builder.and(QContent.content.createdAt.gt(Instant.parse(request.cursor())));
+          }
+          break;
+        default:
+          throw new IllegalArgumentException("잘못된 검색 조건입니다: " + request.sortBy());
       }
-
-    }
-
-    // 커서
-
-    // 보조 커서 UUID
-    if (request.idAfter() != null) {
-
-      if (request.sortDirection().equals("DESCENDING")) {
-        builder.and(QContent.content.uuid.lt(request.idAfter()));
-      } else {
-        builder.and(QContent.content.uuid.gt(request.idAfter()));
-      }
-
     }
 
     return builder;
+
+  }
+
+  private List<OrderSpecifier<?>> buildOrderBy(CursorRequestContentDto request) {
+
+    List<OrderSpecifier<?>> orders = new ArrayList<>();
+
+    // 1차 정렬: createdAt, watcherCount, rate
+    if (request.sortDirection().equals("DESCENDING")) {
+
+      switch (request.sortBy()) {
+        case "watcherCount":
+          // ToDo: 구현 필요
+          break;
+        case "rate":
+          orders.add(QContentsStat.contentsStat.ratingAverage.desc());
+          break;
+        default:
+          orders.add(QContent.content.createdAt.desc());
+          break;
+      }
+
+    } else {
+
+      switch (request.sortBy()) {
+        case "watcherCount":
+          // ToDo: 구현 필요
+          break;
+        case "rate":
+          orders.add(QContentsStat.contentsStat.ratingAverage.asc());
+          break;
+        default:
+          orders.add(QContent.content.createdAt.asc());
+          break;
+      }
+
+    }
+
+    // 2차 정렬: 항상 uuid
+    if (request.sortDirection().equals("DESCENDING")) {
+      orders.add(QContent.content.uuid.desc());
+    } else {
+      orders.add(QContent.content.uuid.asc());
+    }
+
+    return orders;
 
   }
 
