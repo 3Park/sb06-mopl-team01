@@ -1,12 +1,20 @@
 package org.example.mopl.content.service;
 
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.example.mopl.content.dto.request.CursorRequestContentDto;
 import org.example.mopl.content.dto.response.ContentDto;
 import org.example.mopl.content.dto.response.CursorResponseContentDto;
+import org.example.mopl.content.entity.Content;
+import org.example.mopl.content.entity.ContentsStat;
 import org.example.mopl.content.exception.NoSuchContentException;
 import org.example.mopl.content.repository.ContentQueryRepository;
+import org.example.mopl.content.repository.ContentTagQueryRepository;
+import org.example.mopl.content.repository.ContentsStatQueryRepository;
+import org.example.mopl.content.repository.ReviewQueryRepository;
+import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -14,6 +22,9 @@ import org.springframework.stereotype.Service;
 public class ContentQueryService {
 
   private final ContentQueryRepository contentQueryRepository;
+  private final ContentTagQueryRepository contentTagQueryRepository;
+  private final ContentsStatQueryRepository contentsStatQueryRepository;
+  private final ReviewQueryRepository reviewQueryRepository;
 
   // Todo : watcherCount를 실시간 같이보기 모듈에서 가져오기로 대체
   public ContentDto getContentByUuid(UUID uuid) {
@@ -23,7 +34,61 @@ public class ContentQueryService {
 
   // Todo : 커서 기반 페이지네이션 (watcherCount로 정렬해야 하므로 실시간 같이보기 모듈 필요)
   public CursorResponseContentDto getContentsByCursor(CursorRequestContentDto request) {
-    return null;
+
+    Page<Content> contentPage = contentQueryRepository.findAllByCursor(request);
+
+    Map<Long, List<String>> tagListMap = contentTagQueryRepository
+        .findTagsByContentIds(
+            contentPage.stream()
+                .map(Content::getId)
+                .toList()
+        );
+
+    Map<Long, ContentsStat> contentsStatMap = contentsStatQueryRepository
+        .getContentsStatByContentIds(
+            contentPage.stream()
+                .map(Content::getId)
+                .toList()
+        );
+
+    Map<Long, Long> contentReviewCountMap = reviewQueryRepository
+        .countReviewsByContentIds(
+            contentPage.stream()
+                .map(Content::getId)
+                .toList()
+        );
+
+    List<ContentDto> contentDtoList = contentPage.stream()
+        .map(content -> {
+          ContentsStat contentsStat = contentsStatMap.get(content.getId());
+          return ContentDto.of(
+              content.getUuid(),
+              content.getContentType().getValue(),
+              content.getTitle(),
+              content.getDescription(),
+              content.getThumbnailUrl(),
+              tagListMap.getOrDefault(content.getId(), List.of()),
+              contentsStat != null ? contentsStat.getRatingAverage() : 0.0,
+              contentReviewCountMap.getOrDefault(content.getId(), 0L).intValue(),
+              0L // Todo : watcherCount
+          );
+        })
+        .toList();
+
+    return CursorResponseContentDto.builder()
+        .data(contentDtoList)
+        .nextCursor(contentPage.hasNext() ?
+            contentPage.getContent()
+                .get(contentPage.getContent().size() - 1).getUuid().toString() : null)
+        .nextIdAfter(contentPage.hasNext() ?
+            contentPage.getContent()
+                .get(contentPage.getContent().size() - 1).getUuid() : null)
+        .hasNext(contentPage.hasNext())
+        .totalCount(contentPage.getTotalElements())
+        .sortBy(request.sortBy())
+        .sortDirection(request.sortDirection())
+        .build();
+
   }
 
 }

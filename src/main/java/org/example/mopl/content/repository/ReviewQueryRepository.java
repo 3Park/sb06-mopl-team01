@@ -1,13 +1,16 @@
 package org.example.mopl.content.repository;
 
 import com.querydsl.core.BooleanBuilder;
+import com.querydsl.core.Tuple;
 import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.example.mopl.content.dto.request.CursorRequestReviewDto;
 import org.example.mopl.content.dto.response.ReviewDto;
@@ -38,6 +41,25 @@ public class ReviewQueryRepository {
             .where(QReview.review.uuid.eq(reviewId))
             .fetchOne()
     );
+  }
+
+  public Map<Long, Long> countReviewsByContentIds(List<Long> contentIds) {
+
+    List<Tuple> results = queryFactory.select(
+            QReview.review.content.id,
+            QReview.review.count()
+        )
+        .from(QReview.review)
+        .where(QReview.review.content.id.in(contentIds))
+        .groupBy(QReview.review.content.id)
+        .fetch();
+
+    return results.stream()
+        .collect(Collectors.toMap(
+            tuple -> tuple.get(QReview.review.content.id),
+            tuple -> tuple.get(QReview.review.count())
+        ));
+
   }
 
   @Transactional(readOnly = true)
