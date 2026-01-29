@@ -10,9 +10,13 @@ import org.example.mopl.content.entity.Content;
 import org.example.mopl.content.entity.Review;
 import org.example.mopl.content.exception.NoSuchContentException;
 import org.example.mopl.content.exception.NoSuchReviewException;
+import org.example.mopl.content.exception.UnauthorizedReviewException;
 import org.example.mopl.content.repository.ContentQueryRepository;
 import org.example.mopl.content.repository.ReviewCommandRepository;
 import org.example.mopl.content.repository.ReviewQueryRepository;
+import org.example.mopl.user.entity.User;
+import org.example.mopl.user.entity.UserRoleType;
+import org.example.mopl.user.repository.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,31 +27,70 @@ public class ReviewCommandService {
   private final ContentQueryRepository contentQueryRepository;
   private final ReviewCommandRepository reviewCommandRepository;
   private final ReviewQueryRepository reviewQueryRepository;
+  private final UserRepository userRepository;
 
-  // Todo : UserRepository와 시큐리티 사용해 User id 가져오기
   @Transactional
-  public ReviewDto createReview(ReviewCreateRequest request) {
+  public ReviewDto createReview(String email, ReviewCreateRequest request) {
+
+    // Todo : 예외 클래스 변경 필요
+    User user = userRepository.findByEmail(email)
+        .orElseThrow(() -> new RuntimeException("No such user with email: " + email));
 
     Content content = contentQueryRepository.findByUuid(request.contentId())
         .orElseThrow(() -> new NoSuchContentException(request.contentId().toString()));
 
-    return null;
+    Review review = reviewCommandRepository.save(
+        Review.of(
+            user,
+            content,
+            request.rating(),
+            request.text()
+        )
+    );
+
+    // Todo : 콘텐츠 통계테이블 갱신 이벤트 발행
+
+    return ReviewDto.of(
+      review.getUuid(),
+      content.getUuid(),
+      AuthorDto.of(
+        user.getUuid(),
+        user.getProfile().getName(),
+        user.getProfile().getProfileImageUrl()
+      ),
+      review.getText(),
+      review.getRating()
+    );
 
   }
 
-  // Todo : UserRepository에서 User id 가져오기
   @Transactional
-  public ReviewDto updateReview(UUID reviewId, ReviewUpdateRequest request) {
+  public ReviewDto updateReview(String email, UUID reviewId, ReviewUpdateRequest request) {
 
     Review review = reviewQueryRepository.findByUuid(reviewId)
         .orElseThrow(() -> new NoSuchReviewException(reviewId.toString()));
+
+    // Todo : 예외 클래스 변경 필요
+    User user = userRepository.findByEmail(email)
+        .orElseThrow(() -> new RuntimeException("No such user with email: " + email));
+
+    boolean isAdmin = user.getUserRoles().stream()
+        .anyMatch(role -> role.getRole().getIsAdmin());
+
+    if (!isAdmin && !review.getUser().getUuid().equals(user.getUuid())) {
+      throw new UnauthorizedReviewException(email);
+    }
 
     review.update(request.text(), request.rating());
 
     return ReviewDto.of(
       review.getUuid(),
       review.getContent().getUuid(),
-      AuthorDto.of(UUID.randomUUID(), null, null), // 임시 User id
+      AuthorDto.of(
+        user.getUuid(),
+        user.getProfile().getName(),
+        user.getProfile().getProfileImageUrl()
+      ),
       review.getText(),
       review.getRating()
     );

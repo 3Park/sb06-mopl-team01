@@ -12,6 +12,7 @@ import jakarta.persistence.Table;
 import java.time.Instant;
 import java.util.UUID;
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.example.mopl.user.entity.User;
@@ -55,6 +56,23 @@ public class Review {
   @LastModifiedDate
   @Column(name = "updated_at")
   private Instant updatedAt;
+
+  @Builder(access = AccessLevel.PROTECTED)
+  public Review(User user, Content content, Double rating, String text) {
+    this.user = user;
+    this.content = content;
+    this.rating = rating;
+    this.text = text;
+  }
+
+  public static Review of(User user, Content content, Double rating, String text) {
+    return Review.builder()
+        .user(user)
+        .content(content)
+        .rating(rating)
+        .text(text)
+        .build();
+  }
 
   public void update(String text, Double rating) {
     this.text = text;
