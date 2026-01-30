@@ -1,4 +1,4 @@
-package org.example.mopl.user.dto;
+package org.example.mopl.auth.dto;
 
 public record JwtTokenDto(
         String accessToken,

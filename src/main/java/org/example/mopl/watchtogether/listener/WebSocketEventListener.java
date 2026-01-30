@@ -1,18 +1,13 @@
 package org.example.mopl.watchtogether.listener;
 
-import jakarta.annotation.Nullable;
-import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
-import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
-import org.example.mopl.user.custom.CustomUserDetails;
+import org.example.mopl.auth.CustomUserDetails;
 import org.example.mopl.user.dto.UserDto;
-import org.example.mopl.user.entity.User;
 import org.example.mopl.watchtogether.service.WatchTogetherService;
 import org.springframework.context.event.EventListener;
 import org.springframework.messaging.simp.stomp.StompHeaderAccessor;
 import org.springframework.stereotype.Component;
-import org.springframework.web.socket.messaging.SessionConnectedEvent;
 import org.springframework.web.socket.messaging.SessionDisconnectEvent;
 import org.springframework.web.socket.messaging.SessionSubscribeEvent;
 

@@ -1,13 +1,16 @@
-package org.example.mopl.common.jwt;
+package org.example.mopl.auth.jwt;
 
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
-import org.example.mopl.common.jwt.service.AuthService;
-import org.example.mopl.user.custom.CustomUserDetails;
+import org.example.mopl.auth.service.AuthService;
+import org.example.mopl.auth.CustomUserDetails;
+import org.example.mopl.auth.exception.AuthErrorCode;
+import org.example.mopl.auth.exception.AuthException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
@@ -34,11 +37,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             //Redis 에 저장된 refreshToken과 현재 요청의 refreshToken이 맞지않으면 old 유저.
             Authentication authentication = jwtTokenProvider.getAuthentication(token);
             CustomUserDetails customUserDetails = (CustomUserDetails) authentication.getPrincipal();
+            Cookie[] cookies = request.getCookies();
+            //로그아웃 후 다시 로그아웃 시도시 쿠키는 null일 수 있다 (최초 로그아웃시 쿠키 날림)
             if(customUserDetails != null &&
                     customUserDetails.getUserDto() != null &&
-                    StringUtils.hasText(customUserDetails.getUserDto().getEmail())){
+                    StringUtils.hasText(customUserDetails.getUserDto().getEmail()) &&
+                    cookies != null && cookies.length >= 0){
 
-                Arrays.stream(request.getCookies())
+                Arrays.stream(cookies)
                         .filter(cookie -> cookie.getName().equals(TokenUtils.REFRESH_TOKEN))
                         .findFirst()
                         .ifPresent(cookie -> {
@@ -47,7 +53,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                                 SecurityContextHolder.getContext().setAuthentication(authentication);
                             }
                         });
-            }
+                }
         }
 
         filterChain.doFilter(request, response);

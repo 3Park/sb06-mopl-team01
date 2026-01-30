@@ -1,4 +1,4 @@
-package org.example.mopl.common.jwt;
+package org.example.mopl.auth.jwt;
 
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;

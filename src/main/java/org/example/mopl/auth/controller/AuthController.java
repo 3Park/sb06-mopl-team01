@@ -1,13 +1,12 @@
-package org.example.mopl.user.controller;
+package org.example.mopl.auth.controller;
 
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
-import org.example.mopl.common.jwt.JwtTokenProvider;
-import org.example.mopl.common.jwt.TokenUtils;
-import org.example.mopl.common.jwt.service.AuthService;
-import org.example.mopl.user.dto.JwtDto;
-import org.example.mopl.user.dto.JwtTokenDto;
+import org.example.mopl.auth.jwt.JwtTokenProvider;
+import org.example.mopl.auth.jwt.TokenUtils;
+import org.example.mopl.auth.service.AuthService;
+import org.example.mopl.auth.dto.JwtDto;
+import org.example.mopl.auth.dto.JwtTokenDto;
 import org.example.mopl.user.entity.UserRoleType;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -37,9 +36,8 @@ public class AuthController {
         return ResponseEntity.status(HttpStatus.OK).body(dto.jwtDto());
     }
 
-    //PJG 임시. 추후 변경 필요
-//    @PostMapping("/test/sign-in")
-//    public ResponseEntity<JwtDto> signIn(HttpServletResponse response)
+//    @PostMapping("/reset-password")
+//    public ResponseEntity<JwtDto> resetPassword(HttpServletResponse response)
 //    {
 //        String token = jwtTokenProvider.generateAccessToken("admin@test.com", UserRoleType.ADMIN.name());
 //        String refreshToken = jwtTokenProvider.generateRefreshToken("admin@test.com", UserRoleType.ADMIN.name());

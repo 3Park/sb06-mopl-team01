@@ -1,4 +1,4 @@
-package org.example.mopl.common.handler;
+package org.example.mopl.auth.jwt.handler;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.micrometer.common.util.StringUtils;
@@ -6,13 +6,13 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
-import org.example.mopl.common.jwt.JwtTokenProvider;
-import org.example.mopl.common.jwt.TokenUtils;
-import org.example.mopl.common.jwt.service.AuthService;
-import org.example.mopl.user.custom.CustomUserDetails;
-import org.example.mopl.user.dto.JwtDto;
-import org.example.mopl.user.exception.UserErrorCode;
-import org.example.mopl.user.exception.UserException;
+import org.example.mopl.auth.jwt.JwtTokenProvider;
+import org.example.mopl.auth.jwt.TokenUtils;
+import org.example.mopl.auth.service.AuthService;
+import org.example.mopl.auth.CustomUserDetails;
+import org.example.mopl.auth.dto.JwtDto;
+import org.example.mopl.auth.exception.AuthErrorCode;
+import org.example.mopl.auth.exception.AuthException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
@@ -37,7 +37,7 @@ public class JwtLoginSuccessHandler implements AuthenticationSuccessHandler {
         CustomUserDetails user = (CustomUserDetails) authentication.getPrincipal();
 
         if(user == null || user.getUserDto() == null || StringUtils.isEmpty(user.getUserDto().getEmail())){
-            throw new UserException(UserErrorCode.INVALID_USER_DATA);
+            throw new AuthException(AuthErrorCode.INVALID_USER_DATA);
         }
 
         String accessToken = jwtTokenProvider.generateAccessToken(user.getUserDto().getEmail(), user.getUserDto().getRole());

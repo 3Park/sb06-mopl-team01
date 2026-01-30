@@ -1,4 +1,4 @@
-package org.example.mopl.common.jwt.repository;
+package org.example.mopl.auth.repository;
 
 import lombok.RequiredArgsConstructor;
 import org.example.mopl.common.config.property.JwtProperties;

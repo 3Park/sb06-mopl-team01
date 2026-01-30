@@ -1,13 +1,13 @@
-package org.example.mopl.common.jwt.service;
+package org.example.mopl.auth.service;
 
 import lombok.RequiredArgsConstructor;
-import org.example.mopl.common.jwt.JwtTokenProvider;
-import org.example.mopl.common.jwt.repository.RefreshTokenRepository;
-import org.example.mopl.user.custom.CustomUserDetails;
-import org.example.mopl.user.dto.JwtDto;
-import org.example.mopl.user.dto.JwtTokenDto;
-import org.example.mopl.user.exception.UserErrorCode;
-import org.example.mopl.user.exception.UserException;
+import org.example.mopl.auth.jwt.JwtTokenProvider;
+import org.example.mopl.auth.repository.RefreshTokenRepository;
+import org.example.mopl.auth.CustomUserDetails;
+import org.example.mopl.auth.dto.JwtDto;
+import org.example.mopl.auth.dto.JwtTokenDto;
+import org.example.mopl.auth.exception.AuthErrorCode;
+import org.example.mopl.auth.exception.AuthException;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
@@ -22,13 +22,13 @@ public class AuthService {
     {
         Authentication auth = jwtTokenProvider.getAuthentication(refreshToken);
         if (auth == null)
-            throw new UserException(UserErrorCode.INVALID_USER_CREDENTIALS);
+            throw new AuthException(AuthErrorCode.INVALID_USER_CREDENTIALS);
 
         CustomUserDetails userDetails = (CustomUserDetails) auth.getPrincipal();
         if(userDetails == null
                 || userDetails.getUserDto() == null
                 || StringUtils.hasText(userDetails.getUserDto().getEmail()) == false)
-            throw new UserException(UserErrorCode.INVALID_USER_DATA);
+            throw new AuthException(AuthErrorCode.INVALID_USER_DATA);
 
         String userEmail = userDetails.getUserDto().getEmail();
         String userRole = userDetails.getUserDto().getRole();
