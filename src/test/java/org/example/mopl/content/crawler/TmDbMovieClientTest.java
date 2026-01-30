@@ -13,10 +13,21 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.util.ReflectionTestUtils;
 
 @SpringBootTest
-@ActiveProfiles("test")
+@ActiveProfiles("dev")
+@TestPropertySource(
+    properties = {
+        "spring.datasource.url=jdbc:postgresql://localhost:5432/test",
+        "spring.datasource.username=test",
+        "spring.datasource.password=test",
+        "content.api.tmdb.key=f1c41be844fe207552cf8fbf2849b420",
+        "jwt.secret=tem2nx24x340z3sdfd09cc45nc45gnx2n349x4", // 테스트용 시크릿 키
+        "spring.data.redis.host=localhost"
+    }
+)
 @DisplayName("TmDbMovieClientTest 통합 테스트")
 class TmDbMovieClientTest {
 

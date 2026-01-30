@@ -5,12 +5,14 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.example.mopl.content.dto.ContentFetchResultDto;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
 @Component
+@Slf4j
 @RequiredArgsConstructor
 public class TmDbMovieClient implements MediaCrawlerClient {
 
@@ -51,7 +53,7 @@ public class TmDbMovieClient implements MediaCrawlerClient {
         .build();
 
     JsonNode result = restClient.get()
-        .uri(uriBuilder -> uriBuilder.path("/search/movie")
+        .uri(uriBuilder -> uriBuilder.path("/discover/movie")
             .queryParam("api_key", apiKey)
             .queryParam("page", pageNumber)
             .build())
