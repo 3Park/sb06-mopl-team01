@@ -1,17 +1,14 @@
 package org.example.mopl.content.repository;
 
 import com.querydsl.core.BooleanBuilder;
-import com.querydsl.core.Tuple;
 import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.core.types.Projections;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.example.mopl.content.dto.request.CursorRequestContentDto;
 import org.example.mopl.content.dto.response.ContentDto;
@@ -23,9 +20,9 @@ import org.example.mopl.content.entity.QContentTag;
 import org.example.mopl.content.entity.QContentsStat;
 import org.example.mopl.content.entity.QReview;
 import org.example.mopl.content.entity.QTag;
+import org.example.mopl.watchtogether.service.WatchTogetherService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
@@ -35,6 +32,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class ContentQueryRepository {
 
   private final JPAQueryFactory queryFactory;
+  private final WatchTogetherService watchTogetherService;
 
   public boolean existsByUuid(UUID uuid) {
     return queryFactory.selectFrom(QContent.content)
@@ -91,12 +89,11 @@ public class ContentQueryRepository {
         ), // tags는 별도 조회 필요
         (double) (reviewStat.sum / reviewStat.count),
         Long.valueOf(reviewStat.count),
-        0L
+        watchTogetherService.getWatcherCount(String.valueOf(content.getId()))
     ));
 
   }
 
-  @Transactional(readOnly = true)
   public Page<Content> findAllByCursor(CursorRequestContentDto request) {
 
     List<Content> contentList = queryFactory.selectFrom(QContent.content)

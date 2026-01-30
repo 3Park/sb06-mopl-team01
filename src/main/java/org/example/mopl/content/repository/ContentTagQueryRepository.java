@@ -9,7 +9,6 @@ import lombok.RequiredArgsConstructor;
 import org.example.mopl.content.entity.QContentTag;
 import org.example.mopl.content.entity.QTag;
 import org.springframework.stereotype.Repository;
-import org.springframework.transaction.annotation.Transactional;
 
 @Repository
 @RequiredArgsConstructor
@@ -17,7 +16,6 @@ public class ContentTagQueryRepository {
 
   private final JPAQueryFactory queryFactory;
 
-  @Transactional(readOnly = true)
   public Map<Long, List<String>> findTagsByContentIds(List<Long> contentIds) {
     List<Tuple> tagTuples = queryFactory.select(
             QContentTag.contentTag.content.id,

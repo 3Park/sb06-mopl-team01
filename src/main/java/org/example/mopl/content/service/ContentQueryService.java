@@ -14,6 +14,7 @@ import org.example.mopl.content.repository.ContentQueryRepository;
 import org.example.mopl.content.repository.ContentTagQueryRepository;
 import org.example.mopl.content.repository.ContentsStatQueryRepository;
 import org.example.mopl.content.repository.ReviewQueryRepository;
+import org.example.mopl.watchtogether.service.WatchTogetherService;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 
@@ -24,9 +25,9 @@ public class ContentQueryService {
   private final ContentQueryRepository contentQueryRepository;
   private final ContentTagQueryRepository contentTagQueryRepository;
   private final ContentsStatQueryRepository contentsStatQueryRepository;
+  private final WatchTogetherService watchTogetherService;
   private final ReviewQueryRepository reviewQueryRepository;
 
-  // Todo : watcherCount를 실시간 같이보기 모듈에서 가져오기로 대체
   public ContentDto getContentByUuid(UUID uuid) {
     return contentQueryRepository.findByUuidWithContentTag(uuid)
         .orElseThrow(() -> new NoSuchContentException("존재하지 않는 콘텐츠입니다. UUID: " + uuid));
@@ -71,7 +72,7 @@ public class ContentQueryService {
               tagListMap.getOrDefault(content.getId(), List.of()),
               contentsStat != null ? contentsStat.getRatingAverage() : 0.0,
               contentReviewCountMap.getOrDefault(content.getId(), 0L),
-              0L // Todo : watcherCount
+              watchTogetherService.getWatcherCount(String.valueOf(content.getId()))
           );
         })
         .toList();
