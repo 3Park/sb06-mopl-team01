@@ -1,6 +1,7 @@
-package org.example.mopl.user.custom;
+package org.example.mopl.auth.service;
 
 import lombok.RequiredArgsConstructor;
+import org.example.mopl.auth.CustomUserDetails;
 import org.example.mopl.user.dto.UserDto;
 import org.example.mopl.user.entity.User;
 import org.example.mopl.user.repository.UserRepository;

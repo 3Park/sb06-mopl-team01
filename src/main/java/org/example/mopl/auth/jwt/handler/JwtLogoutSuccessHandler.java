@@ -1,4 +1,4 @@
-package org.example.mopl.common.handler;
+package org.example.mopl.auth.jwt.handler;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;

@@ -1,10 +1,13 @@
-package org.example.mopl.common.handler;
+package org.example.mopl.auth.jwt.handler;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.example.mopl.common.exception.ErrorResponse;
+import org.example.mopl.auth.exception.AuthErrorCode;
+import org.example.mopl.auth.exception.AuthException;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.web.access.AccessDeniedHandler;
@@ -24,6 +27,10 @@ public class CustomAccessDeniedHandler implements AccessDeniedHandler {
         response.setStatus(HttpStatus.FORBIDDEN.value());
         response.setCharacterEncoding("UTF-8");
 
-        //PJG 커스텀 exception 리턴 필요
+        ErrorResponse errorResponse = new ErrorResponse(
+                new AuthException(AuthErrorCode.INVALID_USER_CREDENTIALS)
+                , HttpStatus.UNAUTHORIZED.value());
+
+        response.getWriter().write(objectMapper.writeValueAsString(errorResponse));
     }
 }
