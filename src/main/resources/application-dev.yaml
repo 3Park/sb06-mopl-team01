@@ -27,4 +27,4 @@ content:
   api:
     tmdb:
       key: ${CONTENT_API_TMDB_KEY}
-
+      url: https://api.themoviedb.org/3
