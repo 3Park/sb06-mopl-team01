@@ -58,7 +58,7 @@ public class PlaylistQueryService {
         );
 
     Map<Long, ContentsStat> contentsStatMap = contentsStatQueryRepository
-        .getContentsStatByContentIds(
+        .findAllByContentIds(
             playlistContents.stream()
                 .map(content -> content.getContent().getId())
                 .toList()
@@ -126,7 +126,7 @@ public class PlaylistQueryService {
         );
 
     Map<Long, ContentsStat> contentsStatMap = contentsStatQueryRepository
-        .getContentsStatByContentIds(
+        .findAllByContentIds(
             playlists.stream()
                 .map(Playlist::getId)
                 .toList()

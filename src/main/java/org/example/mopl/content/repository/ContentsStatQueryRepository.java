@@ -16,7 +16,7 @@ public class ContentsStatQueryRepository {
 
   private final JPAQueryFactory queryFactory;
 
-  public Optional<ContentsStat> getContentsStatByContentId(Long id) {
+  public Optional<ContentsStat> findByContentId(Long id) {
 
     ContentsStat contentsStat = queryFactory
         .selectFrom(QContentsStat.contentsStat)
@@ -27,7 +27,7 @@ public class ContentsStatQueryRepository {
 
   }
 
-  public Map<Long, ContentsStat> getContentsStatByContentIds(List<Long> ids) {
+  public Map<Long, ContentsStat> findAllByContentIds(List<Long> ids) {
 
     List<ContentsStat> contentsStatList = queryFactory
         .selectFrom(QContentsStat.contentsStat)

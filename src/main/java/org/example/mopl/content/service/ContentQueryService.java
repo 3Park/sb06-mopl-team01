@@ -47,7 +47,7 @@ public class ContentQueryService {
         );
 
     Map<Long, ContentsStat> contentsStatMap = contentsStatQueryRepository
-        .getContentsStatByContentIds(
+        .findAllByContentIds(
             contentPage.stream()
                 .map(Content::getId)
                 .toList()
