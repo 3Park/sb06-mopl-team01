@@ -5,9 +5,12 @@ import java.util.Map;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.example.mopl.content.dto.response.ContentDto;
+import org.example.mopl.content.entity.ContentTag;
 import org.example.mopl.content.entity.ContentsStat;
 import org.example.mopl.content.repository.ContentTagQueryRepository;
 import org.example.mopl.content.repository.ContentsStatQueryRepository;
+import org.example.mopl.contentevaluation.dto.request.CursorRequestPlaylistDto;
+import org.example.mopl.contentevaluation.dto.response.CursorResponsePlaylistDto;
 import org.example.mopl.contentevaluation.dto.response.OwnerDto;
 import org.example.mopl.contentevaluation.dto.response.PlaylistDto;
 import org.example.mopl.contentevaluation.entity.Playlist;
@@ -19,6 +22,7 @@ import org.example.mopl.contentevaluation.repository.PlaylistQueryRepository;
 import org.example.mopl.contentevaluation.repository.PlaylistsStatQueryRepository;
 import org.example.mopl.contentevaluation.repository.SubscribeQueryRepository;
 import org.example.mopl.watchtogether.service.BasicWatchTogetherService;
+import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -34,7 +38,7 @@ public class PlaylistQueryService {
   private final SubscribeQueryRepository subscribeQueryRepository;
   private final BasicWatchTogetherService basicWatchTogetherService;
 
-  // 플레이리스트 단건 조회
+  // Todo : 쿼리 최적화 필요
   @Transactional(readOnly = true)
   public PlaylistDto getPlaylistDtoByUuid(UUID uuid) {
 
@@ -92,6 +96,89 @@ public class PlaylistQueryService {
             )
             .toList()
     );
+
+  }
+
+  // Todo : 쿼리 최적화 필요
+  @Transactional(readOnly = true)
+  public CursorResponsePlaylistDto getPlaylistListByCursor(CursorRequestPlaylistDto request) {
+
+    Page<Playlist> playlists = playlistQueryRepository.findAllByCursor(request);
+
+    Map<Long, List<PlaylistContent>> playlistContentsMap = playlistContentQueryRepository
+        .findAllByPlaylistIds(
+            playlists.stream()
+                .map(Playlist::getId)
+                .toList()
+        );
+
+    Map<Long, PlaylistsStat> playlistsStatMap = playlistsStatQueryRepository
+        .findByPlaylistIds(
+            playlists.stream()
+                .map(Playlist::getId)
+                .toList()
+        );
+
+    Map<Long, List<String>> contentTagsMap = contentTagQueryRepository
+        .findTagsByContentIds(
+            playlists.stream()
+                .map(Playlist::getId)
+                .toList()
+        );
+
+    Map<Long, ContentsStat> contentsStatMap = contentsStatQueryRepository
+        .getContentsStatByContentIds(
+            playlists.stream()
+                .map(Playlist::getId)
+                .toList()
+        );
+
+    List<PlaylistDto> playlistDtoList = playlists.stream()
+        .map(playlist -> PlaylistDto.of(
+            playlist.getUuid(),
+            OwnerDto.of(
+                playlist.getUser().getUuid(),
+                playlist.getUser().getProfile().getName(),
+                playlist.getUser().getProfile().getProfileImageUrl()
+            ),
+            playlist.getTitle(),
+            playlist.getDescription(),
+            playlist.getUpdatedAt(),
+            playlistsStatMap.get(playlist.getId()).getSubscribeCount(),
+            subscribeQueryRepository.existsByUserIdAndPlaylistId(
+                playlist.getUser().getId(),
+                playlist.getId()
+            ),
+            playlistContentsMap.get(playlist.getId()).stream()
+                .map(content ->
+                    ContentDto.of(
+                        content.getContent().getUuid(),
+                        content.getContent().getContentType().getValue(),
+                        content.getContent().getTitle(),
+                        content.getContent().getDescription(),
+                        content.getContent().getThumbnailUrl(),
+                        contentTagsMap.get(content.getId()),
+                        contentsStatMap.get(content.getId()).getRatingAverage(),
+                        contentsStatMap.get(content.getId()).getRatingCount(),
+                        basicWatchTogetherService.getWatcherCount(String.valueOf(content.getId()))
+                    )
+                )
+                .toList()
+        ))
+        .toList();
+
+    return CursorResponsePlaylistDto.builder()
+        .data(playlistDtoList)
+        .nextCursor(playlists.hasNext() ?
+            playlists.getContent()
+                .get(playlists.getContent().size() - 1).getUuid().toString() : null)
+        .hasNext(playlists.hasNext())
+        .totalCount(playlists.getTotalElements())
+        .sortBy(request.sortBy())
+        .sortDirection(request.sortDirection())
+        .build();
+
+
 
   }
 

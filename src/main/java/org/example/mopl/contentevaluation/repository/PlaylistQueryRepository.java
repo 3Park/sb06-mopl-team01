@@ -41,6 +41,8 @@ public class PlaylistQueryRepository {
     List<Playlist> playlists = queryFactory.selectFrom(QPlaylist.playlist)
         .leftJoin(QPlaylist.playlist.user, QUser.user)
         .fetchJoin()
+        .join(QUser.user.profile, QProfile.profile)
+        .fetchJoin()
         .where(buildDynamicQueryByCursor(request))
         .orderBy(buildOrderBy(request).toArray(new OrderSpecifier<?>[0]))
         .limit(request.limit() + 1)
