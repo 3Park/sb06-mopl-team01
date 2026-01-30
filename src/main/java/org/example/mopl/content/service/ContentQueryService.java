@@ -70,7 +70,7 @@ public class ContentQueryService {
               content.getThumbnailUrl(),
               tagListMap.getOrDefault(content.getId(), List.of()),
               contentsStat != null ? contentsStat.getRatingAverage() : 0.0,
-              contentReviewCountMap.getOrDefault(content.getId(), 0L).intValue(),
+              contentReviewCountMap.getOrDefault(content.getId(), 0L),
               0L // Todo : watcherCount
           );
         })

@@ -101,7 +101,7 @@ public class ContentCommandService {
             .map(contentTag -> contentTag.getTag().getName())
             .toList(),
         0.1,
-        0,
+        0L,
         0L
     );
 

@@ -90,7 +90,7 @@ public class ContentQueryRepository {
         ).toList(
         ), // tags는 별도 조회 필요
         (double) (reviewStat.sum / reviewStat.count),
-        reviewStat.count,
+        Long.valueOf(reviewStat.count),
         0L
     ));
 
