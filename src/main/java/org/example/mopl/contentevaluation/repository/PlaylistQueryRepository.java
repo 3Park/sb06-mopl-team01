@@ -9,10 +9,13 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.example.mopl.contentevaluation.dto.ContentEvaluationQueryDto;
+import org.example.mopl.contentevaluation.dto.ContentEvaluationQueryDto.CursorPlaylistPage;
 import org.example.mopl.contentevaluation.dto.request.CursorRequestPlaylistDto;
 import org.example.mopl.contentevaluation.entity.Playlist;
 import org.example.mopl.contentevaluation.entity.QPlaylist;
 import org.example.mopl.contentevaluation.entity.QPlaylistsStat;
+import org.example.mopl.contentevaluation.entity.QSubscribe;
 import org.example.mopl.profile.entity.QProfile;
 import org.example.mopl.user.entity.QUser;
 import org.springframework.data.domain.Page;
@@ -47,6 +50,65 @@ public class PlaylistQueryRepository {
         .orderBy(buildOrderBy(request).toArray(new OrderSpecifier<?>[0]))
         .limit(request.limit() + 1)
         .fetch();
+
+    boolean hasNext = playlists.size() > request.limit();
+
+    if (playlists.size() > request.limit()) {
+      playlists.remove(playlists.size() - 1);
+    }
+
+    return new PageImpl<>(
+        playlists,
+        Pageable.ofSize(request.limit()),
+        hasNext ? request.limit() + 1 : playlists.size()
+    );
+
+  }
+
+  // V2: 구독 정보 및 통계 포함
+  // 구독자 ID에 따른 구독 여부 포함
+  // 추후 성능 테스트 필요
+  public Page<ContentEvaluationQueryDto.CursorPlaylistPage> findAllByCursorV2(CursorRequestPlaylistDto request) {
+
+    List<CursorPlaylistPage> playlists = queryFactory.select(
+            QPlaylist.playlist.id,
+            QPlaylist.playlist.uuid,
+            QPlaylist.playlist.user.uuid,
+            QPlaylist.playlist.user.profile.name,
+            QPlaylist.playlist.user.profile.profileImageUrl,
+            QPlaylist.playlist.title,
+            QPlaylist.playlist.description,
+            QPlaylist.playlist.updatedAt,
+            QPlaylistsStat.playlistsStat.subscribeCount,
+            QSubscribe.subscribe.uuid
+        )
+        .from(QPlaylist.playlist)
+        .leftJoin(QPlaylist.playlist.user, QUser.user)
+        .fetchJoin()
+        .join(QUser.user.profile, QProfile.profile)
+        .fetchJoin()
+        .leftJoin(QPlaylistsStat.playlistsStat)
+        .on(QPlaylistsStat.playlistsStat.playlist.eq(QPlaylist.playlist))
+        .leftJoin(QSubscribe.subscribe)
+        .on(QSubscribe.subscribe.playlist.eq(QPlaylist.playlist)
+            .and(QSubscribe.subscribe.user.uuid.eq(request.subscriberIdEqual() != null ? request.subscriberIdEqual() : UUID.randomUUID())))
+        .where(buildDynamicQueryByCursor(request))
+        .orderBy(buildOrderBy(request).toArray(new OrderSpecifier<?>[0]))
+        .limit(request.limit() + 1)
+        .fetch()
+        .stream()
+        .map(record -> new CursorPlaylistPage(
+            record.get(QPlaylist.playlist.id),
+            record.get(QPlaylist.playlist.uuid),
+            record.get(QPlaylist.playlist.user.uuid),
+            record.get(QUser.user.profile.name),
+            record.get(QUser.user.profile.profileImageUrl),
+            record.get(QPlaylist.playlist.title),
+            record.get(QPlaylist.playlist.description),
+            record.get(QPlaylist.playlist.updatedAt),
+            record.get(QPlaylistsStat.playlistsStat.subscribeCount) != null ? record.get(QPlaylistsStat.playlistsStat.subscribeCount) : 0L,
+            record.get(QSubscribe.subscribe.uuid) != null
+        )).toList();
 
     boolean hasNext = playlists.size() > request.limit();
 

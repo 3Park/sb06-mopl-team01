@@ -12,6 +12,8 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import org.example.mopl.content.dto.ContentQueryDto;
+import org.example.mopl.content.dto.ContentQueryDto.CursorReviewPage;
 import org.example.mopl.content.dto.request.CursorRequestReviewDto;
 import org.example.mopl.content.dto.response.ReviewDto;
 import org.example.mopl.content.entity.QContent;
@@ -90,6 +92,52 @@ public class ReviewQueryRepository {
     return new PageImpl<>(
         reviewList,
         Pageable.ofSize(request.limit()),
+        hasNext ? reviewList.size() + 1 : reviewList.size()
+    );
+
+  }
+
+  // V2: 필요한 필드만 조회
+  // 추후 성능 테스트 필요
+  public Page<ContentQueryDto.CursorReviewPage> findAllByCursorV2(CursorRequestReviewDto request) {
+
+    List<CursorReviewPage> reviewList = queryFactory.select(
+            QReview.review.uuid,
+            QReview.review.content.uuid,
+            QReview.review.user.uuid,
+            QReview.review.user.profile.name,
+            QReview.review.user.profile.profileImageUrl,
+            QReview.review.text,
+            QReview.review.rating
+        )
+        .from(QReview.review)
+        .join(QReview.review.content, QContent.content)
+        .join(QReview.review.user, QUser.user)
+        .join(QReview.review.user.profile, QProfile.profile)
+        .where(buildDynamicQueryByCursor(request))
+        .orderBy(buildOrderBy(request).toArray(OrderSpecifier[]::new))
+        .limit(request.limit() + 1)
+        .fetch()
+        .stream()
+        .map(tuple -> new CursorReviewPage(
+            tuple.get(QReview.review.uuid),
+            tuple.get(QReview.review.content.uuid),
+            tuple.get(QReview.review.user.uuid),
+            tuple.get(QProfile.profile.name),
+            tuple.get(QProfile.profile.profileImageUrl),
+            tuple.get(QReview.review.text),
+            tuple.get(QReview.review.rating)
+        )).toList();
+
+    boolean hasNext = reviewList.size() > request.limit();
+
+    if (hasNext) {
+      reviewList.remove(reviewList.size() - 1);
+    }
+
+    return new PageImpl<>(
+        reviewList,
+        PageRequest.of(0, request.limit()),
         hasNext ? reviewList.size() + 1 : reviewList.size()
     );
 

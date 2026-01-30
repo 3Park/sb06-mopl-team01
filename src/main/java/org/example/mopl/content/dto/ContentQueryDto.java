@@ -1,0 +1,41 @@
+package org.example.mopl.content.dto;
+
+import java.time.Instant;
+import java.util.UUID;
+import lombok.AccessLevel;
+import lombok.Builder;
+import lombok.NoArgsConstructor;
+import org.example.mopl.content.dto.response.AuthorDto;
+
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+public class ContentQueryDto {
+
+  @Builder
+  public record CursorContentPage(
+      Long id,
+      UUID uuid,
+      String contentType,
+      String title,
+      String description,
+      String thumbnailUrl,
+      Instant createdAt,
+      Instant updatedAt,
+      Double averageRating,
+      Long reviewCount
+  ) {
+
+  }
+  @Builder
+  public record CursorReviewPage(
+      UUID uuid,
+      UUID contentId,
+      UUID userId,
+      String userName,
+      String userProfileUrl,
+      String text,
+      Double rating
+  ) {
+
+  }
+
+}

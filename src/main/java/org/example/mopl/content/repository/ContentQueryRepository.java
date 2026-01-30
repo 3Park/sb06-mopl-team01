@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.example.mopl.content.dto.ContentQueryDto.CursorContentPage;
 import org.example.mopl.content.dto.request.CursorRequestContentDto;
 import org.example.mopl.content.dto.response.ContentDto;
 import org.example.mopl.content.entity.Content;
@@ -115,6 +116,46 @@ public class ContentQueryRepository {
         Pageable.ofSize(request.limit()),
         hasNext ? request.limit() + 1 : contentList.size()
     );
+  }
+
+  // V2: 필요한 필드만 조회
+  // One-to-one 매핑된 ContentsStat의 필드도 함께 조회
+  // 추후 성능 테스트 필요
+  public Page<CursorContentPage> findAllByCursorV2(CursorRequestContentDto request) {
+
+    List<CursorContentPage> contentList = queryFactory.select(
+            Projections.constructor(
+                CursorContentPage.class,
+                QContent.content.uuid,
+                QContent.content.contentType,
+                QContent.content.title,
+                QContent.content.description,
+                QContent.content.thumbnailUrl,
+                QContentsStat.contentsStat.ratingAverage,
+                QContentsStat.contentsStat.ratingCount,
+                QContent.content.createdAt
+            )
+        )
+        .from(QContent.content)
+        .join(QContentsStat.contentsStat)
+        .on(QContentsStat.contentsStat.content.id.eq(QContent.content.id))
+        .where(buildDynamicQueryByCursor(request))
+        .orderBy(buildOrderBy(request).toArray(OrderSpecifier[]::new))
+        .limit(request.limit() + 1)
+        .fetch();
+
+    boolean hasNext = contentList.size() > request.limit();
+
+    if (hasNext) {
+      contentList.remove(contentList.size() - 1);
+    }
+
+    return new PageImpl<>(
+        contentList,
+        Pageable.ofSize(request.limit()),
+        hasNext ? request.limit() + 1 : contentList.size()
+    );
+
   }
 
   private BooleanBuilder buildDynamicQueryByCursor(CursorRequestContentDto request) {
