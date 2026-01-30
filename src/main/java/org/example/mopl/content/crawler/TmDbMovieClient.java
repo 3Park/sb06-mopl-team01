@@ -33,13 +33,8 @@ public class TmDbMovieClient implements MediaCrawlerClient {
         .uri(uriBuilder -> uriBuilder.path("/genre/movie/list")
             .queryParam("api_key", apiKey)
             .build())
-        .header("Authorization", apiKey)
         .retrieve()
         .body(JsonNode.class);
-
-    if (result == null) {
-      return List.of();
-    }
 
     return ((ArrayNode) result.get("genres")).findValuesAsText("name");
 
@@ -57,13 +52,8 @@ public class TmDbMovieClient implements MediaCrawlerClient {
             .queryParam("api_key", apiKey)
             .queryParam("page", pageNumber)
             .build())
-        .header("Authorization", apiKey)
         .retrieve()
         .body(JsonNode.class);
-
-    if (result == null) {
-      return List.of();
-    }
 
     ArrayNode resultArray = (ArrayNode) result.get("results");
 
@@ -91,13 +81,8 @@ public class TmDbMovieClient implements MediaCrawlerClient {
             .queryParam("api_key", apiKey)
             .queryParam("page", pageNumber)
             .build())
-        .header("Authorization", apiKey)
         .retrieve()
         .body(JsonNode.class);
-
-    if (result == null) {
-      return List.of();
-    }
 
     return result.get("results").findValuesAsText("id");
 
@@ -111,16 +96,11 @@ public class TmDbMovieClient implements MediaCrawlerClient {
         .build();
 
     JsonNode result = restClient.get()
-        .uri(uriBuilder -> uriBuilder.path("/movie/" + externalId)
+        .uri(uriBuilder -> uriBuilder.path(String.format("/movie/%s", externalId))
             .queryParam("api_key", apiKey)
             .build())
-        .header("Authorization", apiKey)
         .retrieve()
         .body(JsonNode.class);
-
-    if (result != null) {
-      return Optional.empty();
-    }
 
     return Optional.ofNullable(ContentFetchResultDto.of(
         result.get("id").asText(),
