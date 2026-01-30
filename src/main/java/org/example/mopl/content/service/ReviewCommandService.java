@@ -52,7 +52,7 @@ public class ReviewCommandService {
     );
 
     eventPublisher.publishEvent(
-        RatingEvent.IncreaseRatingEvent.of(content.getId(), request.rating())
+        RatingEvent.IncreaseRatingEvent.of(content.getId(), review.getUuid(), request.rating())
     );
 
     return ReviewDto.of(
@@ -89,11 +89,11 @@ public class ReviewCommandService {
     review.update(request.text(), request.rating());
 
     eventPublisher.publishEvent(
-        RatingEvent.DecreaseRatingEvent.of(review.getContent().getId(), review.getRating())
+        RatingEvent.DecreaseRatingEvent.of(review.getContent().getId(), review.getUuid(), review.getRating())
     );
 
     eventPublisher.publishEvent(
-        RatingEvent.IncreaseRatingEvent.of(review.getContent().getId(), request.rating())
+        RatingEvent.IncreaseRatingEvent.of(review.getContent().getId(), review.getUuid(), request.rating())
     );
 
     return ReviewDto.of(
@@ -128,7 +128,7 @@ public class ReviewCommandService {
     }
 
     eventPublisher.publishEvent(
-        RatingEvent.DecreaseRatingEvent.of(review.getContent().getId(), review.getRating())
+        RatingEvent.DecreaseRatingEvent.of(review.getContent().getId(), review.getUuid(), review.getRating())
     );
 
     reviewCommandRepository.deleteByUuid(reviewId);

@@ -22,7 +22,7 @@ public class RatingEventListener {
   public void handleIncreaseRatingEvent(RatingEvent.IncreaseRatingEvent event) {
 
     ContentsStat contentsStat = contentsStatQueryRepository.findByContentId(event.contentId())
-        .orElseThrow(() -> new NoSuchContentException(String.valueOf(event.contentId())));
+        .orElseThrow(() -> new NoSuchContentException(event.contentUuid()));
 
     contentsStat.addRating((long) event.rating());
 
@@ -34,7 +34,7 @@ public class RatingEventListener {
   public void handleDecreaseRatingEvent(RatingEvent.DecreaseRatingEvent event) {
 
     ContentsStat contentsStat = contentsStatQueryRepository.findByContentId(event.contentId())
-        .orElseThrow(() -> new NoSuchContentException(String.valueOf(event.contentId())));
+        .orElseThrow(() -> new NoSuchContentException(event.contentUuid()));
 
     contentsStat.removeRating((long) event.rating());
 
