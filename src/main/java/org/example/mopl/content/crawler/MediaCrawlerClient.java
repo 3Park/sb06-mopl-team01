@@ -1,18 +1,19 @@
 package org.example.mopl.content.crawler;
 
 import java.util.List;
-import org.example.mopl.content.dto.response.ContentDto;
+import java.util.Optional;
+import org.example.mopl.content.dto.ContentFetchResultDto;
 
 public interface MediaCrawlerClient {
 
   List<String> fetchGenres();
 
-  List<ContentDto> fetchContentsByPage(int pageNumber);
+  List<String> fetchContentIdByPage(int pageNumber);
 
-  List<ContentDto> fetchContentsByPageSize(int pageNumber, int pageSize);
+  List<ContentFetchResultDto> fetchContentsByPageSize(int pageNumber, int pageSize);
 
-  List<ContentDto> fetchRecentContentsByPage(int pageNumber);
+  List<String> fetchRecentContentIdByPage(int pageNumber);
 
-  ContentDto fetchContentDetailsByExternalId(String externalId);
+  Optional<ContentFetchResultDto> fetchContentDetailsByExternalId(String externalId);
 
 }
