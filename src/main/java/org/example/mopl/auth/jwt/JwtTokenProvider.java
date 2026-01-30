@@ -1,4 +1,4 @@
-package org.example.mopl.common.jwt;
+package org.example.mopl.auth.jwt;
 
 import com.nimbusds.jose.*;
 import com.nimbusds.jose.crypto.MACSigner;
@@ -7,8 +7,11 @@ import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
-import org.example.mopl.user.custom.CustomUserDetailService;
-import org.example.mopl.user.custom.CustomUserDetails;
+import org.example.mopl.common.config.property.JwtProperties;
+import org.example.mopl.auth.service.CustomUserDetailService;
+import org.example.mopl.auth.CustomUserDetails;
+import org.example.mopl.auth.exception.AuthErrorCode;
+import org.example.mopl.auth.exception.AuthException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
@@ -35,7 +38,7 @@ public class JwtTokenProvider {
         }
         catch (Exception e)
         {
-            throw new RuntimeException(e);
+            throw new AuthException(AuthErrorCode.INVALID_USER_CREDENTIALS, e);
         }
     }
 
@@ -66,7 +69,7 @@ public class JwtTokenProvider {
             signedJWT.sign(jwsSigner);
             return signedJWT.serialize();
         } catch (JOSEException e) {
-            throw new RuntimeException(e);
+            throw new AuthException(AuthErrorCode.INVALID_USER_CREDENTIALS, e);
         }
     }
 
@@ -86,17 +89,17 @@ public class JwtTokenProvider {
         try {
             SignedJWT signedJWT = SignedJWT.parse(token);
             if(signedJWT.verify(jwsVerifier) == false)
-                throw new RuntimeException("JWT verification failed");
+                throw new AuthException(AuthErrorCode.INVALID_USER_CREDENTIALS);
 
             JWTClaimsSet set = signedJWT.getJWTClaimsSet();
             if(set.getExpirationTime() != null && set.getExpirationTime().before(new Date()))
-                throw new RuntimeException("JWT expired");
+                throw new AuthException(AuthErrorCode.INVALID_USER_CREDENTIALS);
 
             return set;
         } catch (JOSEException e) {
-            throw new RuntimeException(e);
+            throw new AuthException(AuthErrorCode.INVALID_USER_CREDENTIALS, e);
         } catch (ParseException e) {
-            throw new RuntimeException(e);
+            throw new AuthException(AuthErrorCode.INVALID_USER_CREDENTIALS, e);
         }
     }
 

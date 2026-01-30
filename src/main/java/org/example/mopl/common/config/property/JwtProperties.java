@@ -1,4 +1,4 @@
-package org.example.mopl.common.jwt;
+package org.example.mopl.common.config.property;
 
 import lombok.Getter;
 import lombok.Setter;
