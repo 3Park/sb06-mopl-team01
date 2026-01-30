@@ -14,6 +14,7 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import org.example.mopl.contentevaluation.exception.InvalidSubscribeCountDecreaseException;
 
 @Getter
 @Entity
@@ -47,9 +48,13 @@ public class PlaylistsStat {
   }
 
   public void decrementSubscribeCount() {
-    if (this.subscribeCount > 0) {
-      this.subscribeCount--;
+
+    if (this.subscribeCount <= 0) {
+      throw new InvalidSubscribeCountDecreaseException(playlist.getTitle());
     }
+
+    this.subscribeCount--;
+
   }
 
 }
