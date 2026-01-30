@@ -13,6 +13,7 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import org.example.mopl.content.exception.InvalidRatingDecreaseException;
 
 @Getter
 @Entity
@@ -53,6 +54,22 @@ public class ContentsStat {
     this.ratingCount += 1;
     this.ratingSum += rating;
     this.ratingAverage = this.ratingSum.doubleValue() / this.ratingCount.doubleValue();
+  }
+
+  public void removeRating(long rating) {
+
+    if (this.ratingCount <= 0) {
+      throw new InvalidRatingDecreaseException(content.getUuid());
+    }
+
+    this.ratingCount -= 1;
+    this.ratingSum -= rating;
+    if (this.ratingCount == 0) {
+      this.ratingAverage = 0.0;
+    } else {
+      this.ratingAverage = this.ratingSum.doubleValue() / this.ratingCount.doubleValue();
+    }
+
   }
 
 }
