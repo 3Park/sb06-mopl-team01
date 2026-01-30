@@ -63,7 +63,11 @@ public class SecurityConfig {
                             "/api/auth/sign-in"
                                     , "/api/auth/sign-out"
                                     , "/api/auth/reset-password"
-                                    , "/api/auth/refresh"))
+                                    , "/api/auth/refresh"
+                        ).ignoringRequestMatchers(
+                                request ->
+                                "/api/users".equals(request.getRequestURI())
+                                 && "POST".equals(request.getMethod())))
                 .authorizeHttpRequests( authorizeRequests ->
                         authorizeRequests
                                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
@@ -97,8 +101,6 @@ public class SecurityConfig {
                         .permitAll())
                 .sessionManagement(management ->
                         management.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .exceptionHandling(exceptionHandler -> exceptionHandler
-                        .accessDeniedHandler(customAccessDeniedHandler))
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();

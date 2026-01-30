@@ -3,12 +3,18 @@ package org.example.mopl.user.service;
 import lombok.RequiredArgsConstructor;
 import org.example.mopl.profile.entity.Profile;
 import org.example.mopl.profile.repository.ProfileRepository;
+import org.example.mopl.user.dto.UserDto;
+import org.example.mopl.user.dto.request.UserCreateRequest;
 import org.example.mopl.user.entity.Role;
 import org.example.mopl.user.entity.User;
 import org.example.mopl.user.entity.UserRole;
 import org.example.mopl.user.entity.UserRoleType;
+import org.example.mopl.user.exception.UserErrorCode;
+import org.example.mopl.user.exception.UserException;
+import org.example.mopl.user.repository.RoleRepository;
 import org.example.mopl.user.repository.UserRepository;
 import org.example.mopl.user.repository.UserRoleRepository;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,25 +24,49 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class UserService {
     public static final String ADMIN_EMAIL = "admin@test.com";
+    public static final String ADMIN_NAME = "admin";
     private final UserRepository userRepository;
     private final UserRoleRepository userRoleRepository;
     private final ProfileRepository profileRepository;
+    private final RoleRepository roleRepository;
+    private final PasswordEncoder passwordEncoder;
 
     @Transactional
-    public void addAdmin(String password, Role adminRole) {
-        if (userRoleRepository.existsUserWithEmailAndRole(ADMIN_EMAIL, UserRoleType.ADMIN))
-            return;
+    public void addAdmin(String password) {
+        try
+        {
+            createUser(ADMIN_EMAIL,password,ADMIN_NAME,UserRoleType.ADMIN);
+        }
+        catch (UserException e)
+        {
+            if(e.getErrorCode() != UserErrorCode.DUPLICATED_USER)
+                throw e;
+        }
+    }
+
+    @Transactional
+    public UserDto createUser(UserCreateRequest request)
+    {
+        return createUser(request.getEmail(), request.getPassword(), request.getName(), UserRoleType.USER);
+    }
+
+    private UserDto createUser(String email, String password, String name, UserRoleType type)
+    {
+        if (userRoleRepository.existsUserWithEmailAndRole(email, type))
+            throw new UserException(UserErrorCode.DUPLICATED_USER);
 
         User user = User.builder()
-                .email(ADMIN_EMAIL)
-                .password(password)
+                .email(email)
+                .password(passwordEncoder.encode(password))
                 .build();
 
         userRepository.save(user);
 
+        Role role = roleRepository.findByName(type).orElseThrow(()-> new UserException(UserErrorCode.INVALID_ROLE));
+
         UserRole userRole = UserRole.builder()
                 .user(user)
-                .role(adminRole)
+                .role(role)
                 .build();
 
         userRoleRepository.save(userRole);
@@ -44,10 +74,19 @@ public class UserService {
         Profile profile = Profile.builder()
                 .profileImageUrl("")
                 .user(user)
-                .name("admin")
+                .name(name)
                 .uuid(UUID.randomUUID())
                 .build();
 
         profileRepository.save(profile);
+
+        user.setProfile(profile);
+        user.updateUserRole(userRole);
+        userRepository.save(user);
+
+        return UserDto
+                .builder()
+                .user(user)
+                .build();
     }
 }
