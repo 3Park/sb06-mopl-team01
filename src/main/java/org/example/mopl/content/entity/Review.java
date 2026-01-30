@@ -1,4 +1,4 @@
-package org.example.mopl.contentevaluation.entity;
+package org.example.mopl.content.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -23,8 +23,8 @@ import org.springframework.data.annotation.LastModifiedDate;
 @Getter
 @Entity
 @RequiredArgsConstructor(access = AccessLevel.PROTECTED)
-@Table(name = "playlists")
-public class Playlist {
+@Table(name = "reviews")
+public class Review {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -35,15 +35,19 @@ public class Playlist {
   @Column(name = "uuid", nullable = false, unique = true)
   private UUID uuid;
 
-  @Column(name = "title", nullable = false)
-  private String title;
-
+  @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "user_id", nullable = false)
-  @ManyToOne(optional = false, fetch = FetchType.LAZY)
   private User user;
 
-  @Column(name = "description", columnDefinition = "TEXT", nullable = false)
-  private String description;
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "content_id", nullable = false)
+  private Content content;
+
+  @Column(name = "rating", nullable = false)
+  private Double rating;
+
+  @Column(name = "text", columnDefinition = "TEXT", nullable = false)
+  private String text;
 
   @CreatedDate
   @Column(name = "created_at", nullable = false)
@@ -54,23 +58,25 @@ public class Playlist {
   private Instant updatedAt;
 
   @Builder(access = AccessLevel.PROTECTED)
-  public Playlist(String title, User user, String description) {
-    this.title = title;
+  public Review(User user, Content content, Double rating, String text) {
     this.user = user;
-    this.description = description;
+    this.content = content;
+    this.rating = rating;
+    this.text = text;
   }
 
-  public static Playlist of(String title, User user, String description) {
-    return Playlist.builder()
-        .title(title)
+  public static Review of(User user, Content content, Double rating, String text) {
+    return Review.builder()
         .user(user)
-        .description(description)
+        .content(content)
+        .rating(rating)
+        .text(text)
         .build();
   }
 
-  public void update(String title, String description) {
-    this.title = title;
-    this.description = description;
+  public void update(String text, Double rating) {
+    this.text = text;
+    this.rating = rating;
   }
 
 }

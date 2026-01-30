@@ -18,13 +18,12 @@ import lombok.RequiredArgsConstructor;
 import org.example.mopl.user.entity.User;
 import org.hibernate.annotations.UuidGenerator;
 import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.LastModifiedDate;
 
 @Getter
 @Entity
 @RequiredArgsConstructor(access = AccessLevel.PROTECTED)
-@Table(name = "playlists")
-public class Playlist {
+@Table(name = "subscribes")
+public class Subscribe {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -35,42 +34,29 @@ public class Playlist {
   @Column(name = "uuid", nullable = false, unique = true)
   private UUID uuid;
 
-  @Column(name = "title", nullable = false)
-  private String title;
-
   @JoinColumn(name = "user_id", nullable = false)
   @ManyToOne(optional = false, fetch = FetchType.LAZY)
   private User user;
 
-  @Column(name = "description", columnDefinition = "TEXT", nullable = false)
-  private String description;
+  @JoinColumn(name = "playlist_id", nullable = false)
+  @ManyToOne(optional = false, fetch = FetchType.LAZY)
+  private Playlist playlist;
 
   @CreatedDate
   @Column(name = "created_at", nullable = false)
   private Instant createdAt;
 
-  @LastModifiedDate
-  @Column(name = "updated_at")
-  private Instant updatedAt;
-
   @Builder(access = AccessLevel.PROTECTED)
-  public Playlist(String title, User user, String description) {
-    this.title = title;
+  public Subscribe(User user, Playlist playlist) {
     this.user = user;
-    this.description = description;
+    this.playlist = playlist;
   }
 
-  public static Playlist of(String title, User user, String description) {
-    return Playlist.builder()
-        .title(title)
+  public static Subscribe of(User user, Playlist playlist) {
+    return Subscribe.builder()
         .user(user)
-        .description(description)
+        .playlist(playlist)
         .build();
-  }
-
-  public void update(String title, String description) {
-    this.title = title;
-    this.description = description;
   }
 
 }
