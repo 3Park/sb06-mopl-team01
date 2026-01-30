@@ -13,6 +13,7 @@ import org.example.mopl.contentevaluation.dto.request.CursorRequestPlaylistDto;
 import org.example.mopl.contentevaluation.entity.Playlist;
 import org.example.mopl.contentevaluation.entity.QPlaylist;
 import org.example.mopl.contentevaluation.entity.QPlaylistsStat;
+import org.example.mopl.profile.entity.QProfile;
 import org.example.mopl.user.entity.QUser;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -28,6 +29,8 @@ public class PlaylistQueryRepository {
   public Optional<Playlist> findByUuid(UUID uuid) {
     return Optional.ofNullable(queryFactory.selectFrom(QPlaylist.playlist)
         .join(QPlaylist.playlist.user, QUser.user)
+        .fetchJoin()
+        .join(QUser.user.profile, QProfile.profile)
         .fetchJoin()
         .where(QPlaylist.playlist.uuid.eq(uuid))
         .fetchOne());
@@ -45,7 +48,7 @@ public class PlaylistQueryRepository {
 
     boolean hasNext = playlists.size() > request.limit();
 
-    if (hasNext) {
+    if (playlists.size() > request.limit()) {
       playlists.remove(playlists.size() - 1);
     }
 

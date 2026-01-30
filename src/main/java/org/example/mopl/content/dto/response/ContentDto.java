@@ -18,7 +18,7 @@ public record ContentDto(
     String thumbnailUrl,
     List<String> tags,
     Double averageRating,
-    Integer reviewCount,
+    Long reviewCount,
     Long watcherCount
 ) {
 
@@ -31,7 +31,7 @@ public record ContentDto(
         String thumbnailUrl,
         List<String> tags,
         Double averageRating,
-        Integer reviewCount,
+        Long reviewCount,
         Long watcherCount
     ) {
         return ContentDto.builder()
