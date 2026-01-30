@@ -5,7 +5,6 @@ import java.util.Map;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.example.mopl.content.dto.response.ContentDto;
-import org.example.mopl.content.entity.ContentTag;
 import org.example.mopl.content.entity.ContentsStat;
 import org.example.mopl.content.repository.ContentTagQueryRepository;
 import org.example.mopl.content.repository.ContentsStatQueryRepository;
@@ -21,7 +20,7 @@ import org.example.mopl.contentevaluation.repository.PlaylistContentQueryReposit
 import org.example.mopl.contentevaluation.repository.PlaylistQueryRepository;
 import org.example.mopl.contentevaluation.repository.PlaylistsStatQueryRepository;
 import org.example.mopl.contentevaluation.repository.SubscribeQueryRepository;
-import org.example.mopl.watchtogether.service.BasicWatchTogetherService;
+import org.example.mopl.watchtogether.service.WatchTogetherService;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -36,7 +35,7 @@ public class PlaylistQueryService {
   private final ContentTagQueryRepository contentTagQueryRepository;
   private final ContentsStatQueryRepository contentsStatQueryRepository;
   private final SubscribeQueryRepository subscribeQueryRepository;
-  private final BasicWatchTogetherService basicWatchTogetherService;
+  private final WatchTogetherService watchTogetherService;
 
   // Todo : 쿼리 최적화 필요
   @Transactional(readOnly = true)
@@ -91,7 +90,7 @@ public class PlaylistQueryService {
                     contentTagsMap.get(content.getId()),
                     contentsStatMap.get(content.getId()).getRatingAverage(),
                     contentsStatMap.get(content.getId()).getRatingCount(),
-                    basicWatchTogetherService.getWatcherCount(String.valueOf(content.getId()))
+                    watchTogetherService.getWatcherCount(String.valueOf(content.getId()))
                 )
             )
             .toList()
@@ -160,7 +159,7 @@ public class PlaylistQueryService {
                         contentTagsMap.get(content.getId()),
                         contentsStatMap.get(content.getId()).getRatingAverage(),
                         contentsStatMap.get(content.getId()).getRatingCount(),
-                        basicWatchTogetherService.getWatcherCount(String.valueOf(content.getId()))
+                        watchTogetherService.getWatcherCount(String.valueOf(content.getId()))
                     )
                 )
                 .toList()
