@@ -8,6 +8,8 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.example.mopl.profile.entity.Profile;
 import org.example.mopl.user.entity.basic.BasicUserUUIDEntity;
+
+import java.util.ArrayList;
 import java.util.List;
 
 @Getter
@@ -32,11 +34,16 @@ public class User extends BasicUserUUIDEntity {
     private Profile profile;
 
     @OneToMany(mappedBy = "user",  fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<UserRole> userRoles;
+    private List<UserRole> userRoles =  new ArrayList<>();
 
     @Builder
     public User(String email, String password) {
         this.email = email;
         this.password = password;
+    }
+
+    public void updateUserRole(UserRole userRole) {
+        userRoles.clear();
+        userRoles.add(userRole);
     }
 }

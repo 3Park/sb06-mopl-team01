@@ -19,7 +19,6 @@ public class BasicUserEntity {
     @Column(name = "id", nullable = false)
     protected Long id;
 
-    @NotNull
     @CreatedDate
     @Column(name = "created_at", nullable = false)
     protected Instant createdAt;

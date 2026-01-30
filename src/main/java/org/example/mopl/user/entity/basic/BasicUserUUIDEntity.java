@@ -16,7 +16,6 @@ import java.util.UUID;
 @MappedSuperclass
 public class BasicUserUUIDEntity extends BasicUserEntity{
 
-    @NotNull
     @UuidGenerator
     @Column(name = "uuid", nullable = false, unique = true)
     protected UUID uuid;
