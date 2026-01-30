@@ -34,3 +34,9 @@ logging:
     org.hibernate.SQL: debug
     org.hibernate.orm.jdbc.bind: trace
     org.springframework.security: trace
+
+content:
+  api:
+    tmdb:
+      key: ${CONTENT_API_TMDB_KEY}
+      url: https://api.themoviedb.org/3
