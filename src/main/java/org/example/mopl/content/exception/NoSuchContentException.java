@@ -13,9 +13,9 @@ public class NoSuchContentException extends MoplException {
     super(new NoSuchContentErrorCode(), cause);
   }
 
-  public NoSuchContentException(Long contentId) {
+  public NoSuchContentException(String contentUuid) {
     super(new NoSuchContentErrorCode());
-    addDetail("contentUuid", contentId);
+    addDetail("contentUuid", contentUuid);
   }
 
   public NoSuchContentException(UUID contentUuid) {

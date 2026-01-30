@@ -8,6 +8,7 @@ import org.example.mopl.content.dto.response.AuthorDto;
 import org.example.mopl.content.dto.response.ReviewDto;
 import org.example.mopl.content.entity.Content;
 import org.example.mopl.content.entity.Review;
+import org.example.mopl.content.event.RatingEvent;
 import org.example.mopl.content.exception.NoSuchContentException;
 import org.example.mopl.content.exception.NoSuchReviewException;
 import org.example.mopl.content.exception.UnauthorizedReviewException;
@@ -17,6 +18,7 @@ import org.example.mopl.content.repository.ReviewQueryRepository;
 import org.example.mopl.user.entity.User;
 import org.example.mopl.user.entity.UserRoleType;
 import org.example.mopl.user.repository.UserRepository;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,6 +30,7 @@ public class ReviewCommandService {
   private final ReviewCommandRepository reviewCommandRepository;
   private final ReviewQueryRepository reviewQueryRepository;
   private final UserRepository userRepository;
+  private final ApplicationEventPublisher eventPublisher;
 
   @Transactional
   public ReviewDto createReview(String email, ReviewCreateRequest request) {
@@ -48,7 +51,9 @@ public class ReviewCommandService {
         )
     );
 
-    // Todo : 콘텐츠 통계테이블 갱신 이벤트 발행
+    eventPublisher.publishEvent(
+        RatingEvent.IncreaseRatingEvent.of(content.getId(), request.rating())
+    );
 
     return ReviewDto.of(
       review.getUuid(),
@@ -83,6 +88,14 @@ public class ReviewCommandService {
 
     review.update(request.text(), request.rating());
 
+    eventPublisher.publishEvent(
+        RatingEvent.DecreaseRatingEvent.of(review.getContent().getId(), review.getRating())
+    );
+
+    eventPublisher.publishEvent(
+        RatingEvent.IncreaseRatingEvent.of(review.getContent().getId(), request.rating())
+    );
+
     return ReviewDto.of(
       review.getUuid(),
       review.getContent().getUuid(),
@@ -113,6 +126,10 @@ public class ReviewCommandService {
     if (!isAdmin && !review.getUser().getUuid().equals(user.getUuid())) {
       throw new UnauthorizedReviewException(email);
     }
+
+    eventPublisher.publishEvent(
+        RatingEvent.DecreaseRatingEvent.of(review.getContent().getId(), review.getRating())
+    );
 
     reviewCommandRepository.deleteByUuid(reviewId);
 
