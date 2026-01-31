@@ -31,7 +31,7 @@ public class TheSportsDbSoccerCrawlerClient implements SportCrawlerClient {
 
     JsonNode result = restClient.get()
         .uri(uriBuilder -> uriBuilder
-            .path("/api/v1/json/{apiKey}/all_leagues.php")
+            .path("/{apiKey}/all_leagues.php")
             .build(apiKey))
         .retrieve()
         .onStatus(status -> !status.is2xxSuccessful(), (request, response) -> {
@@ -57,7 +57,7 @@ public class TheSportsDbSoccerCrawlerClient implements SportCrawlerClient {
 
     JsonNode result = restClient.get()
         .uri(uriBuilder -> uriBuilder
-            .path("/api/v1/json/{apiKey}/eventsnextleague.php")
+            .path("/{apiKey}/eventsnextleague.php")
             .queryParam("id", league)
             .build(apiKey))
         .retrieve()
