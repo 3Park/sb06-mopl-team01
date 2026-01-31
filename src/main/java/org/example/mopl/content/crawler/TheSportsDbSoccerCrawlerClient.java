@@ -35,7 +35,7 @@ public class TheSportsDbSoccerCrawlerClient implements SportCrawlerClient {
             .build(apiKey))
         .retrieve()
         .onStatus(status -> !status.is2xxSuccessful(), (request, response) -> {
-          log.error("Error while fetching leagues from SportsDb API");
+          log.error("Error while fetching leagues from SportsDb API. Status code: {}", response.getStatusCode().value());
           throw new TheSportsDbApiException(response.getStatusCode().value(), response.getStatusText(), "Failed to fetch leagues from TheSportsDb API");
         })
         .body(JsonNode.class);
@@ -62,7 +62,7 @@ public class TheSportsDbSoccerCrawlerClient implements SportCrawlerClient {
             .build(apiKey))
         .retrieve()
         .onStatus(status -> !status.is2xxSuccessful(), (request, response) -> {
-          log.error("Error while fetching upcoming events from SportsDb API for league: {}", league);
+          log.error("Error while fetching leagues from SportsDb API. Status code: {}", response.getStatusCode().value());
           throw new TheSportsDbApiException(response.getStatusCode().value(), response.getStatusText(), "Failed to fetch upcoming events from TheSportsDb API");
         })
         .body(JsonNode.class);
