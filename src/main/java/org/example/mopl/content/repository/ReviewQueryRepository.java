@@ -13,10 +13,8 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
-import org.example.mopl.content.dto.ContentQueryDto;
-import org.example.mopl.content.dto.ContentQueryDto.CursorReviewPage;
+import org.example.mopl.content.dto.ContentQueryDto.ReviewPage;
 import org.example.mopl.content.dto.request.CursorRequestReviewDto;
-import org.example.mopl.content.dto.response.ReviewDto;
 import org.example.mopl.content.entity.QContent;
 import org.example.mopl.content.entity.QReview;
 import org.example.mopl.content.entity.Review;
@@ -25,9 +23,7 @@ import org.example.mopl.user.entity.QUser;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
-import org.springframework.transaction.annotation.Transactional;
 
 @Repository
 @RequiredArgsConstructor
@@ -100,11 +96,11 @@ public class ReviewQueryRepository {
   }*/
 
   // V2: 필요한 필드만 조회
-  public Page<ContentQueryDto.CursorReviewPage> findAllByCursor(CursorRequestReviewDto request) {
+  public Page<ReviewPage> findAllByCursor(CursorRequestReviewDto request) {
 
-    List<CursorReviewPage> reviewList = queryFactory.select(
+    List<ReviewPage> reviewList = queryFactory.select(
             Projections.constructor(
-                CursorReviewPage.class,
+                ReviewPage.class,
                 QReview.review.uuid,
                 QReview.review.content.uuid,
                 QReview.review.user.uuid,

@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
 public class ContentQueryDto {
 
   @Builder
-  public record CursorContentPage(
+  public record ContentPage(
       Long id,
       UUID uuid,
       String contentType,
@@ -25,7 +25,7 @@ public class ContentQueryDto {
 
   }
   @Builder
-  public record CursorReviewPage(
+  public record ReviewPage(
       UUID uuid,
       UUID contentId,
       UUID userId,

@@ -8,14 +8,12 @@ import org.example.mopl.content.dto.response.ContentDto;
 import org.example.mopl.content.entity.ContentsStat;
 import org.example.mopl.content.repository.ContentTagQueryRepository;
 import org.example.mopl.content.repository.ContentsStatQueryRepository;
-import org.example.mopl.contentevaluation.dto.ContentEvaluationQueryDto.CursorPlaylistPage;
+import org.example.mopl.contentevaluation.dto.ContentEvaluationQueryDto.PlaylistPage;
 import org.example.mopl.contentevaluation.dto.request.CursorRequestPlaylistDto;
 import org.example.mopl.contentevaluation.dto.response.CursorResponsePlaylistDto;
 import org.example.mopl.contentevaluation.dto.response.OwnerDto;
 import org.example.mopl.contentevaluation.dto.response.PlaylistDto;
-import org.example.mopl.contentevaluation.entity.Playlist;
 import org.example.mopl.contentevaluation.entity.PlaylistContent;
-import org.example.mopl.contentevaluation.entity.PlaylistsStat;
 import org.example.mopl.contentevaluation.exception.NoSuchPlaylistException;
 import org.example.mopl.contentevaluation.repository.PlaylistContentQueryRepository;
 import org.example.mopl.contentevaluation.repository.PlaylistQueryRepository;
@@ -41,7 +39,7 @@ public class PlaylistQueryService {
   @Transactional(readOnly = true)
   public PlaylistDto getPlaylistDtoByUuid(UUID uuid) {
 
-    CursorPlaylistPage playlist = playlistQueryRepository.findByUuidWithStats(uuid)
+    PlaylistPage playlist = playlistQueryRepository.findByUuidWithStats(uuid)
         .orElseThrow(() -> new NoSuchPlaylistException(uuid));
 
     List<PlaylistContent> playlistContents = playlistContentQueryRepository
@@ -98,12 +96,12 @@ public class PlaylistQueryService {
   @Transactional(readOnly = true)
   public CursorResponsePlaylistDto getPlaylistListByCursor(CursorRequestPlaylistDto request) {
 
-    Page<CursorPlaylistPage> playlistPage = playlistQueryRepository.findAllByCursor(request);
+    Page<PlaylistPage> playlistPage = playlistQueryRepository.findAllByCursor(request);
 
     Map<Long, List<PlaylistContent>> playlistContentsMap = playlistContentQueryRepository
         .findAllByPlaylistIds(
             playlistPage.getContent().stream()
-                .map(CursorPlaylistPage::id)
+                .map(PlaylistPage::id)
                 .toList()
         );
 

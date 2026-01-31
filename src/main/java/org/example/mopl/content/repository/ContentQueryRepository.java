@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
-import org.example.mopl.content.dto.ContentQueryDto.CursorContentPage;
+import org.example.mopl.content.dto.ContentQueryDto.ContentPage;
 import org.example.mopl.content.dto.request.CursorRequestContentDto;
 import org.example.mopl.content.dto.response.ContentDto;
 import org.example.mopl.content.entity.Content;
@@ -121,11 +121,11 @@ public class ContentQueryRepository {
 
   // V2: 필요한 필드만 조회
   // One-to-one 매핑된 ContentsStat의 필드도 함께 조회
-  public Page<CursorContentPage> findAllByCursor(CursorRequestContentDto request) {
+  public Page<ContentPage> findAllByCursor(CursorRequestContentDto request) {
 
-    List<CursorContentPage> contentList = queryFactory.select(
+    List<ContentPage> contentList = queryFactory.select(
             Projections.constructor(
-                CursorContentPage.class,
+                ContentPage.class,
                 QContent.content.uuid,
                 QContent.content.contentType,
                 QContent.content.title,
