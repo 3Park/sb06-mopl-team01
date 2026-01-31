@@ -23,6 +23,7 @@ public class NotificationRequiredEventListener {
 
     @KafkaListener(topics = UserRoleUpdatedKafkaEvent.TOPIC)
     public void onUserRoleUpdatedEvent(String kafkaEvent) {
+        log.debug("kafka 이벤트 수신 - 유저 권한 변경");
         try {
             UserRoleUpdatedKafkaEvent event = objectMapper.readValue(kafkaEvent, UserRoleUpdatedKafkaEvent.class);
 
@@ -39,6 +40,7 @@ public class NotificationRequiredEventListener {
 
     @KafkaListener(topics = UserFollowCreatedKafkaEvent.TOPIC)
     public void onUserFollowCreatedEvent(String kafkaEvent) {
+        log.debug("kafka 이벤트 수신 - 팔로우 발생");
         try {
             UserFollowCreatedKafkaEvent event = objectMapper.readValue(kafkaEvent, UserFollowCreatedKafkaEvent.class);
 
@@ -55,6 +57,7 @@ public class NotificationRequiredEventListener {
 
     @KafkaListener(topics = PlaylistSubscriptionCreatedKafkaEvent.TOPIC)
     public void onPlaylistSubscriptionCreatedEvent(String kafkaEvent) {
+        log.debug("kafka 이벤트 수신 - 플레이리스트 구독 발생");
         try {
             PlaylistSubscriptionCreatedKafkaEvent event = objectMapper.readValue(kafkaEvent, PlaylistSubscriptionCreatedKafkaEvent.class);
 
@@ -71,6 +74,7 @@ public class NotificationRequiredEventListener {
 
     @KafkaListener(topics = PlaylistCreatedKafkaEvent.TOPIC)
     public void onPlaylistCreatedEvent(String kafkaEvent) {
+        log.debug("kafka 이벤트 수신 - 플레이리스트 생성");
         try {
             PlaylistCreatedKafkaEvent event = objectMapper.readValue(kafkaEvent, PlaylistCreatedKafkaEvent.class);
 
@@ -87,6 +91,7 @@ public class NotificationRequiredEventListener {
 
     @KafkaListener(topics = PlaylistContentAddedKafkaEvent.TOPIC)
     public void onPlaylistContentAddedEvent(String kafkaEvent) {
+        log.debug("kafka 이벤트 수신 - 플레이리스트에 새 컨텐츠 추가");
         try {
             PlaylistContentAddedKafkaEvent event = objectMapper.readValue(kafkaEvent, PlaylistContentAddedKafkaEvent.class);
 
@@ -103,6 +108,7 @@ public class NotificationRequiredEventListener {
 
     @KafkaListener(topics = DmMessageReceivedKafkaEvent.TOPIC)
     public void onDmMessageReceivedEvent(String kafkaEvent) {
+        log.debug("kafka 이벤트 수신 - DM 수신");
         try {
             DmMessageReceivedKafkaEvent event = objectMapper.readValue(kafkaEvent, DmMessageReceivedKafkaEvent.class);
 
