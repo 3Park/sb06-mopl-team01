@@ -13,7 +13,6 @@ import org.springframework.stereotype.Component;
 public class DataInitializer {
 
     public static final String ADMIN_PASSWORD = "admin";
-    private final PasswordEncoder passwordEncoder;
     private final UserService userService;
     private final RoleService roleService;
 
@@ -21,7 +20,7 @@ public class DataInitializer {
     public CommandLineRunner commandLineRunner() {
         return args -> {
             roleService.addDefaultRole();
-            userService.addAdmin(passwordEncoder.encode(ADMIN_PASSWORD), roleService.getAdminRole());
+            userService.addAdmin(ADMIN_PASSWORD);
         };
     }
 }

@@ -1,13 +1,9 @@
 package org.example.mopl.common.config;
 
 import lombok.RequiredArgsConstructor;
-import org.example.mopl.common.handler.*;
-import org.example.mopl.common.jwt.JwtAuthenticationFilter;
-import org.example.mopl.user.entity.User;
+import org.example.mopl.auth.jwt.handler.*;
+import org.example.mopl.auth.jwt.JwtAuthenticationFilter;
 import org.example.mopl.user.entity.UserRoleType;
-import org.example.mopl.user.repository.RoleRepository;
-import org.example.mopl.user.repository.UserRepository;
-import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -66,7 +62,12 @@ public class SecurityConfig {
                         .ignoringRequestMatchers(
                             "/api/auth/sign-in"
                                     , "/api/auth/sign-out"
-                                    , "/api/auth/refresh"))
+                                    , "/api/auth/reset-password"
+                                    , "/api/auth/refresh"
+                        ).ignoringRequestMatchers(
+                                request ->
+                                "/api/users".equals(request.getRequestURI())
+                                 && "POST".equals(request.getMethod())))
                 .authorizeHttpRequests( authorizeRequests ->
                         authorizeRequests
                                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
@@ -100,8 +101,6 @@ public class SecurityConfig {
                         .permitAll())
                 .sessionManagement(management ->
                         management.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .exceptionHandling(exceptionHandler -> exceptionHandler
-                        .accessDeniedHandler(customAccessDeniedHandler))
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();

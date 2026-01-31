@@ -41,3 +41,4 @@ out/
 .*
 !.gitignore
 .env
+*.log
