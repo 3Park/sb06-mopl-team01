@@ -40,4 +40,5 @@ out/
 ### 숨김 파일 ###
 .*
 !.gitignore
+.env
 *.log
