@@ -3,6 +3,7 @@ package org.example.mopl.content.repository;
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.Tuple;
 import com.querydsl.core.types.OrderSpecifier;
+import com.querydsl.core.types.Projections;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -102,14 +103,17 @@ public class ReviewQueryRepository {
   public Page<ContentQueryDto.CursorReviewPage> findAllByCursor(CursorRequestReviewDto request) {
 
     List<CursorReviewPage> reviewList = queryFactory.select(
-            QReview.review.uuid,
-            QReview.review.content.uuid,
-            QReview.review.user.uuid,
-            QReview.review.user.profile.name,
-            QReview.review.user.profile.profileImageUrl,
-            QReview.review.text,
-            QReview.review.rating,
-            QReview.review.createdAt
+            Projections.constructor(
+                CursorReviewPage.class,
+                QReview.review.uuid,
+                QReview.review.content.uuid,
+                QReview.review.user.uuid,
+                QProfile.profile.name,
+                QProfile.profile.profileImageUrl,
+                QReview.review.text,
+                QReview.review.rating,
+                QReview.review.createdAt
+            )
         )
         .from(QReview.review)
         .join(QReview.review.content, QContent.content)
@@ -118,18 +122,7 @@ public class ReviewQueryRepository {
         .where(buildDynamicQueryByCursor(request))
         .orderBy(buildOrderBy(request).toArray(OrderSpecifier[]::new))
         .limit(request.limit() + 1)
-        .fetch()
-        .stream()
-        .map(tuple -> new CursorReviewPage(
-            tuple.get(QReview.review.uuid),
-            tuple.get(QReview.review.content.uuid),
-            tuple.get(QReview.review.user.uuid),
-            tuple.get(QProfile.profile.name),
-            tuple.get(QProfile.profile.profileImageUrl),
-            tuple.get(QReview.review.text),
-            tuple.get(QReview.review.rating),
-            tuple.get(QReview.review.createdAt)
-        )).toList();
+        .fetch();
 
     boolean hasNext = reviewList.size() > request.limit();
 

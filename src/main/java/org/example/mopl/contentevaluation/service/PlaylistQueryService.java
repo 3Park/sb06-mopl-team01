@@ -38,18 +38,14 @@ public class PlaylistQueryService {
   private final SubscribeQueryRepository subscribeQueryRepository;
   private final WatchTogetherService watchTogetherService;
 
-  // Todo : 쿼리 최적화 필요
   @Transactional(readOnly = true)
   public PlaylistDto getPlaylistDtoByUuid(UUID uuid) {
 
-    Playlist playlist = playlistQueryRepository.findByUuid(uuid)
+    CursorPlaylistPage playlist = playlistQueryRepository.findByUuidWithStats(uuid)
         .orElseThrow(() -> new NoSuchPlaylistException(uuid));
 
     List<PlaylistContent> playlistContents = playlistContentQueryRepository
-        .findAllByPlaylistId(playlist.getId());
-
-    PlaylistsStat playlistsStat = playlistsStatQueryRepository.findByPlaylistId(playlist.getId())
-        .orElseThrow(() -> new NoSuchPlaylistException(uuid));
+        .findAllByPlaylistId(playlist.id());
 
     Map<Long, List<String>> contentTagsMap = contentTagQueryRepository
         .findTagsByContentIds(
@@ -66,19 +62,19 @@ public class PlaylistQueryService {
         );
 
     return PlaylistDto.of(
-        playlist.getUuid(),
+        playlist.uuid(),
         OwnerDto.of(
-            playlist.getUser().getUuid(),
-            playlist.getUser().getProfile().getName(),
-            playlist.getUser().getProfile().getProfileImageUrl()
+            playlist.userUuid(),
+            playlist.userName(),
+            playlist.userProfileUrl()
         ),
-        playlist.getTitle(),
-        playlist.getDescription(),
-        playlist.getUpdatedAt(),
-        playlistsStat.getSubscribeCount(),
+        playlist.title(),
+        playlist.description(),
+        playlist.updatedAt(),
+        playlist.subscriberCount(),
         subscribeQueryRepository.existsByUserIdAndPlaylistId(
-            playlist.getUser().getId(),
-            playlist.getId()
+            playlist.userId(),
+            playlist.id()
         ),
         playlistContents.stream()
             .map(content ->

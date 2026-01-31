@@ -2,6 +2,7 @@ package org.example.mopl.contentevaluation.repository;
 
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.OrderSpecifier;
+import com.querydsl.core.types.Projections;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -39,6 +40,36 @@ public class PlaylistQueryRepository {
         .fetchOne());
   }
 
+  public Optional<CursorPlaylistPage> findByUuidWithStats(
+      UUID playlistUuid
+  ) {
+    return Optional.ofNullable(
+        queryFactory.select(
+            Projections.constructor(
+                CursorPlaylistPage.class,
+                QPlaylist.playlist.id,
+                QPlaylist.playlist.uuid,
+                QPlaylist.playlist.user.id,
+                QPlaylist.playlist.user.uuid,
+                QUser.user.profile.name,
+                QUser.user.profile.profileImageUrl,
+                QPlaylist.playlist.title,
+                QPlaylist.playlist.description,
+                QPlaylist.playlist.updatedAt,
+                QPlaylistsStat.playlistsStat.subscribeCount
+            )
+        )
+            .from(QPlaylist.playlist)
+            .leftJoin(QPlaylist.playlist.user, QUser.user)
+            .fetchJoin()
+            .join(QUser.user.profile, QProfile.profile)
+            .fetchJoin()
+            .leftJoin(QPlaylistsStat.playlistsStat)
+            .on(QPlaylistsStat.playlistsStat.playlist.eq(QPlaylist.playlist))
+            .where(QPlaylist.playlist.uuid.eq(playlistUuid))
+            .fetchOne());
+  }
+
   // V1: 기본 정보만 포함
   /*public Page<Playlist> findAllByCursor(CursorRequestPlaylistDto request) {
 
@@ -71,17 +102,20 @@ public class PlaylistQueryRepository {
   public Page<ContentEvaluationQueryDto.CursorPlaylistPage> findAllByCursor(CursorRequestPlaylistDto request) {
 
     List<CursorPlaylistPage> playlists = queryFactory.select(
-            QPlaylist.playlist.id,
-            QPlaylist.playlist.uuid,
-            QPlaylist.playlist.user.id,
-            QPlaylist.playlist.user.uuid,
-            QPlaylist.playlist.user.profile.name,
-            QPlaylist.playlist.user.profile.profileImageUrl,
-            QPlaylist.playlist.title,
-            QPlaylist.playlist.description,
-            QPlaylist.playlist.updatedAt,
-            QPlaylistsStat.playlistsStat.subscribeCount,
-            QSubscribe.subscribe.uuid
+            Projections.constructor(
+                CursorPlaylistPage.class,
+                QPlaylist.playlist.id,
+                QPlaylist.playlist.uuid,
+                QPlaylist.playlist.user.id,
+                QPlaylist.playlist.user.uuid,
+                QUser.user.profile.name,
+                QUser.user.profile.profileImageUrl,
+                QPlaylist.playlist.title,
+                QPlaylist.playlist.description,
+                QPlaylist.playlist.updatedAt,
+                QPlaylistsStat.playlistsStat.subscribeCount,
+                QSubscribe.subscribe.uuid
+            )
         )
         .from(QPlaylist.playlist)
         .leftJoin(QPlaylist.playlist.user, QUser.user)
@@ -96,21 +130,7 @@ public class PlaylistQueryRepository {
         .where(buildDynamicQueryByCursor(request))
         .orderBy(buildOrderBy(request).toArray(new OrderSpecifier<?>[0]))
         .limit(request.limit() + 1)
-        .fetch()
-        .stream()
-        .map(record -> new CursorPlaylistPage(
-            record.get(QPlaylist.playlist.id),
-            record.get(QPlaylist.playlist.uuid),
-            record.get(QPlaylist.playlist.user.id),
-            record.get(QPlaylist.playlist.user.uuid),
-            record.get(QUser.user.profile.name),
-            record.get(QUser.user.profile.profileImageUrl),
-            record.get(QPlaylist.playlist.title),
-            record.get(QPlaylist.playlist.description),
-            record.get(QPlaylist.playlist.updatedAt),
-            record.get(QPlaylistsStat.playlistsStat.subscribeCount) != null ? record.get(QPlaylistsStat.playlistsStat.subscribeCount) : 0L,
-            record.get(QSubscribe.subscribe.uuid) != null
-        )).toList();
+        .fetch();
 
     boolean hasNext = playlists.size() > request.limit();
 
