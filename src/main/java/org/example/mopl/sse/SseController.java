@@ -1,7 +1,7 @@
 package org.example.mopl.sse;
 
 import lombok.RequiredArgsConstructor;
-import org.example.mopl.user.custom.CustomUserDetails;
+import org.example.mopl.auth.CustomUserDetails;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;

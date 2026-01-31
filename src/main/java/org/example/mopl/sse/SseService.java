@@ -38,7 +38,7 @@ public class SseService {
 
         // lastEventId 존재 + 놓친 데이터가 있을 경우 보내주기
         if (lastEventId != null) {
-            Notification lastNotification = notificationRepository.findById(lastEventId).orElse(null);
+            Notification lastNotification = notificationRepository.findByUuid(lastEventId).orElse(null);
 
             if (lastNotification != null) {
                 try {
