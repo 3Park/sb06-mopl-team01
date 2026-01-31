@@ -7,6 +7,6 @@ public interface SportCrawlerClient {
 
   List<String> fetchLeagues();
 
-  List<ContentFetchResultDto> fetchRecentMatches(String league);
+  List<ContentFetchResultDto> fetchUpcomingEvents(String league);
 
 }
