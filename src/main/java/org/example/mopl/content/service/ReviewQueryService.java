@@ -7,7 +7,6 @@ import org.example.mopl.content.dto.request.CursorRequestReviewDto;
 import org.example.mopl.content.dto.response.AuthorDto;
 import org.example.mopl.content.dto.response.CursorResponseReviewDto;
 import org.example.mopl.content.dto.response.ReviewDto;
-import org.example.mopl.content.entity.Review;
 import org.example.mopl.content.repository.ReviewQueryRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;

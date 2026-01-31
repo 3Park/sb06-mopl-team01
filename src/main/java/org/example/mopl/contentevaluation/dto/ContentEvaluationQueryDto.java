@@ -13,7 +13,8 @@ public class ContentEvaluationQueryDto {
   public record CursorPlaylistPage(
       Long id,
       UUID uuid,
-      UUID userId,
+      Long userId,
+      UUID userUuid,
       String userName,
       String userProfileUrl,
       String title,

@@ -39,7 +39,8 @@ public class PlaylistQueryRepository {
         .fetchOne());
   }
 
-  public Page<Playlist> findAllByCursor(CursorRequestPlaylistDto request) {
+  // V1: 기본 정보만 포함
+  /*public Page<Playlist> findAllByCursor(CursorRequestPlaylistDto request) {
 
     List<Playlist> playlists = queryFactory.selectFrom(QPlaylist.playlist)
         .leftJoin(QPlaylist.playlist.user, QUser.user)
@@ -63,15 +64,16 @@ public class PlaylistQueryRepository {
         hasNext ? request.limit() + 1 : playlists.size()
     );
 
-  }
+  }*/
 
   // V2: 구독 정보 및 통계 포함
   // 구독자 ID에 따른 구독 여부 포함
-  public Page<ContentEvaluationQueryDto.CursorPlaylistPage> findAllByCursorV2(CursorRequestPlaylistDto request) {
+  public Page<ContentEvaluationQueryDto.CursorPlaylistPage> findAllByCursor(CursorRequestPlaylistDto request) {
 
     List<CursorPlaylistPage> playlists = queryFactory.select(
             QPlaylist.playlist.id,
             QPlaylist.playlist.uuid,
+            QPlaylist.playlist.user.id,
             QPlaylist.playlist.user.uuid,
             QPlaylist.playlist.user.profile.name,
             QPlaylist.playlist.user.profile.profileImageUrl,
@@ -99,6 +101,7 @@ public class PlaylistQueryRepository {
         .map(record -> new CursorPlaylistPage(
             record.get(QPlaylist.playlist.id),
             record.get(QPlaylist.playlist.uuid),
+            record.get(QPlaylist.playlist.user.id),
             record.get(QPlaylist.playlist.user.uuid),
             record.get(QUser.user.profile.name),
             record.get(QUser.user.profile.profileImageUrl),

@@ -8,6 +8,7 @@ import org.example.mopl.content.dto.response.ContentDto;
 import org.example.mopl.content.entity.ContentsStat;
 import org.example.mopl.content.repository.ContentTagQueryRepository;
 import org.example.mopl.content.repository.ContentsStatQueryRepository;
+import org.example.mopl.contentevaluation.dto.ContentEvaluationQueryDto.CursorPlaylistPage;
 import org.example.mopl.contentevaluation.dto.request.CursorRequestPlaylistDto;
 import org.example.mopl.contentevaluation.dto.response.CursorResponsePlaylistDto;
 import org.example.mopl.contentevaluation.dto.response.OwnerDto;
@@ -98,57 +99,51 @@ public class PlaylistQueryService {
 
   }
 
-  // Todo : 쿼리 최적화 필요
   @Transactional(readOnly = true)
   public CursorResponsePlaylistDto getPlaylistListByCursor(CursorRequestPlaylistDto request) {
 
-    Page<Playlist> playlists = playlistQueryRepository.findAllByCursor(request);
+    Page<CursorPlaylistPage> playlistPage = playlistQueryRepository.findAllByCursor(request);
 
     Map<Long, List<PlaylistContent>> playlistContentsMap = playlistContentQueryRepository
         .findAllByPlaylistIds(
-            playlists.stream()
-                .map(Playlist::getId)
-                .toList()
-        );
-
-    Map<Long, PlaylistsStat> playlistsStatMap = playlistsStatQueryRepository
-        .findByPlaylistIds(
-            playlists.stream()
-                .map(Playlist::getId)
+            playlistPage.getContent().stream()
+                .map(CursorPlaylistPage::id)
                 .toList()
         );
 
     Map<Long, List<String>> contentTagsMap = contentTagQueryRepository
         .findTagsByContentIds(
-            playlists.stream()
-                .map(Playlist::getId)
+            playlistContentsMap.values().stream()
+                .flatMap(List::stream)
+                .map(content -> content.getContent().getId())
                 .toList()
         );
 
     Map<Long, ContentsStat> contentsStatMap = contentsStatQueryRepository
         .findAllByContentIds(
-            playlists.stream()
-                .map(Playlist::getId)
+            playlistContentsMap.values().stream()
+                .flatMap(List::stream)
+                .map(content -> content.getContent().getId())
                 .toList()
         );
 
-    List<PlaylistDto> playlistDtoList = playlists.stream()
+    List<PlaylistDto> playlistDtoList = playlistPage.getContent().stream()
         .map(playlist -> PlaylistDto.of(
-            playlist.getUuid(),
+            playlist.uuid(),
             OwnerDto.of(
-                playlist.getUser().getUuid(),
-                playlist.getUser().getProfile().getName(),
-                playlist.getUser().getProfile().getProfileImageUrl()
+                playlist.userUuid(),
+                playlist.userName(),
+                playlist.userProfileUrl()
             ),
-            playlist.getTitle(),
-            playlist.getDescription(),
-            playlist.getUpdatedAt(),
-            playlistsStatMap.get(playlist.getId()).getSubscribeCount(),
+            playlist.title(),
+            playlist.description(),
+            playlist.updatedAt(),
+            playlist.subscriberCount(),
             subscribeQueryRepository.existsByUserIdAndPlaylistId(
-                playlist.getUser().getId(),
-                playlist.getId()
+                playlist.userId(),
+                playlist.id()
             ),
-            playlistContentsMap.get(playlist.getId()).stream()
+            playlistContentsMap.get(playlist.id()).stream()
                 .map(content ->
                     ContentDto.of(
                         content.getContent().getUuid(),
@@ -168,11 +163,11 @@ public class PlaylistQueryService {
 
     return CursorResponsePlaylistDto.builder()
         .data(playlistDtoList)
-        .nextCursor(playlists.hasNext() ?
-            playlists.getContent()
-                .get(playlists.getContent().size() - 1).getUuid().toString() : null)
-        .hasNext(playlists.hasNext())
-        .totalCount(playlists.getTotalElements())
+        .nextCursor(playlistPage.hasNext() ?
+            playlistPage.getContent()
+                .get(playlistPage.getContent().size() - 1).uuid().toString() : null)
+        .hasNext(playlistPage.hasNext())
+        .totalCount(playlistPage.getTotalElements())
         .sortBy(request.sortBy())
         .sortDirection(request.sortDirection())
         .build();
