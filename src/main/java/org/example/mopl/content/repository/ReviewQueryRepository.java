@@ -13,7 +13,7 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
-import org.example.mopl.content.dto.ContentQueryDto.ReviewPage;
+import org.example.mopl.content.dto.ContentQueryDto.ReviewResult;
 import org.example.mopl.content.dto.request.CursorRequestReviewDto;
 import org.example.mopl.content.entity.QContent;
 import org.example.mopl.content.entity.QReview;
@@ -96,11 +96,11 @@ public class ReviewQueryRepository {
   }*/
 
   // V2: 필요한 필드만 조회
-  public Page<ReviewPage> findAllByCursor(CursorRequestReviewDto request) {
+  public Page<ReviewResult> findAllByCursor(CursorRequestReviewDto request) {
 
-    List<ReviewPage> reviewList = queryFactory.select(
+    List<ReviewResult> reviewList = queryFactory.select(
             Projections.constructor(
-                ReviewPage.class,
+                ReviewResult.class,
                 QReview.review.uuid,
                 QReview.review.content.uuid,
                 QReview.review.user.uuid,

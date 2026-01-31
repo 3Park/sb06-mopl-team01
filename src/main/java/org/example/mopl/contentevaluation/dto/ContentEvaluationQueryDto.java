@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
 public class ContentEvaluationQueryDto {
 
   @Builder
-  public record PlaylistPage(
+  public record PlaylistResult(
       Long id,
       UUID uuid,
       Long userId,

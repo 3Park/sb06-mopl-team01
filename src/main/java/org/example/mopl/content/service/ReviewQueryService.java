@@ -2,7 +2,7 @@ package org.example.mopl.content.service;
 
 import java.util.List;
 import lombok.RequiredArgsConstructor;
-import org.example.mopl.content.dto.ContentQueryDto.ReviewPage;
+import org.example.mopl.content.dto.ContentQueryDto.ReviewResult;
 import org.example.mopl.content.dto.request.CursorRequestReviewDto;
 import org.example.mopl.content.dto.response.AuthorDto;
 import org.example.mopl.content.dto.response.CursorResponseReviewDto;
@@ -19,7 +19,7 @@ public class ReviewQueryService {
 
   public CursorResponseReviewDto getReviewsByCursor(CursorRequestReviewDto request) {
 
-    Page<ReviewPage> reviewPage = reviewQueryRepository.findAllByCursor(request);
+    Page<ReviewResult> reviewPage = reviewQueryRepository.findAllByCursor(request);
 
     List<ReviewDto> reviewDtoList = reviewPage.getContent().stream()
         .map(review ->

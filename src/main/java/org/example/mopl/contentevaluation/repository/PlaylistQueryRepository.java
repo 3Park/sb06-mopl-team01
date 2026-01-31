@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
-import org.example.mopl.contentevaluation.dto.ContentEvaluationQueryDto.PlaylistPage;
+import org.example.mopl.contentevaluation.dto.ContentEvaluationQueryDto.PlaylistResult;
 import org.example.mopl.contentevaluation.dto.request.CursorRequestPlaylistDto;
 import org.example.mopl.contentevaluation.entity.Playlist;
 import org.example.mopl.contentevaluation.entity.QPlaylist;
@@ -39,13 +39,13 @@ public class PlaylistQueryRepository {
         .fetchOne());
   }
 
-  public Optional<PlaylistPage> findByUuidWithStats(
+  public Optional<PlaylistResult> findByUuidWithStats(
       UUID playlistUuid
   ) {
     return Optional.ofNullable(
         queryFactory.select(
             Projections.constructor(
-                PlaylistPage.class,
+                PlaylistResult.class,
                 QPlaylist.playlist.id,
                 QPlaylist.playlist.uuid,
                 QPlaylist.playlist.user.id,
@@ -98,11 +98,11 @@ public class PlaylistQueryRepository {
 
   // V2: 구독 정보 및 통계 포함
   // 구독자 ID에 따른 구독 여부 포함
-  public Page<PlaylistPage> findAllByCursor(CursorRequestPlaylistDto request) {
+  public Page<PlaylistResult> findAllByCursor(CursorRequestPlaylistDto request) {
 
-    List<PlaylistPage> playlists = queryFactory.select(
+    List<PlaylistResult> playlists = queryFactory.select(
             Projections.constructor(
-                PlaylistPage.class,
+                PlaylistResult.class,
                 QPlaylist.playlist.id,
                 QPlaylist.playlist.uuid,
                 QPlaylist.playlist.user.id,

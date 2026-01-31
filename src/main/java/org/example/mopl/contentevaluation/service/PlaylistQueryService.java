@@ -8,7 +8,7 @@ import org.example.mopl.content.dto.response.ContentDto;
 import org.example.mopl.content.entity.ContentsStat;
 import org.example.mopl.content.repository.ContentTagQueryRepository;
 import org.example.mopl.content.repository.ContentsStatQueryRepository;
-import org.example.mopl.contentevaluation.dto.ContentEvaluationQueryDto.PlaylistPage;
+import org.example.mopl.contentevaluation.dto.ContentEvaluationQueryDto.PlaylistResult;
 import org.example.mopl.contentevaluation.dto.request.CursorRequestPlaylistDto;
 import org.example.mopl.contentevaluation.dto.response.CursorResponsePlaylistDto;
 import org.example.mopl.contentevaluation.dto.response.OwnerDto;
@@ -39,7 +39,7 @@ public class PlaylistQueryService {
   @Transactional(readOnly = true)
   public PlaylistDto getPlaylistDtoByUuid(UUID uuid) {
 
-    PlaylistPage playlist = playlistQueryRepository.findByUuidWithStats(uuid)
+    PlaylistResult playlist = playlistQueryRepository.findByUuidWithStats(uuid)
         .orElseThrow(() -> new NoSuchPlaylistException(uuid));
 
     List<PlaylistContent> playlistContents = playlistContentQueryRepository
@@ -96,12 +96,12 @@ public class PlaylistQueryService {
   @Transactional(readOnly = true)
   public CursorResponsePlaylistDto getPlaylistListByCursor(CursorRequestPlaylistDto request) {
 
-    Page<PlaylistPage> playlistPage = playlistQueryRepository.findAllByCursor(request);
+    Page<PlaylistResult> playlistPage = playlistQueryRepository.findAllByCursor(request);
 
     Map<Long, List<PlaylistContent>> playlistContentsMap = playlistContentQueryRepository
         .findAllByPlaylistIds(
             playlistPage.getContent().stream()
-                .map(PlaylistPage::id)
+                .map(PlaylistResult::id)
                 .toList()
         );
 

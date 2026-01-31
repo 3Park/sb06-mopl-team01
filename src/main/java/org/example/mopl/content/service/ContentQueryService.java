@@ -4,7 +4,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
-import org.example.mopl.content.dto.ContentQueryDto.ContentPage;
+import org.example.mopl.content.dto.ContentQueryDto.ContentResult;
 import org.example.mopl.content.dto.request.CursorRequestContentDto;
 import org.example.mopl.content.dto.response.ContentDto;
 import org.example.mopl.content.dto.response.CursorResponseContentDto;
@@ -35,13 +35,13 @@ public class ContentQueryService {
   // Todo : 커서 기반 페이지네이션 (watcherCount로 정렬해야 하므로 실시간 같이보기 모듈 필요)
   public CursorResponseContentDto getContentsByCursor(CursorRequestContentDto request) {
 
-    Page<ContentPage> contentPage = contentQueryRepository
+    Page<ContentResult> contentPage = contentQueryRepository
         .findAllByCursor(request);
 
     Map<Long, List<String>> tagListMap = contentTagQueryRepository
         .findTagsByContentIds(
             contentPage.getContent().stream()
-                .map(ContentPage::id)
+                .map(ContentResult::id)
                 .toList()
         );
 
