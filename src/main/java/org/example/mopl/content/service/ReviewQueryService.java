@@ -2,6 +2,7 @@ package org.example.mopl.content.service;
 
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.example.mopl.content.dto.ContentQueryDto.CursorReviewPage;
 import org.example.mopl.content.dto.request.CursorRequestReviewDto;
 import org.example.mopl.content.dto.response.AuthorDto;
 import org.example.mopl.content.dto.response.CursorResponseReviewDto;
@@ -19,28 +20,28 @@ public class ReviewQueryService {
 
   public CursorResponseReviewDto getReviewsByCursor(CursorRequestReviewDto request) {
 
-    Page<Review> reviewPage = reviewQueryRepository.findAllByCursor(request);
+    Page<CursorReviewPage> reviewPage = reviewQueryRepository.findAllByCursor(request);
 
-    List<ReviewDto> reviewDtoList = reviewPage.stream()
+    List<ReviewDto> reviewDtoList = reviewPage.getContent().stream()
         .map(review ->
           ReviewDto.of(
-              review.getUuid(),
-              review.getContent().getUuid(),
+              review.uuid(),
+              review.contentId(),
               AuthorDto.of(
-                  review.getUser().getUuid(),
-                  review.getUser().getProfile().getName(),
-                  review.getUser().getProfile().getProfileImageUrl()
+                  review.userId(),
+                  review.userName(),
+                  review.userProfileUrl()
               ),
-              review.getText(),
-              review.getRating()
+              review.text(),
+              review.rating()
           )
         )
         .toList();
 
     return CursorResponseReviewDto.builder()
         .data(reviewDtoList)
-        .nextCursor(reviewPage.hasNext() ? reviewPage.getContent().get(reviewPage.getSize() - 1).getCreatedAt().toString() : null)
-        .nextIdAfter(reviewPage.hasNext() ? reviewPage.getContent().get(reviewPage.getSize() - 1).getUuid() : null)
+        .nextCursor(reviewPage.hasNext() ? reviewPage.getContent().get(reviewPage.getSize() - 1).createdAt().toString() : null)
+        .nextIdAfter(reviewPage.hasNext() ? reviewPage.getContent().get(reviewPage.getSize() - 1).uuid() : null)
         .hasNext(reviewPage.hasNext())
         .totalCount(reviewPage.getTotalElements())
         .sortBy(request.sortBy())

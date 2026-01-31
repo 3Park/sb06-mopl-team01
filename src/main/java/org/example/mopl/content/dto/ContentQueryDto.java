@@ -5,7 +5,6 @@ import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.NoArgsConstructor;
-import org.example.mopl.content.dto.response.AuthorDto;
 
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class ContentQueryDto {
@@ -33,7 +32,8 @@ public class ContentQueryDto {
       String userName,
       String userProfileUrl,
       String text,
-      Double rating
+      Double rating,
+      Instant createdAt
   ) {
 
   }

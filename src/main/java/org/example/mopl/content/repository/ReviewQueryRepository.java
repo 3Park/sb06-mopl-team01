@@ -69,7 +69,8 @@ public class ReviewQueryRepository {
 
   }
 
-  public Page<Review> findAllByCursor(CursorRequestReviewDto request) {
+  // V1: Review 엔티티 전체 조회
+  /*public Page<Review> findAllByCursor(CursorRequestReviewDto request) {
 
     List<Review> reviewList = queryFactory.selectFrom(QReview.review)
         .join(QReview.review.content, QContent.content)
@@ -95,10 +96,10 @@ public class ReviewQueryRepository {
         hasNext ? reviewList.size() + 1 : reviewList.size()
     );
 
-  }
+  }*/
 
   // V2: 필요한 필드만 조회
-  public Page<ContentQueryDto.CursorReviewPage> findAllByCursorV2(CursorRequestReviewDto request) {
+  public Page<ContentQueryDto.CursorReviewPage> findAllByCursor(CursorRequestReviewDto request) {
 
     List<CursorReviewPage> reviewList = queryFactory.select(
             QReview.review.uuid,
@@ -107,7 +108,8 @@ public class ReviewQueryRepository {
             QReview.review.user.profile.name,
             QReview.review.user.profile.profileImageUrl,
             QReview.review.text,
-            QReview.review.rating
+            QReview.review.rating,
+            QReview.review.createdAt
         )
         .from(QReview.review)
         .join(QReview.review.content, QContent.content)
@@ -125,7 +127,8 @@ public class ReviewQueryRepository {
             tuple.get(QProfile.profile.name),
             tuple.get(QProfile.profile.profileImageUrl),
             tuple.get(QReview.review.text),
-            tuple.get(QReview.review.rating)
+            tuple.get(QReview.review.rating),
+            tuple.get(QReview.review.createdAt)
         )).toList();
 
     boolean hasNext = reviewList.size() > request.limit();
