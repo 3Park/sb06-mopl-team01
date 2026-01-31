@@ -98,7 +98,6 @@ public class ReviewQueryRepository {
   }
 
   // V2: 필요한 필드만 조회
-  // 추후 성능 테스트 필요
   public Page<ContentQueryDto.CursorReviewPage> findAllByCursorV2(CursorRequestReviewDto request) {
 
     List<CursorReviewPage> reviewList = queryFactory.select(

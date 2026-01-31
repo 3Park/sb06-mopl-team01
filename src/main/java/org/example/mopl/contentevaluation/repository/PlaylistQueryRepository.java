@@ -67,7 +67,6 @@ public class PlaylistQueryRepository {
 
   // V2: 구독 정보 및 통계 포함
   // 구독자 ID에 따른 구독 여부 포함
-  // 추후 성능 테스트 필요
   public Page<ContentEvaluationQueryDto.CursorPlaylistPage> findAllByCursorV2(CursorRequestPlaylistDto request) {
 
     List<CursorPlaylistPage> playlists = queryFactory.select(

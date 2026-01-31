@@ -95,7 +95,8 @@ public class ContentQueryRepository {
 
   }
 
-  public Page<Content> findAllByCursor(CursorRequestContentDto request) {
+  // V1: Content 엔티티 전체 조회
+  /*public Page<Content> findAllByCursor(CursorRequestContentDto request) {
 
     List<Content> contentList = queryFactory.selectFrom(QContent.content)
         .join(QContentsStat.contentsStat)
@@ -116,12 +117,11 @@ public class ContentQueryRepository {
         Pageable.ofSize(request.limit()),
         hasNext ? request.limit() + 1 : contentList.size()
     );
-  }
+  }*/
 
   // V2: 필요한 필드만 조회
   // One-to-one 매핑된 ContentsStat의 필드도 함께 조회
-  // 추후 성능 테스트 필요
-  public Page<CursorContentPage> findAllByCursorV2(CursorRequestContentDto request) {
+  public Page<CursorContentPage> findAllByCursor(CursorRequestContentDto request) {
 
     List<CursorContentPage> contentList = queryFactory.select(
             Projections.constructor(
