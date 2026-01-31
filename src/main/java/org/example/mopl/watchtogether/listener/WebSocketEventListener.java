@@ -3,6 +3,9 @@ package org.example.mopl.watchtogether.listener;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.example.mopl.auth.CustomUserDetails;
+import org.example.mopl.auth.exception.AuthErrorCode;
+import org.example.mopl.auth.exception.AuthException;
+import org.example.mopl.content.entity.Content;
 import org.example.mopl.user.dto.UserDto;
 import org.example.mopl.watchtogether.service.WatchTogetherService;
 import org.springframework.context.event.EventListener;
@@ -12,6 +15,8 @@ import org.springframework.web.socket.messaging.SessionDisconnectEvent;
 import org.springframework.web.socket.messaging.SessionSubscribeEvent;
 
 import java.util.Objects;
+import java.util.Optional;
+import java.util.UUID;
 
 @Slf4j
 @Component
@@ -19,8 +24,6 @@ import java.util.Objects;
 public class WebSocketEventListener {
 
     private final WatchTogetherService watchTogetherService;
-    //어디에서 컨텐츠 정보를 호출해야 의존성 순환이 안될지 생각중
-    //여기에서 컨텐츠 정보를 호츨 해도 될까?
 
     @EventListener
     public void handleSubscribe(SessionSubscribeEvent event){
@@ -31,7 +34,7 @@ public class WebSocketEventListener {
 
         UserDto userDto = null;
         if(details ==null){
-            throw new RuntimeException("사용자 없음");
+            throw new AuthException(AuthErrorCode.INVALID_USER_DATA);
         }
         userDto = details.getUserDto();
 
@@ -46,7 +49,7 @@ public class WebSocketEventListener {
 
         UserDto userDto = null;
         if(details ==null){
-            throw new RuntimeException("사용자 없음");
+            throw new AuthException(AuthErrorCode.INVALID_USER_DATA);
         }
         userDto = details.getUserDto();
 

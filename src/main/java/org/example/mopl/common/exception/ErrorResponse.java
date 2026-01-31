@@ -9,7 +9,7 @@ public record ErrorResponse(
         String code,
         String message,
         Map<String, Object> details,
-        String exceptionType,
+        String exceptionName,
         int status
 ) {
     public ErrorResponse(MoplException exception, int status) {

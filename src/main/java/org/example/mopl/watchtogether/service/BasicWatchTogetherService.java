@@ -2,7 +2,10 @@ package org.example.mopl.watchtogether.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.example.mopl.common.exception.MoplException;
 import org.example.mopl.content.entity.Content;
+import org.example.mopl.content.exception.NoSuchContentException;
+import org.example.mopl.content.repository.ContentCommandRepository;
 import org.example.mopl.user.dto.UserDto;
 import org.example.mopl.watchtogether.dto.ContentChatSendRequest;
 import org.example.mopl.watchtogether.dto.CursorResponseWatchingSessionDto;
@@ -11,7 +14,9 @@ import org.example.mopl.watchtogether.model.Watcher;
 import org.example.mopl.watchtogether.model.WatchingRoom;
 import org.springframework.messaging.simp.SimpMessageSendingOperations;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Slf4j
@@ -23,18 +28,23 @@ public class BasicWatchTogetherService implements WatchTogetherService{
     private final ConcurrentHashMap<String, String> sessionToRoom = new ConcurrentHashMap<>();
 
     private final SimpMessageSendingOperations messagingTemplate;
+    private final ContentCommandRepository contentCommandRepository;
 
     @Override
+    @Transactional(readOnly = true)
     public void addUserToRoom(UserDto userDto, String contentId, String sessionId) {
         Watcher watcher = new Watcher(userDto);
-        /**
-         * 어디서 컨텐츠 호출해야 읜존성 순환 없는지 생각중입니다.
-        Content content =
+        WatchingRoom room = watchingRooms.getOrDefault(contentId,null);
 
-        WatchingRoom room = watchingRooms.computeIfAbsent(contentId, w -> new WatchingRoom(content));
+        //실시간 같이 시청방 처음 생성시에 컨텐츠 정보 호출
+        if(room == null){
+            Content content = contentCommandRepository.findByUuid(UUID.fromString(contentId))
+                    .orElseThrow(()-> new NoSuchContentException(contentId));
+            room = watchingRooms.computeIfAbsent(contentId, w -> new WatchingRoom(content));
+            sessionToRoom.put(sessionId,content.getUuid().toString());
+        }
+
         room.addWatcher(watcher);
-        sessionToRoom.put(sessionId,content.getId());
-        **/
     }
 
     @Override
