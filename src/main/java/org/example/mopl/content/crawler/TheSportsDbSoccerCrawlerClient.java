@@ -19,7 +19,7 @@ public class TheSportsDbSoccerCrawlerClient implements SportCrawlerClient {
   @Value("${content.api.thesportsdb.key}")
   private String apiKey;
 
-  @Value("${content.api.tmdb.url}")
+  @Value("${content.api.thesportsdb.url}")
   private String baseUrl;
 
   @Override
