@@ -14,18 +14,14 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import org.example.mopl.content.entity.basic.BasicContentEntity;
 import org.springframework.data.annotation.CreatedDate;
 
 @Getter
 @Entity
 @RequiredArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(name = "content_tags")
-public class ContentTag {
-
-  @Id
-  @GeneratedValue(strategy = GenerationType.IDENTITY)
-  @Column(name = "id", nullable = false)
-  private Long id;
+public class ContentTag extends BasicContentEntity {
 
   @JoinColumn(name = "content_id", nullable = false)
   @ManyToOne(optional = false, fetch = FetchType.LAZY)
@@ -34,10 +30,6 @@ public class ContentTag {
   @JoinColumn(name = "tag_id", nullable = false)
   @ManyToOne(optional = false, fetch = FetchType.LAZY)
   private Tag tag;
-
-  @CreatedDate
-  @Column(name = "created_at", nullable = false)
-  private Instant createdAt;
 
   @Builder(access = AccessLevel.PROTECTED)
   public ContentTag(Content content, Tag tag) {
