@@ -6,7 +6,7 @@ import java.util.List;
 
 @Builder
 public record CursorResponseWatchingSessionDto (
-        List<WatchingSessionDto> dara,
+        List<WatchingSessionDto> data,
         String nextCursor,
         String nextIdAfter,
         boolean hasNext,
