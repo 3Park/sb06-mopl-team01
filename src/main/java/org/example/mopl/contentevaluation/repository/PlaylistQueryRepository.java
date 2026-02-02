@@ -113,7 +113,7 @@ public class PlaylistQueryRepository {
                 QPlaylist.playlist.description,
                 QPlaylist.playlist.updatedAt,
                 QPlaylistsStat.playlistsStat.subscribeCount,
-                QSubscribe.subscribe.uuid
+                QSubscribe.subscribe.uuid.isNotNull().as("subscribeByMe")
             )
         )
         .from(QPlaylist.playlist)
