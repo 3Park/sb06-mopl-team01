@@ -1,8 +1,9 @@
 package org.example.mopl.content.exception;
 
 import java.util.UUID;
+import org.example.mopl.common.exception.MoplException;
 
-public class UnauthorizedReviewException extends ContentException {
+public class UnauthorizedReviewException extends MoplException {
 
   public UnauthorizedReviewException() {
     super(new UnauthorizedReviewErrorCode());

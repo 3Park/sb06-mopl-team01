@@ -1,8 +1,9 @@
 package org.example.mopl.content.exception;
 
 import java.util.UUID;
+import org.example.mopl.common.exception.MoplException;
 
-public class InvalidRatingDecreaseException extends ContentException {
+public class InvalidRatingDecreaseException extends MoplException {
 
   public InvalidRatingDecreaseException() {
     super(new InvalidRatingDecreaseErrorCode());

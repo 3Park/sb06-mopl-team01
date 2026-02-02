@@ -1,8 +1,9 @@
 package org.example.mopl.content.exception;
 
 import java.util.UUID;
+import org.example.mopl.common.exception.MoplException;
 
-public class NoSuchAuthorException extends ContentException {
+public class NoSuchAuthorException extends MoplException {
 
   public NoSuchAuthorException() {
     super(new NoSuchAuthorErrorCode());

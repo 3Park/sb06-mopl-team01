@@ -1,6 +1,9 @@
 package org.example.mopl.content.exception;
 
-public class NoSuchReviewException extends ContentException {
+import org.example.mopl.common.exception.MoplException;
+
+public class NoSuchReviewException extends
+    MoplException {
 
   public NoSuchReviewException() {
     super(new NoSuchReviewErrorCode());
