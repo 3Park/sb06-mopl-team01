@@ -114,7 +114,6 @@ public class ReviewCommandService {
     Review review = reviewQueryRepository.findByUuid(reviewId)
         .orElseThrow(() -> new NoSuchReviewException(reviewId.toString()));
 
-    // Todo : 예외 클래스 변경 필요
     User user = userRepository.findByEmail(email)
         .orElseThrow(() -> new NoSuchAuthorException(email));
 
