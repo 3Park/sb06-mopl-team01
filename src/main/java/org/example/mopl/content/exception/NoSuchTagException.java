@@ -1,8 +1,6 @@
 package org.example.mopl.content.exception;
 
-import org.example.mopl.common.exception.MoplException;
-
-public class NoSuchTagException extends MoplException {
+public class NoSuchTagException extends ContentException {
 
   public NoSuchTagException() {
     super(new NoSuchTagErrorCode());

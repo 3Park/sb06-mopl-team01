@@ -1,9 +1,8 @@
 package org.example.mopl.content.exception;
 
 import java.util.UUID;
-import org.example.mopl.common.exception.MoplException;
 
-public class NoSuchContentException extends MoplException {
+public class NoSuchContentException extends ContentException {
 
   public NoSuchContentException() {
     super(new NoSuchContentErrorCode());

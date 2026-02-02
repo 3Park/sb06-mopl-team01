@@ -1,36 +1,35 @@
 package org.example.mopl.content.exception;
 
 import java.util.UUID;
-import org.example.mopl.common.exception.MoplException;
 
-public class UnauthorizedReviewException extends MoplException {
+public class UnauthorizedReviewException extends ContentException {
 
   public UnauthorizedReviewException() {
-    super(new UnauthorizedReview());
+    super(new UnauthorizedReviewErrorCode());
   }
 
   public UnauthorizedReviewException(Throwable cause) {
-    super(new UnauthorizedReview(), cause);
+    super(new UnauthorizedReviewErrorCode(), cause);
   }
 
   public UnauthorizedReviewException(String email) {
-    super(new UnauthorizedReview());
+    super(new UnauthorizedReviewErrorCode());
     addDetail("email", email);
   }
 
   public UnauthorizedReviewException(String email, Throwable cause) {
-    super(new UnauthorizedReview(), cause);
+    super(new UnauthorizedReviewErrorCode(), cause);
     addDetail("email", email);
   }
 
   public UnauthorizedReviewException(String email, UUID reviewId) {
-    super(new UnauthorizedReview());
+    super(new UnauthorizedReviewErrorCode());
     addDetail("email", email);
     addDetail("reviewId", reviewId.toString());
   }
 
   public UnauthorizedReviewException(String email, UUID reviewId, Throwable cause) {
-    super(new UnauthorizedReview(), cause);
+    super(new UnauthorizedReviewErrorCode(), cause);
     addDetail("email", email);
     addDetail("reviewId", reviewId.toString());
   }
