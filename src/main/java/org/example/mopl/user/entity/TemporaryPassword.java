@@ -2,7 +2,9 @@ package org.example.mopl.user.entity;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
+import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.example.mopl.user.entity.basic.BasicUserEntity;
 
@@ -10,6 +12,7 @@ import org.example.mopl.user.entity.basic.BasicUserEntity;
 @Setter
 @Entity
 @Table(name = "temporary_password")
+@NoArgsConstructor
 public class TemporaryPassword extends BasicUserEntity {
 
     @NotNull
@@ -21,4 +24,9 @@ public class TemporaryPassword extends BasicUserEntity {
     @Column(name = "password", nullable = false, length = Integer.MAX_VALUE)
     private String password;
 
+    @Builder
+    public TemporaryPassword(User user, String password) {
+        this.user = user;
+        this.password = password;
+    }
 }
