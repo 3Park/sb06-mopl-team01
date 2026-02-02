@@ -9,14 +9,13 @@ import java.util.UUID;
 
 @Getter
 @NoArgsConstructor
-@AllArgsConstructor
 public class Watcher {
-    UUID id;
-    String name;
-    String profileImageUrl;
+    private UUID userId;
+    private String name;
+    private String profileImageUrl;
 
     public Watcher(UserDto userDto){
-        this.id = userDto.getId();
+        this.userId = userDto.getId();
         this.name = userDto.getName();
         this.profileImageUrl =userDto.getProfileImageUrl();
     }
