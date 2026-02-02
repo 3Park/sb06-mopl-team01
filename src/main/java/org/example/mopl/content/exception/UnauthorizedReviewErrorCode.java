@@ -3,7 +3,7 @@ package org.example.mopl.content.exception;
 import org.example.mopl.common.exception.ErrorCode;
 import org.springframework.http.HttpStatus;
 
-public class UnauthorizedReview implements ErrorCode {
+public class UnauthorizedReviewErrorCode implements ErrorCode {
 
   @Override
   public HttpStatus getHttpStatus() {
