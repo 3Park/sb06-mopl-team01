@@ -9,6 +9,7 @@ import org.example.mopl.contentevaluation.event.SubscribeCountEvent;
 import org.example.mopl.contentevaluation.exception.NoSuchPlaylistException;
 import org.example.mopl.contentevaluation.repository.PlaylistQueryRepository;
 import org.example.mopl.contentevaluation.repository.SubscribeCommandRepository;
+import org.example.mopl.event.message.PlaylistSubscriptionCreatedKafkaEvent;
 import org.example.mopl.user.entity.User;
 import org.example.mopl.user.repository.UserRepository;
 import org.springframework.context.ApplicationEventPublisher;
@@ -44,7 +45,15 @@ public class SubscribeCommandService {
         )
     );
 
-    // Todo : 플레이리스트 소유자에게 알림 전송 이벤트 발행
+    // 플레이리스트 소유자에게 알림 전송 이벤트 발행
+    eventPublisher.publishEvent(
+      PlaylistSubscriptionCreatedKafkaEvent.of(
+          playlist.getUser().getUuid(),
+          user.getProfile().getName(),
+          playlist.getTitle(),
+          playlist.getDescription()
+      )
+    );
 
   }
 

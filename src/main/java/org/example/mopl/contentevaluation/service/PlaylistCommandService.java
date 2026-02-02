@@ -17,8 +17,10 @@ import org.example.mopl.contentevaluation.repository.PlaylistContentCommandRepos
 import org.example.mopl.contentevaluation.repository.PlaylistQueryRepository;
 import org.example.mopl.contentevaluation.repository.PlaylistsStatCommandRepository;
 import org.example.mopl.contentevaluation.repository.PlaylistsStatQueryRepository;
+import org.example.mopl.event.message.PlaylistCreatedKafkaEvent;
 import org.example.mopl.user.entity.User;
 import org.example.mopl.user.repository.UserRepository;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,11 +34,11 @@ public class PlaylistCommandService {
   private final PlaylistsStatCommandRepository playlistsStatCommandRepository;
   private final PlaylistsStatQueryRepository playlistsStatQueryRepository;
   private final UserRepository userRepository;
+  private final ApplicationEventPublisher eventPublisher;
 
   @Transactional
   public PlaylistDto createPlaylist(String email, PlaylistCreateRequest request) {
 
-    // Todo : 예외 클래스 변경 필요
     User user = userRepository.findByEmail(email)
         .orElseThrow(() -> new NoSuchAuthorException(email));
 
@@ -47,6 +49,17 @@ public class PlaylistCommandService {
     playlistsStatCommandRepository.save(
         PlaylistsStat.of(playlist)
     );
+
+    // 팔로우 중인 사용자에게 플레이리스트 생성 알림
+    eventPublisher.publishEvent(
+        PlaylistCreatedKafkaEvent.of(
+          user.getUuid(),
+          user.getProfile().getName(),
+          savedPlaylist.getTitle(),
+          savedPlaylist.getDescription()
+      )
+    );
+
 
     return PlaylistDto.of(
         playlist.getUuid(),
@@ -71,7 +84,6 @@ public class PlaylistCommandService {
     Playlist playlist = playlistQueryRepository.findByUuid(playlistId)
         .orElseThrow(() -> new NoSuchPlaylistException(playlistId));
 
-    // Todo : 예외 클래스 변경 필요
     User user = userRepository.findByEmail(email)
         .orElseThrow(() -> new NoSuchAuthorException(email));
 
@@ -110,7 +122,6 @@ public class PlaylistCommandService {
     Playlist playlist = playlistQueryRepository.findByUuid(playlistId)
         .orElseThrow(() -> new NoSuchPlaylistException(playlistId));
 
-    // Todo : 예외 클래스 변경 필요
     User user = userRepository.findByEmail(email)
         .orElseThrow(() -> new NoSuchAuthorException(email));
 

@@ -1,5 +1,6 @@
 package org.example.mopl.contentevaluation.service;
 
+import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.example.mopl.content.entity.Content;
@@ -13,8 +14,11 @@ import org.example.mopl.contentevaluation.exception.UnauthorizedPlaylistExceptio
 import org.example.mopl.contentevaluation.repository.PlaylistContentCommandRepository;
 import org.example.mopl.contentevaluation.repository.PlaylistContentQueryRepository;
 import org.example.mopl.contentevaluation.repository.PlaylistQueryRepository;
+import org.example.mopl.contentevaluation.repository.SubscribeQueryRepository;
+import org.example.mopl.event.message.PlaylistContentAddedKafkaEvent;
 import org.example.mopl.user.entity.User;
 import org.example.mopl.user.repository.UserRepository;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,7 +30,9 @@ public class PlaylistContentCommandService {
   private final PlaylistQueryRepository playlistQueryRepository;
   private final PlaylistContentCommandRepository playlistContentCommandRepository;
   private final PlaylistContentQueryRepository playlistContentQueryRepository;
+  private final SubscribeQueryRepository subscribeQueryRepository;
   private final UserRepository userRepository;
+  private final ApplicationEventPublisher eventPublisher;
 
   @Transactional
   public void addContentToPlaylist(String email, UUID playlistId, UUID contentId) {
@@ -37,7 +43,6 @@ public class PlaylistContentCommandService {
     Playlist playlist = playlistQueryRepository.findByUuid(playlistId)
         .orElseThrow(() -> new NoSuchPlaylistException(playlistId));
 
-    // Todo : 예외 클래스 변경 필요
     User user = userRepository.findByEmail(email)
         .orElseThrow(() -> new NoSuchAuthorException(email));
 
@@ -55,7 +60,19 @@ public class PlaylistContentCommandService {
       )
     );
 
-    // Todo : 구독 중인 사용자에게 알림 전송 이벤트 발행
+    // 구독 중인 사용자에게 알림 전송 이벤트 발행
+    List<UUID> subscribersUuidList = subscribeQueryRepository.findSubscribersUuidsByPlaylistId(playlist.getId());
+
+    // 이벤트 발행
+    for (UUID subscriberUuid : subscribersUuidList) {
+      eventPublisher.publishEvent(
+          PlaylistContentAddedKafkaEvent.of(
+              subscriberUuid,
+              playlist.getTitle(),
+              content.getTitle()
+          )
+      );
+    }
 
   }
 
@@ -65,7 +82,6 @@ public class PlaylistContentCommandService {
     Playlist playlist = playlistQueryRepository.findByUuid(playlistId)
         .orElseThrow(() -> new NoSuchPlaylistException(playlistId));
 
-    // Todo : 예외 클래스 변경 필요
     User user = userRepository.findByEmail(email)
         .orElseThrow(() -> new NoSuchAuthorException(email));
 
