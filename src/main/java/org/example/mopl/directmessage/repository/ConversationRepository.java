@@ -1,6 +1,6 @@
-package org.example.mopl.conversation.repository;
+package org.example.mopl.directmessage.repository;
 
-import org.example.mopl.conversation.entity.Conversation;
+import org.example.mopl.directmessage.entity.Conversation;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;

@@ -4,7 +4,7 @@ import jakarta.annotation.Nullable;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.example.mopl.auth.jwt.JwtTokenProvider;
-import org.example.mopl.conversation.repository.ConversationRepository;
+import org.example.mopl.directmessage.repository.ConversationRepository;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.simp.stomp.StompCommand;

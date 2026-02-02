@@ -1,4 +1,4 @@
-package org.example.mopl.conversation.entity;
+package org.example.mopl.directmessage.entity;
 
 import jakarta.persistence.*;
 import lombok.AccessLevel;
