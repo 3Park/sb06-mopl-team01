@@ -4,6 +4,7 @@ import jakarta.annotation.Nullable;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.example.mopl.auth.jwt.JwtTokenProvider;
+import org.example.mopl.conversation.repository.ConversationRepository;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.simp.stomp.StompCommand;
@@ -13,12 +14,16 @@ import org.springframework.messaging.support.MessageHeaderAccessor;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
 
+import java.security.Principal;
+import java.util.UUID;
+
 @Slf4j
 @Component
 @RequiredArgsConstructor
 public class WebSocketChannelInterceptor implements ChannelInterceptor {
 
     private final JwtTokenProvider jwtTokenProvider;
+    private final ConversationRepository conversationRepository;
 
     @Override
     public @Nullable Message<?> preSend(Message<?> message, MessageChannel channel) {
@@ -72,18 +77,40 @@ public class WebSocketChannelInterceptor implements ChannelInterceptor {
 
     private Message<?> handleSubscribe(StompHeaderAccessor accessor, Message<?> message) {
         String destination = accessor.getDestination();
+        Principal user = accessor.getUser();
+
         if (destination != null && destination.startsWith("/sub/contents")) {
             String roomId = extractContentId(destination);
             if (roomId == null || roomId.trim().isEmpty()) {
                 throw new SecurityException("잘못된 구독 경로");
             }
         }
+        if (destination != null && destination.startsWith("/sub/conversations")) {
+            String conversationId = extractConversationId(destination);
+            if (conversationId == null || conversationId.trim().isEmpty()) {
+                throw new SecurityException("잘못된 구독 경로");
+            }
+            if (user == null) {
+                throw new SecurityException("로그인 정보가 없습니다.");
+            }
+
+            // 해당 채팅방의 참여자가 아닐 시 구독 불가
+            UUID conversationUuid = UUID.fromString(conversationId);
+            UUID userUuid = UUID.fromString(user.getName());
+            boolean isParticipant = conversationRepository
+                    .existsByConversationUuidAndUserUuid(conversationUuid, userUuid);
+            if (!isParticipant) {
+                throw new SecurityException("채팅방 구독 권한이 없습니다.");
+            }
+        }
+
         return message;
     }
 
     private Message<?> handleSend(StompHeaderAccessor accessor, Message<?> message) {
         String destination = accessor.getDestination();
-        String username = (String) accessor.getSessionAttributes().get("username");
+        Principal user = accessor.getUser();
+        String username = (user != null)? accessor.getUser().getName() : null;
 
         if (destination == null) {
             return message; // 하트비트 메시지
@@ -96,11 +123,21 @@ public class WebSocketChannelInterceptor implements ChannelInterceptor {
             }
         }
 
+        if (destination.startsWith("/pub/conversations")) {
+            String conversationId = extractConversationId(destination);
+            if (conversationId == null || conversationId.trim().isEmpty() || username == null) {
+                throw new SecurityException("잘못된 대상입니다.");
+            }
+        }
+
+
         return message;
     }
 
     private void handleDisconnect(StompHeaderAccessor accessor) {
-        String username = (String) accessor.getSessionAttributes().get("username");
+        Principal user = accessor.getUser();
+        String username = (user != null)? accessor.getUser().getName() : null;
+
         log.info("STOMP 연결 해제: {}", username);
     }
 
@@ -109,5 +146,11 @@ public class WebSocketChannelInterceptor implements ChannelInterceptor {
         if (destination == null) return null;
         String[] parts = destination.split("/");
         return parts.length >= 4 ? parts[2] : null;
+    }
+
+    private String extractConversationId(String destination) {
+        if (destination == null) return null;
+        String[] parts = destination.split("/");
+        return parts.length >= 4 ? parts[3] : null;
     }
 }
