@@ -5,11 +5,11 @@ import jakarta.validation.constraints.NotNull;
 import java.util.UUID;
 
 public record ReviewCreateRequest(
-    @NotNull
+    @NotNull(message = "contentId는 null일 수 없습니다.")
     UUID contentId,
-    @NotBlank
+    @NotBlank(message = "text는 blank일 수 없습니다.")
     String text,
-    @NotNull
+    @NotNull(message = "rating은 null일 수 없습니다.")
     Double rating
 ) {
 

@@ -10,11 +10,11 @@ public record CursorRequestPlaylistDto(
     UUID subscriberIdEqual,
     String cursor,
     UUID idAfter,
-    @NotNull
+    @NotNull(message = "limit는 null일 수 없습니다.")
     Integer limit,
-    @NotBlank
+    @NotBlank(message = "sortDirection은 blank일 수 없습니다.")
     String sortDirection,
-    @NotBlank
+    @NotBlank(message = "sortBy는 blank일 수 없습니다.")
     String sortBy
 ) {
 
