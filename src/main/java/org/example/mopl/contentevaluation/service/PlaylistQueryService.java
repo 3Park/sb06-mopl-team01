@@ -36,6 +36,7 @@ public class PlaylistQueryService {
   private final SubscribeQueryRepository subscribeQueryRepository;
   private final WatchTogetherService watchTogetherService;
 
+  // 플레이리스트 단건 조회
   @Transactional(readOnly = true)
   public PlaylistDto getPlaylistDtoByUuid(UUID uuid) {
 
@@ -93,6 +94,7 @@ public class PlaylistQueryService {
 
   }
 
+  // 플레이리스트 커서 기반 페이징
   @Transactional(readOnly = true)
   public CursorResponsePlaylistDto getPlaylistListByCursor(CursorRequestPlaylistDto request) {
 

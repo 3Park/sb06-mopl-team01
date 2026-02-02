@@ -90,6 +90,7 @@ public class PlaylistCommandService {
     boolean isAdmin = user.getUserRoles().stream()
         .anyMatch(role -> role.getRole().getIsAdmin());
 
+    // 작성자 본인이나 관리자가 아닌 경우 예외 발생
     if (!isAdmin && !playlist.getUser().getId().equals(user.getId())) {
       throw new UnauthorizedPlaylistException(email, playlistId);
     }
@@ -128,12 +129,15 @@ public class PlaylistCommandService {
     boolean isAdmin = user.getUserRoles().stream()
         .anyMatch(role -> role.getRole().getIsAdmin());
 
+    // 작성자 본인이나 관리자가 아닌 경우 예외 발생
     if (!isAdmin && !playlist.getUser().getId().equals(user.getId())) {
       throw new UnauthorizedPlaylistException(email, playlistId);
     }
 
+    // 연관관계 삭제
     playlistContentCommandRepository.deleteByPlaylist_Id(playlist.getId());
     playlistsStatCommandRepository.deleteByPlaylist_Id(playlist.getId());
+
     playlistCommandRepository.deleteById(playlist.getId());
 
   }

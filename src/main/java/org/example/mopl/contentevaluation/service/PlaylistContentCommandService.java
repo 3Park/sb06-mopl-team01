@@ -49,6 +49,7 @@ public class PlaylistContentCommandService {
     boolean isAdmin = user.getUserRoles().stream()
         .anyMatch(role -> role.getRole().getIsAdmin());
 
+    // 플레이리스트 소유자 또는 관리자인지 확인
     if (!isAdmin && !playlist.getUser().getId().equals(user.getId())) {
       throw new UnauthorizedPlaylistException(email, playlistId);
     }
@@ -88,6 +89,7 @@ public class PlaylistContentCommandService {
     boolean isAdmin = user.getUserRoles().stream()
         .anyMatch(role -> role.getRole().getIsAdmin());
 
+    // 플레이리스트 소유자 또는 관리자인지 확인
     if (!isAdmin && !playlist.getUser().getId().equals(user.getId())) {
       throw new UnauthorizedPlaylistException(email, playlistId);
     }

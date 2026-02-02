@@ -50,6 +50,7 @@ public class ReviewCommandService {
         )
     );
 
+    // 평점 증가 이벤트 발행
     eventPublisher.publishEvent(
         RatingEvent.IncreaseRatingEvent.of(content.getId(), review.getUuid(), request.rating())
     );
@@ -80,6 +81,7 @@ public class ReviewCommandService {
     boolean isAdmin = user.getUserRoles().stream()
         .anyMatch(role -> role.getRole().getIsAdmin());
 
+    // 작성자 본인이나 관리자가 아닌 경우 예외 발생
     if (!isAdmin && !review.getUser().getUuid().equals(user.getUuid())) {
       throw new UnauthorizedReviewException(email);
     }
@@ -120,10 +122,12 @@ public class ReviewCommandService {
     boolean isAdmin = user.getUserRoles().stream()
         .anyMatch(role -> role.getRole().getIsAdmin());
 
+    // 작성자 본인이나 관리자가 아닌 경우 예외 발생
     if (!isAdmin && !review.getUser().getUuid().equals(user.getUuid())) {
       throw new UnauthorizedReviewException(email);
     }
 
+    // 평점 감소 이벤트 발행
     eventPublisher.publishEvent(
         RatingEvent.DecreaseRatingEvent.of(review.getContent().getId(), review.getUuid(), review.getRating())
     );

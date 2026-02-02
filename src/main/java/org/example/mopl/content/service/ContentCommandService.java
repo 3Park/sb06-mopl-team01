@@ -170,9 +170,11 @@ public class ContentCommandService {
     Content content = contentQueryRepository.findByUuid(contentUuid)
         .orElseThrow(() -> new NoSuchContentException(contentUuid.toString()));
 
+    // 연관관계 삭제
     contentTagCommandRepository.deleteByContent_Id(content.getId());
     contentsStatCommandRepository.deleteByContent_id(content.getId());
 
+    // 콘텐츠 삭제
     contentCommandRepository.delete(content);
 
   }
