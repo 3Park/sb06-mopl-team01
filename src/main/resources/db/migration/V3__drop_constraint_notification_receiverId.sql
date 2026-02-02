@@ -1,0 +1,2 @@
+ALTER TABLE notifications
+DROP CONSTRAINT uk_notifications_receiver_id;
