@@ -3,6 +3,7 @@ package org.example.mopl.contentevaluation.service;
 import java.util.ArrayList;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.example.mopl.content.exception.NoSuchAuthorException;
 import org.example.mopl.contentevaluation.dto.request.PlaylistCreateRequest;
 import org.example.mopl.contentevaluation.dto.request.PlaylistUpdateRequest;
 import org.example.mopl.contentevaluation.dto.response.OwnerDto;
@@ -37,7 +38,7 @@ public class PlaylistCommandService {
 
     // Todo : 예외 클래스 변경 필요
     User user = userRepository.findByEmail(email)
-        .orElseThrow(() -> new IllegalArgumentException("User not found with email: " + email));
+        .orElseThrow(() -> new NoSuchAuthorException(email));
 
     Playlist playlist = Playlist.of(request.title(), user, request.description());
 
@@ -72,7 +73,7 @@ public class PlaylistCommandService {
 
     // Todo : 예외 클래스 변경 필요
     User user = userRepository.findByEmail(email)
-        .orElseThrow(() -> new IllegalArgumentException("User not found with email: " + email));
+        .orElseThrow(() -> new NoSuchAuthorException(email));
 
     boolean isAdmin = user.getUserRoles().stream()
         .anyMatch(role -> role.getRole().getIsAdmin());
@@ -111,7 +112,7 @@ public class PlaylistCommandService {
 
     // Todo : 예외 클래스 변경 필요
     User user = userRepository.findByEmail(email)
-        .orElseThrow(() -> new IllegalArgumentException("User not found with email: " + email));
+        .orElseThrow(() -> new NoSuchAuthorException(email));
 
     boolean isAdmin = user.getUserRoles().stream()
         .anyMatch(role -> role.getRole().getIsAdmin());

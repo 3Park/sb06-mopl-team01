@@ -2,6 +2,7 @@ package org.example.mopl.contentevaluation.service;
 
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.example.mopl.content.exception.NoSuchAuthorException;
 import org.example.mopl.contentevaluation.entity.Playlist;
 import org.example.mopl.contentevaluation.entity.Subscribe;
 import org.example.mopl.contentevaluation.event.SubscribeCountEvent;
@@ -26,9 +27,8 @@ public class SubscribeCommandService {
   @Transactional
   public void subscribePlaylist(String email, UUID playlistId) {
 
-    // Todo : 예외 클래스 변경 필요
     User user = userRepository.findByEmail(email)
-        .orElseThrow(() -> new IllegalArgumentException("User not found with email: " + email));
+        .orElseThrow(() -> new NoSuchAuthorException(email));
 
     Playlist playlist = playlistQueryRepository.findByUuid(playlistId)
         .orElseThrow(() -> new NoSuchPlaylistException(playlistId));
@@ -51,9 +51,8 @@ public class SubscribeCommandService {
   @Transactional
   public void unsubscribePlaylist(String email, UUID playlistId) {
 
-    // Todo : 예외 클래스 변경 필요
     User user = userRepository.findByEmail(email)
-        .orElseThrow(() -> new IllegalArgumentException("User not found with email: " + email));
+        .orElseThrow(() -> new NoSuchAuthorException(email));
 
     Playlist playlist = playlistQueryRepository.findByUuid(playlistId)
         .orElseThrow(() -> new NoSuchPlaylistException(playlistId));

@@ -3,6 +3,7 @@ package org.example.mopl.contentevaluation.service;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.example.mopl.content.entity.Content;
+import org.example.mopl.content.exception.NoSuchAuthorException;
 import org.example.mopl.content.exception.NoSuchContentException;
 import org.example.mopl.content.repository.ContentQueryRepository;
 import org.example.mopl.contentevaluation.entity.Playlist;
@@ -38,7 +39,7 @@ public class PlaylistContentCommandService {
 
     // Todo : 예외 클래스 변경 필요
     User user = userRepository.findByEmail(email)
-        .orElseThrow(() -> new IllegalArgumentException("User not found with email: " + email));
+        .orElseThrow(() -> new NoSuchAuthorException(email));
 
     boolean isAdmin = user.getUserRoles().stream()
         .anyMatch(role -> role.getRole().getIsAdmin());
@@ -66,7 +67,7 @@ public class PlaylistContentCommandService {
 
     // Todo : 예외 클래스 변경 필요
     User user = userRepository.findByEmail(email)
-        .orElseThrow(() -> new IllegalArgumentException("User not found with email: " + email));
+        .orElseThrow(() -> new NoSuchAuthorException(email));
 
     boolean isAdmin = user.getUserRoles().stream()
         .anyMatch(role -> role.getRole().getIsAdmin());
