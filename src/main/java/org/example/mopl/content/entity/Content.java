@@ -76,12 +76,10 @@ public class Content {
 
   public void update(
       String title,
-      String description,
-      String thumbnailUrl
+      String description
   ) {
     this.title = title;
     this.description = description;
-    this.thumbnailUrl = thumbnailUrl;
   }
 
 }

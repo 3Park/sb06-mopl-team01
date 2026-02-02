@@ -6,9 +6,9 @@ import java.util.List;
 public record ContentUpdateRequest(
     String title,
     String description,
-    List<String> tags,
-    @JsonProperty("thumbnail")
-    String thumbnailUrl
+    List<String> tags
+    /*@JsonProperty("thumbnail")
+    String thumbnailUrl*/
 ) {
 
 }
