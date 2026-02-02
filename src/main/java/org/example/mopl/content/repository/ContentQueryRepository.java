@@ -126,14 +126,16 @@ public class ContentQueryRepository {
     List<ContentResult> contentList = queryFactory.select(
             Projections.constructor(
                 ContentResult.class,
+                QContent.content.id,
                 QContent.content.uuid,
-                QContent.content.contentType,
+                QContent.content.contentType.stringValue(),
                 QContent.content.title,
                 QContent.content.description,
                 QContent.content.thumbnailUrl,
+                QContent.content.createdAt,
+                QContent.content.updatedAt,
                 QContentsStat.contentsStat.ratingAverage,
-                QContentsStat.contentsStat.ratingCount,
-                QContent.content.createdAt
+                QContentsStat.contentsStat.ratingCount
             )
         )
         .from(QContent.content)
