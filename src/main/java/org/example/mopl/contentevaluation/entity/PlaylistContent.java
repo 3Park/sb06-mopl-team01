@@ -15,18 +15,14 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.example.mopl.content.entity.Content;
+import org.example.mopl.contentevaluation.entity.basic.BasicContentEvaluationEntity;
 import org.springframework.data.annotation.CreatedDate;
 
 @Getter
 @Entity
 @RequiredArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(name = "playlist_contents")
-public class PlaylistContent {
-
-  @Id
-  @GeneratedValue(strategy = GenerationType.IDENTITY)
-  @Column(name = "id", nullable = false)
-  private Long id;
+public class PlaylistContent extends BasicContentEvaluationEntity {
 
   @JoinColumn(name = "content_id", nullable = false)
   @ManyToOne(optional = false, fetch = FetchType.LAZY)
@@ -35,10 +31,6 @@ public class PlaylistContent {
   @JoinColumn(name = "playlist_id", nullable = false)
   @ManyToOne(optional = false, fetch = FetchType.LAZY)
   private Playlist playlist;
-
-  @CreatedDate
-  @Column(name = "created_at", nullable = false)
-  private Instant createdAt;
 
   @Builder(access = AccessLevel.PROTECTED)
   public PlaylistContent(Content content, Playlist playlist) {

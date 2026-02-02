@@ -126,14 +126,16 @@ public class ContentQueryRepository {
     List<ContentResult> contentList = queryFactory.select(
             Projections.constructor(
                 ContentResult.class,
+                QContent.content.id,
                 QContent.content.uuid,
-                QContent.content.contentType,
+                QContent.content.contentType.stringValue(),
                 QContent.content.title,
                 QContent.content.description,
                 QContent.content.thumbnailUrl,
+                QContent.content.createdAt,
+                QContent.content.updatedAt,
                 QContentsStat.contentsStat.ratingAverage,
-                QContentsStat.contentsStat.ratingCount,
-                QContent.content.createdAt
+                QContentsStat.contentsStat.ratingCount
             )
         )
         .from(QContent.content)
@@ -169,6 +171,26 @@ public class ContentQueryRepository {
 
     // 검색 키워드
     builder.and(QContent.content.title.containsIgnoreCase(request.keywordLike()));
+
+    if (request.tagsIn() != null && !request.tagsIn().isEmpty()) {
+
+      List<Long> contentIdsWithAllTags = queryFactory
+          .select(QContentTag.contentTag.content.id)
+          .from(QContentTag.contentTag)
+          .join(QContentTag.contentTag.tag, QTag.tag)
+          .where(QTag.tag.name.in(request.tagsIn()))
+          .groupBy(QContentTag.contentTag.content.id)
+          .having(QContentTag.contentTag.content.id.count().eq((long) request.tagsIn().size()))
+          .fetch();
+
+      if (!contentIdsWithAllTags.isEmpty()) {
+        builder.and(QContent.content.id.in(contentIdsWithAllTags));
+      } else {
+        // 조건에 맞는 콘텐츠가 없을 경우 빈 결과를 반환하기 위해 항상 거짓인 조건 추가
+        builder.and(QContent.content.id.eq(-1L));
+      }
+
+    }
 
     // 커서 : createdAt, watcherCount, rate
     // 보조 커서 : uuid

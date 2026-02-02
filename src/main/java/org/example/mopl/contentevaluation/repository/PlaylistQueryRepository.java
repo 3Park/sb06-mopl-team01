@@ -113,19 +113,19 @@ public class PlaylistQueryRepository {
                 QPlaylist.playlist.description,
                 QPlaylist.playlist.updatedAt,
                 QPlaylistsStat.playlistsStat.subscribeCount,
-                QSubscribe.subscribe.uuid
+                QSubscribe.subscribe.uuid.isNotNull().as("subscribeByMe")
             )
         )
         .from(QPlaylist.playlist)
         .leftJoin(QPlaylist.playlist.user, QUser.user)
-        .fetchJoin()
         .join(QUser.user.profile, QProfile.profile)
-        .fetchJoin()
         .leftJoin(QPlaylistsStat.playlistsStat)
         .on(QPlaylistsStat.playlistsStat.playlist.eq(QPlaylist.playlist))
         .leftJoin(QSubscribe.subscribe)
         .on(QSubscribe.subscribe.playlist.eq(QPlaylist.playlist)
-            .and(QSubscribe.subscribe.user.uuid.eq(request.subscriberIdEqual() != null ? request.subscriberIdEqual() : UUID.randomUUID())))
+            .and(request.subscriberIdEqual() != null
+                ? QSubscribe.subscribe.user.uuid.eq(request.subscriberIdEqual())
+                : QSubscribe.subscribe.user.uuid.isNull()))
         .where(buildDynamicQueryByCursor(request))
         .orderBy(buildOrderBy(request).toArray(new OrderSpecifier<?>[0]))
         .limit(request.limit() + 1)
@@ -169,18 +169,28 @@ public class PlaylistQueryRepository {
     if (request.sortDirection().equals("DESCENDING")) {
       switch (request.sortBy()) {
         case "updatedAt" :
-          builder.and(
-              QPlaylist.playlist.updatedAt.lt(Instant.parse(request.cursor()))
-                  .or(QPlaylist.playlist.updatedAt.eq(Instant.parse(request.cursor()))
-                      .and(QPlaylist.playlist.uuid.lt(request.idAfter())))
-          );
+          if (request.cursor() != null && request.idAfter() != null) {
+            builder.and(
+                QPlaylist.playlist.updatedAt.lt(Instant.parse(request.cursor()))
+                    .or(QPlaylist.playlist.updatedAt.eq(Instant.parse(request.cursor()))
+                        .and(QPlaylist.playlist.uuid.lt(request.idAfter())))
+            );
+          } else if (request.cursor() != null) {
+            // 첫 페이지
+            builder.and(QPlaylist.playlist.updatedAt.lt(Instant.parse(request.cursor())));
+          }
           break;
         case "subscribeCount" :
-          builder.and(
-              QPlaylistsStat.playlistsStat.subscribeCount.lt(Long.parseLong(request.cursor()))
-                  .or(QPlaylistsStat.playlistsStat.subscribeCount.eq(Long.parseLong(request.cursor()))
-                      .and(QPlaylist.playlist.uuid.lt(request.idAfter())))
-          );
+          if (request.cursor() != null && request.idAfter() != null) {
+            builder.and(
+                QPlaylistsStat.playlistsStat.subscribeCount.lt(Long.parseLong(request.cursor()))
+                    .or(QPlaylistsStat.playlistsStat.subscribeCount.eq(Long.parseLong(request.cursor()))
+                        .and(QPlaylist.playlist.uuid.lt(request.idAfter())))
+            );
+          } else if (request.cursor() != null) {
+            // 첫 페이지
+            builder.and(QPlaylistsStat.playlistsStat.subscribeCount.lt(Long.parseLong(request.cursor())));
+          }
           break;
         default :
           throw new IllegalArgumentException("잘못된 검색 조건입니다: " + request.sortBy());
@@ -188,18 +198,28 @@ public class PlaylistQueryRepository {
     } else {
       switch (request.sortBy()) {
         case "updatedAt" :
-          builder.and(
-              QPlaylist.playlist.updatedAt.gt(Instant.parse(request.cursor()))
-                  .or(QPlaylist.playlist.updatedAt.eq(Instant.parse(request.cursor()))
-                      .and(QPlaylist.playlist.uuid.gt(request.idAfter())))
-          );
+          if (request.cursor() != null && request.idAfter() != null) {
+            builder.and(
+                QPlaylist.playlist.updatedAt.gt(Instant.parse(request.cursor()))
+                    .or(QPlaylist.playlist.updatedAt.eq(Instant.parse(request.cursor()))
+                        .and(QPlaylist.playlist.uuid.gt(request.idAfter())))
+            );
+          } else if (request.cursor() != null) {
+            // 첫 페이지
+            builder.and(QPlaylist.playlist.updatedAt.gt(Instant.parse(request.cursor())));
+          }
           break;
         case "subscribeCount" :
-          builder.and(
-              QPlaylistsStat.playlistsStat.subscribeCount.gt(Long.parseLong(request.cursor()))
-                  .or(QPlaylistsStat.playlistsStat.subscribeCount.eq(Long.parseLong(request.cursor()))
-                      .and(QPlaylist.playlist.uuid.gt(request.idAfter())))
-          );
+          if (request.cursor() != null && request.idAfter() != null) {
+            builder.and(
+                QPlaylistsStat.playlistsStat.subscribeCount.gt(Long.parseLong(request.cursor()))
+                    .or(QPlaylistsStat.playlistsStat.subscribeCount.eq(Long.parseLong(request.cursor()))
+                        .and(QPlaylist.playlist.uuid.gt(request.idAfter())))
+            );
+          } else if (request.cursor() != null) {
+            // 첫 페이지
+            builder.and(QPlaylistsStat.playlistsStat.subscribeCount.gt(Long.parseLong(request.cursor())));
+          }
           break;
         default :
           throw new IllegalArgumentException("잘못된 검색 조건입니다: " + request.sortBy());

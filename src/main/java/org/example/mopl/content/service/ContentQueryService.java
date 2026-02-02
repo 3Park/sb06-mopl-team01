@@ -29,7 +29,7 @@ public class ContentQueryService {
 
   public ContentDto getContentByUuid(UUID uuid) {
     return contentQueryRepository.findByUuidWithContentTag(uuid)
-        .orElseThrow(() -> new NoSuchContentException("존재하지 않는 콘텐츠입니다. UUID: " + uuid));
+        .orElseThrow(() -> new NoSuchContentException(uuid));
   }
 
   // Todo : 커서 기반 페이지네이션 (watcherCount로 정렬해야 하므로 실시간 같이보기 모듈 필요)

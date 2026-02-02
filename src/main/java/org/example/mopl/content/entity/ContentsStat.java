@@ -26,7 +26,7 @@ public class ContentsStat {
   @Column(name = "id", nullable = false)
   private Long id;
 
-  @JoinColumn(name = "content_id", nullable = false)
+  @JoinColumn(name = "contents_id", nullable = false)
   @OneToOne(optional = false, fetch = FetchType.LAZY)
   private Content content;
 

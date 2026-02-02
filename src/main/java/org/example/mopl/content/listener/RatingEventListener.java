@@ -7,6 +7,7 @@ import org.example.mopl.content.event.RatingEvent;
 import org.example.mopl.content.exception.NoSuchContentException;
 import org.example.mopl.content.repository.ContentsStatCommandRepository;
 import org.example.mopl.content.repository.ContentsStatQueryRepository;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionalEventListener;
 
@@ -18,6 +19,7 @@ public class RatingEventListener {
   private final ContentsStatCommandRepository contentsStatCommandRepository;
   private final ContentsStatQueryRepository contentsStatQueryRepository;
 
+  @Async("eventTaskExecutor")
   @TransactionalEventListener
   public void handleIncreaseRatingEvent(RatingEvent.IncreaseRatingEvent event) {
 
@@ -30,6 +32,7 @@ public class RatingEventListener {
 
   }
 
+  @Async("eventTaskExecutor")
   @TransactionalEventListener
   public void handleDecreaseRatingEvent(RatingEvent.DecreaseRatingEvent event) {
 
