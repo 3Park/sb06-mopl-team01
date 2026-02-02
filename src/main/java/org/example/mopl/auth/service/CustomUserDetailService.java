@@ -3,7 +3,9 @@ package org.example.mopl.auth.service;
 import lombok.RequiredArgsConstructor;
 import org.example.mopl.auth.CustomUserDetails;
 import org.example.mopl.user.dto.UserDto;
+import org.example.mopl.user.entity.TemporaryPassword;
 import org.example.mopl.user.entity.User;
+import org.example.mopl.user.repository.TemporaryPasswordRepository;
 import org.example.mopl.user.repository.UserRepository;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -16,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class CustomUserDetailService implements UserDetailsService {
 
     private final UserRepository userRepository;
+    private final TemporaryPasswordRepository temporaryPasswordRepository;
 
     @Transactional(readOnly = true)
     @Override
@@ -25,6 +28,11 @@ public class CustomUserDetailService implements UserDetailsService {
                 .user(user)
                 .build();
 
-        return new CustomUserDetails(userDto, user.getPassword());
+        //임시 비번 로그인일 경우를 대비해 임시비번 정보를 가져옴
+        TemporaryPassword temporaryPassword = temporaryPasswordRepository.findByUserEmail(userDto.getEmail()).orElse(null);
+        if(temporaryPassword == null)
+            return new CustomUserDetails(userDto, user.getPassword(), "",null);
+
+        return new CustomUserDetails(userDto, user.getPassword(), temporaryPassword.getPassword(),temporaryPassword.getCreatedAt());
     }
 }

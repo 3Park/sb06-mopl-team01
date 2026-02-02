@@ -29,6 +29,7 @@ public class AuthController {
 
     @GetMapping("/csrf-token")
     public ResponseEntity<Void> getCsrfToken(CsrfToken csrfToken) {
+        String token = csrfToken.getToken();
         return ResponseEntity.status(HttpStatus.OK).body(null);
     }
 

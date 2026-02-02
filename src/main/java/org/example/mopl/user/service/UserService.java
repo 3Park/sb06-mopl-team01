@@ -1,6 +1,7 @@
 package org.example.mopl.user.service;
 
 import lombok.RequiredArgsConstructor;
+import org.example.mopl.auth.CustomUserDetails;
 import org.example.mopl.profile.entity.Profile;
 import org.example.mopl.profile.repository.ProfileRepository;
 import org.example.mopl.user.dto.UserDto;
@@ -14,6 +15,7 @@ import org.example.mopl.user.exception.UserException;
 import org.example.mopl.user.repository.RoleRepository;
 import org.example.mopl.user.repository.UserRepository;
 import org.example.mopl.user.repository.UserRoleRepository;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,6 +32,7 @@ public class UserService {
     private final ProfileRepository profileRepository;
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
+    private final TemporaryPasswordService temporaryPasswordService;
 
     @Transactional
     public void addAdmin(String password) {
@@ -88,5 +91,33 @@ public class UserService {
                 .builder()
                 .user(user)
                 .build();
+    }
+
+    @Transactional(readOnly = true)
+    public boolean existsUserByEmail(String email)
+    {
+        return userRepository.existsUserByEmail(email);
+    }
+
+    @Transactional
+    public void changePassword(Authentication authentication, UUID userId, String newPassword)
+    {
+        if(authentication == null)
+            throw new UserException(UserErrorCode.INVALID_DATA);
+
+        CustomUserDetails details = (CustomUserDetails) authentication.getPrincipal();
+        if(details == null
+            || details.getUserDto() == null)
+            throw new UserException(UserErrorCode.INVALID_DATA);
+
+        if(details.getUserDto().getId().equals(userId) == false)
+            throw new UserException(UserErrorCode.INVALID_ROLE);
+
+        User user = userRepository.findByUuid(userId).orElseThrow(()-> new UserException(UserErrorCode.INVALID_DATA));
+
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+
+        temporaryPasswordService.deleteFromUserByEmail(user.getEmail());
     }
 }

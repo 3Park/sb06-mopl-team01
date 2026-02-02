@@ -10,7 +10,7 @@ import org.springframework.http.HttpStatus;
 public enum UserErrorCode implements ErrorCode {
 
     DUPLICATED_USER(HttpStatus.BAD_REQUEST,"이미 가입한 유저 입니다."),
-    INVALID_ROLE(HttpStatus.NOT_FOUND,"명시된 유저 권한이 없습니다"),
+    INVALID_ROLE(HttpStatus.NOT_FOUND,"권한이 없습니다"),
     INVALID_DATA(HttpStatus.BAD_REQUEST,"잘못된 데이터 입니다.");
 
     private final HttpStatus httpStatus;

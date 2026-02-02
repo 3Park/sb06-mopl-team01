@@ -17,6 +17,9 @@ spring:
           auth: true
           starttls:
             enable: true
+  batch:
+    job:
+      enabled: false
 jwt:
   secret: ${JWT_SECRET_KEY}
   access_key_expiration: 600000
