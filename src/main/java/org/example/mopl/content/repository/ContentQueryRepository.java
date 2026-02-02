@@ -172,7 +172,7 @@ public class ContentQueryRepository {
     // 검색 키워드
     builder.and(QContent.content.title.containsIgnoreCase(request.keywordLike()));
 
-    if (!request.tagsIn().isEmpty()) {
+    if (request.tagsIn() != null && !request.tagsIn().isEmpty()) {
 
       List<Long> contentIdsWithAllTags = queryFactory
           .select(QContentTag.contentTag.content.id)
