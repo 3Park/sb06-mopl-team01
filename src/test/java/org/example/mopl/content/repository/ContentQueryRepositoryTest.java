@@ -6,7 +6,6 @@ import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 import org.example.mopl.MoplApplication;
 import org.example.mopl.common.config.QueryDslConfig;
 import org.example.mopl.content.dto.ContentQueryDto.ContentResult;
@@ -18,7 +17,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mock;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.context.annotation.Import;
@@ -48,9 +46,6 @@ class ContentQueryRepositoryTest {
 
   @BeforeEach
   void setUp() {
-
-    contentsStatCommandRepository.deleteAll();
-    contentCommandRepository.deleteAll();
 
     for (int i = 1; i <= 25; i++) {
       Content content = Content.of(
