@@ -130,12 +130,12 @@ public class PlaylistController {
   @DeleteMapping("/{playlistId}")
   public ResponseEntity<Void> deletePlaylistById(
       @AuthenticationPrincipal CustomUserDetails userDetails,
-      @PathVariable String playlistId
+      @PathVariable UUID playlistId
   ) {
 
     playlistCommandService.deletePlaylistByUuid(
         userDetails.getUserDto().getEmail(),
-        UUID.fromString(playlistId)
+        playlistId
     );
 
     return ResponseEntity.ok().build();
