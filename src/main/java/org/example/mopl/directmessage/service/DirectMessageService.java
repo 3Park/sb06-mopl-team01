@@ -32,18 +32,10 @@ public class DirectMessageService {
 
         Conversation conversation = conversationRepository.findByUuid(conversationUuid)
                 .orElseThrow(() -> new ConversationNotFoundException(conversationUuid));
+
         User sender = userRepository.findUserAndProfileOnlyByUuid(senderUuid)
                 .orElseThrow(() -> new ParticipantNotFoundException(senderUuid));
-
-        Long receiverId;
-        if (conversation.isCreatorId(sender.getId())) {
-            receiverId = conversation.getJoinId();
-        } else if (conversation.isJoinId(sender.getId())) {
-            receiverId = conversation.getCreatorId();
-        } else {
-            throw new ParticipantNotFoundException(senderUuid);
-        }
-
+        Long receiverId = conversation.findCounterpartId(sender.getId());
         User receiver = userRepository.findUserAndProfileOnlyById(receiverId)
                 .orElseThrow(() -> new ParticipantNotFoundException());
 

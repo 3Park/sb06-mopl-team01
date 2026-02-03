@@ -5,6 +5,7 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.example.mopl.directmessage.exception.ParticipantNotFoundException;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
@@ -43,5 +44,11 @@ public class Conversation {
 
         this.creatorId = creatorId;
         this.joinId = joinId;
+    }
+
+    public Long findCounterpartId(Long senderId) {
+        if (creatorId.equals(senderId)) return joinId;
+        if (joinId.equals(senderId)) return creatorId;
+        else throw new ParticipantNotFoundException();
     }
 }
