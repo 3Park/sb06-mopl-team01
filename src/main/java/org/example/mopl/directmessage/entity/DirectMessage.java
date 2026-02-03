@@ -48,7 +48,7 @@ public class DirectMessage {
 
 
     @Builder
-    public DirectMessage(Conversation conversation, Long senderId, Long receiverId, String content) {
+    private DirectMessage(Conversation conversation, Long senderId, Long receiverId, String content) {
         this.uuid = UUID.randomUUID();
         this.readStatus = false;
 
@@ -56,6 +56,11 @@ public class DirectMessage {
         this.senderId = senderId;
         this.receiverId = receiverId;
         this.content = content;
+    }
+
+    public static DirectMessage of(Conversation conversation, Long senderId, Long receiverId, String content) {
+        return DirectMessage.builder().conversation(conversation).senderId(senderId)
+                .receiverId(receiverId).content(content).build();
     }
 
 }
