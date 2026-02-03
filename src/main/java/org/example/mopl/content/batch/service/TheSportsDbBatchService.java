@@ -75,7 +75,7 @@ public class TheSportsDbBatchService {
         .collect(Collectors.toSet());
 
     // 2. 기존 태그들을 한 번에 조회
-    List<Tag> existingTags = tagQueryRepository.findByNameIn(allTagNames);
+    List<Tag> existingTags = tagQueryRepository.findAllByNameIn(allTagNames);
     Set<String> existingTagNames = existingTags.stream()
         .map(Tag::getName)
         .collect(Collectors.toSet());

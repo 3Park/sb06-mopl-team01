@@ -106,7 +106,7 @@ public class TmDbBatchService {
     List<Tag> tagList = new ArrayList<>();
 
     // 1. 기존 태그들을 한 번에 조회
-    List<Tag> existingTags = tagQueryRepository.findByNameIn(genres);
+    List<Tag> existingTags = tagQueryRepository.findAllByNameIn(genres);
     Set<String> existingTagNames = existingTags.stream()
         .map(Tag::getName)
         .collect(Collectors.toSet());
