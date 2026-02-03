@@ -30,11 +30,4 @@ public interface UserRepository extends JpaRepository<User,Long> {
 //                where u.uuid = :uuid
 //    """)
     Optional<User> findByUuid(UUID uuid);
-
-    // 임시 페치 조인 메소드 -> 추후 변경 예정
-    @Query("SELECT u FROM User u JOIN FETCH u.profile WHERE u.uuid = :uuid")
-    Optional<User> findUserAndProfileOnlyByUuid(@Param("uuid") UUID uuid);
-
-    @Query("SELECT u FROM User u JOIN FETCH u.profile WHERE u.id = :id")
-    Optional<User> findUserAndProfileOnlyById(@Param("id") Long id);
 }
