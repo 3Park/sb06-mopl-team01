@@ -7,9 +7,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.example.mopl.user.entity.basic.BasicUserUUIDEntity;
-import org.springframework.data.annotation.LastModifiedDate;
-
-import java.time.Instant;
+import org.example.mopl.user.enums.UserRoleType;
 
 @Getter
 @Setter
