@@ -67,11 +67,22 @@ public class TheSportsDbSoccerCrawlerClient implements SportCrawlerClient {
         })
         .body(JsonNode.class);
 
-    if (result.get("events") == null || result.get("events").isNull()) {
+    JsonNode eventsNode = result.get("events");
+
+    // null 체크
+    if (eventsNode == null || eventsNode.isNull()) {
+      log.warn("No events found in API response for league: {}", league);
       return List.of();
     }
 
-    ArrayNode events = (ArrayNode) result.get("events");
+    // 타입 체크 추가
+    if (!eventsNode.isArray()) {
+      log.warn("Events node is not an array, type: {} for league: {}",
+          eventsNode.getNodeType(), league);
+      return List.of();
+    }
+
+    ArrayNode events = (ArrayNode) eventsNode;
 
     return events.valueStream()
         .map(event -> ContentFetchResultDto.of(

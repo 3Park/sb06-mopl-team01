@@ -143,12 +143,13 @@ public class TmDbBatchService {
          })
           .toList();
 
+     contentList = contentCommandRepository.saveAll(contentList);
+
      contentList.forEach(content -> {
        ContentsStat contentsStat = ContentsStat.of(content);
        contentsStatList.add(contentsStat);
      });
 
-     contentCommandRepository.saveAll(contentList);
      contentsStatCommandRepository.saveAll(contentsStatList);
 
   }
@@ -186,12 +187,13 @@ public class TmDbBatchService {
        })
         .toList();
 
+    contentList = contentCommandRepository.saveAll(contentList);
+
     contentList.forEach(content -> {
       ContentsStat contentsStat = ContentsStat.of(content);
       contentsStatList.add(contentsStat);
     });
 
-   contentCommandRepository.saveAll(contentList);
     contentsStatCommandRepository.saveAll(contentsStatList);
 
   }
