@@ -109,13 +109,29 @@ public class TmDbBatchService {
 
    List<Content> contentList = fetchResultDtoList.stream()
        .map(content -> {
-         return Content.of(
-             ContentType.MOVIE.getValue(),
-             content.title(),
-             content.description(),
-             content.thumbnailUrl(),
-             content.externalId()
-         );
+
+         if (contentQueryRepository.existsByExternalId(content.externalId())) {
+
+           Content existingContent = contentQueryRepository.findByExternalId(content.externalId())
+               .orElseThrow(() -> new NoSuchContentException(content.externalId()));
+
+            existingContent.update(
+                content.title(),
+                content.description()
+            );
+
+            return existingContent;
+
+         } else {
+           return Content.of(
+               ContentType.MOVIE.getValue(),
+               content.title(),
+               content.description(),
+               content.thumbnailUrl(),
+               content.externalId()
+           );
+         }
+
        })
         .toList();
 
@@ -128,13 +144,29 @@ public class TmDbBatchService {
 
    List<Content> contentList = fetchResultDtoList.stream()
        .map(content -> {
-         return Content.of(
-             ContentType.TVSERIES.getValue(),
-             content.title(),
-             content.description(),
-             content.thumbnailUrl(),
-             content.externalId()
-         );
+
+         if (contentQueryRepository.existsByExternalId(content.externalId())) {
+
+           Content existingContent = contentQueryRepository.findByExternalId(content.externalId())
+               .orElseThrow(() -> new NoSuchContentException(content.externalId()));
+
+           existingContent.update(
+               content.title(),
+               content.description()
+           );
+
+           return existingContent;
+
+         } else {
+           return Content.of(
+               ContentType.TVSERIES.getValue(),
+               content.title(),
+               content.description(),
+               content.thumbnailUrl(),
+               content.externalId()
+           );
+         }
+
        })
         .toList();
 
