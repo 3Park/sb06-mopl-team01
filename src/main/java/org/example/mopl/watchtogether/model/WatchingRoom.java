@@ -4,18 +4,19 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.example.mopl.content.entity.Content;
+import org.example.mopl.watchtogether.dto.WatchingSessionDto;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Getter
 @NoArgsConstructor
-@AllArgsConstructor
 public class WatchingRoom {
     private UUID id;
     private Instant createdAt;
-    private ConcurrentHashMap<String, Watcher> watchers;
+    private ConcurrentHashMap<String, WatchingSession> watchers;
     private Content content;
 
     public WatchingRoom(Content content){
@@ -25,15 +26,21 @@ public class WatchingRoom {
         this.content = content;
     }
 
-    public void addWatcher(Watcher watcher) {watchers.put(watcher.id.toString(), watcher);}
+    public void addWatcher(WatchingSession watchingSession) {
+        watchers.put(watchingSession.getId().toString(), watchingSession);
+    }
 
-    public Watcher removeWatcher(String watcherId) {
-        return watchers.remove(watcherId);
+    public WatchingSession removeWatcher(String sessionId) {
+        return watchers.remove(sessionId);
     }
 
     public long getWatcherCount() {
         return watchers.size();
     }
+
+    public WatchingSession getWatcher(String sessionId){ return this.watchers.get(sessionId);}
+
+    public List<WatchingSession> getWatchers(){return this.watchers.values().stream().toList();}
 
     public boolean isEmpty() {
         return watchers.isEmpty();

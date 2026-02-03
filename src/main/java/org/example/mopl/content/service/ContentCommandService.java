@@ -113,7 +113,7 @@ public class ContentCommandService {
     // content 업데이트
     Content content = contentQueryRepository.findByUuid(contentId)
         .orElseThrow(() -> new NoSuchContentException(contentId.toString()));
-    content.update(request.title(), request.description(), request.thumbnailUrl());
+    content.update(request.title(), request.description());
 
     //태그 매핑 일괄 삭제
     contentTagCommandRepository.deleteByContent_Id(content.getId());
@@ -170,9 +170,11 @@ public class ContentCommandService {
     Content content = contentQueryRepository.findByUuid(contentUuid)
         .orElseThrow(() -> new NoSuchContentException(contentUuid.toString()));
 
+    // 연관관계 삭제
     contentTagCommandRepository.deleteByContent_Id(content.getId());
     contentsStatCommandRepository.deleteByContent_id(content.getId());
 
+    // 콘텐츠 삭제
     contentCommandRepository.delete(content);
 
   }

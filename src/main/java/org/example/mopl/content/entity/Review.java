@@ -15,6 +15,7 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import org.example.mopl.content.entity.basic.BasicContentUuidEntity;
 import org.example.mopl.user.entity.User;
 import org.hibernate.annotations.UuidGenerator;
 import org.springframework.data.annotation.CreatedDate;
@@ -24,16 +25,7 @@ import org.springframework.data.annotation.LastModifiedDate;
 @Entity
 @RequiredArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(name = "reviews")
-public class Review {
-
-  @Id
-  @GeneratedValue(strategy = GenerationType.IDENTITY)
-  @Column(name = "id", nullable = false)
-  private Long id;
-
-  @UuidGenerator
-  @Column(name = "uuid", nullable = false, unique = true)
-  private UUID uuid;
+public class Review extends BasicContentUuidEntity {
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "user_id", nullable = false)
@@ -48,14 +40,6 @@ public class Review {
 
   @Column(name = "text", columnDefinition = "TEXT", nullable = false)
   private String text;
-
-  @CreatedDate
-  @Column(name = "created_at", nullable = false)
-  private Instant createdAt;
-
-  @LastModifiedDate
-  @Column(name = "updated_at")
-  private Instant updatedAt;
 
   @Builder(access = AccessLevel.PROTECTED)
   public Review(User user, Content content, Double rating, String text) {

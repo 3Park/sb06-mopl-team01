@@ -8,6 +8,7 @@ import org.example.mopl.contentevaluation.event.SubscribeCountEvent;
 import org.example.mopl.contentevaluation.exception.NoSuchPlaylistException;
 import org.example.mopl.contentevaluation.repository.PlaylistsStatCommandRepository;
 import org.example.mopl.contentevaluation.repository.PlaylistsStatQueryRepository;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionalEventListener;
 
@@ -19,6 +20,7 @@ public class SubscribeCountEventListener {
   private final PlaylistsStatCommandRepository playlistsStatCommandRepository;
   private final PlaylistsStatQueryRepository playlistsStatQueryRepository;
 
+  @Async("eventTaskExecutor")
   @TransactionalEventListener
   public void handleIncreaseSubscribeCountEvent(SubscribeCountEvent.IncreaseSubscribeCountEvent event) {
 
@@ -31,6 +33,7 @@ public class SubscribeCountEventListener {
 
   }
 
+  @Async("eventTaskExecutor")
   @TransactionalEventListener
   public void handleDecreaseSubscribeCountEvent(SubscribeCountEvent.DecreaseSubscribeCountEvent event) {
 

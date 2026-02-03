@@ -1,24 +1,33 @@
 package org.example.mopl.user.service;
 
 import lombok.RequiredArgsConstructor;
+import org.example.mopl.auth.CustomUserDetails;
 import org.example.mopl.profile.entity.Profile;
 import org.example.mopl.profile.repository.ProfileRepository;
+import org.example.mopl.user.dto.CursorResponseUserDto;
 import org.example.mopl.user.dto.UserDto;
 import org.example.mopl.user.dto.request.UserCreateRequest;
+import org.example.mopl.user.dto.request.UserCursorRequest;
 import org.example.mopl.user.entity.Role;
 import org.example.mopl.user.entity.User;
 import org.example.mopl.user.entity.UserRole;
-import org.example.mopl.user.entity.UserRoleType;
+import org.example.mopl.user.enums.UserRoleType;
 import org.example.mopl.user.exception.UserErrorCode;
 import org.example.mopl.user.exception.UserException;
 import org.example.mopl.user.repository.RoleRepository;
 import org.example.mopl.user.repository.UserRepository;
 import org.example.mopl.user.repository.UserRoleRepository;
+import org.springframework.data.domain.Slice;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -30,6 +39,7 @@ public class UserService {
     private final ProfileRepository profileRepository;
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
+    private final TemporaryPasswordService temporaryPasswordService;
 
     @Transactional
     public void addAdmin(String password) {
@@ -88,5 +98,112 @@ public class UserService {
                 .builder()
                 .user(user)
                 .build();
+    }
+
+    @Transactional(readOnly = true)
+    public boolean existsUserByEmail(String email)
+    {
+        return userRepository.existsUserByEmail(email);
+    }
+
+    @Transactional
+    public void changePassword(Authentication authentication, UUID userId, String newPassword)
+    {
+        if(authentication == null)
+            throw new UserException(UserErrorCode.INVALID_DATA);
+
+        CustomUserDetails details = (CustomUserDetails) authentication.getPrincipal();
+        if(details == null
+            || details.getUserDto() == null)
+            throw new UserException(UserErrorCode.INVALID_DATA);
+
+        if(details.getUserDto().getId().equals(userId) == false)
+            throw new UserException(UserErrorCode.INVALID_ROLE);
+
+        User user = userRepository.findByUuid(userId).orElseThrow(()-> new UserException(UserErrorCode.INVALID_DATA));
+
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+
+        temporaryPasswordService.deleteFromUserByEmail(user.getEmail());
+    }
+
+    @Transactional(readOnly = true)
+    @PreAuthorize("hasRole('ADMIN')")
+    public CursorResponseUserDto getAllUsers(UserCursorRequest request)
+    {
+        if(request == null)
+            throw new UserException(UserErrorCode.INVALID_DATA);
+
+        //QueryDsl 메서드 호출
+        List<User> users = userRepository.findAllUsers(request);
+        boolean hasNext = false;
+        String nextCursor = null;
+        UUID idAfter = null;
+        //JpaRepository 기본 메서드 count 호출
+        Long totalCount = userRepository.count();
+
+        //userroles n+1 해결을 위해 fetch join을 해오기 위한 부분
+        List<UUID> ids = users.stream().map(User::getUuid).toList();
+        if(ids.isEmpty())
+            return new CursorResponseUserDto(
+                    null,
+                    nextCursor,
+                    idAfter,
+                    hasNext,
+                    totalCount,
+                    request.sortBy().name(),
+                    request.sortDirection().name());
+
+        //fetch join 후 정렬이 깨짐
+        List<User> fetchedUsers = userRepository.findUsersByIds(ids);
+
+        //uuid를 key로 하는 userMap을 생성 -> 정렬된 리스트를 재구성할떄 사용
+        Map<UUID, User> userMap = fetchedUsers.stream()
+                .collect(Collectors.toMap(User::getUuid, u -> u));
+
+        //ids 는 paging 조건에 맞는 정렬형태. userMap에서 가져와 기존 정렬된 형태로 복구
+        List<User> orderedUsers = ids.stream().map(userMap::get).toList();
+
+        if(users.size() > request.limit())
+        {
+            hasNext = true;
+            users.remove(users.size() - 1);
+            idAfter = users.get(users.size() - 1).getUuid();
+            nextCursor = getNextCursor(request, users);
+        }
+
+        return CursorResponseUserDto.builder()
+                .data(orderedUsers.stream()
+                        .map(x -> UserDto.builder()
+                                .user(x)
+                                .build()).toList())
+                .hasNext(hasNext)
+                .nextCursor(nextCursor)
+                .nextIdAfter(idAfter)
+                .totalCount(totalCount)
+                .sortDirection(request.sortDirection().name())
+                .sortBy(request.sortBy().name())
+                .build();
+
+    }
+
+    private String getNextCursor(UserCursorRequest request, List<User> users)
+    {
+        switch (request.sortBy())
+        {
+            case name:
+                return users.get(users.size() - 1).getProfile().getName();
+            case email:
+                return users.get(users.size() - 1).getEmail();
+            case role:
+                return users.get(users.size() - 1).getUserRoles().get(0).getRole().getName().name();
+            case isLocked:
+                return users.get(users.size() - 1).getLocked().toString();
+            case createdAt:
+                return users.get(users.size() - 1).getCreatedAt().toString();
+            default:
+                return null;
+        }
     }
 }

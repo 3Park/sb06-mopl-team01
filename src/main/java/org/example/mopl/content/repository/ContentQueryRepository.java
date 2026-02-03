@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.example.mopl.content.dto.ContentQueryDto.ContentResult;
 import org.example.mopl.content.dto.request.CursorRequestContentDto;
 import org.example.mopl.content.dto.response.ContentDto;
 import org.example.mopl.content.entity.Content;
@@ -94,7 +95,8 @@ public class ContentQueryRepository {
 
   }
 
-  public Page<Content> findAllByCursor(CursorRequestContentDto request) {
+  // V1: Content 엔티티 전체 조회
+  /*public Page<Content> findAllByCursor(CursorRequestContentDto request) {
 
     List<Content> contentList = queryFactory.selectFrom(QContent.content)
         .join(QContentsStat.contentsStat)
@@ -115,6 +117,47 @@ public class ContentQueryRepository {
         Pageable.ofSize(request.limit()),
         hasNext ? request.limit() + 1 : contentList.size()
     );
+  }*/
+
+  // V2: 필요한 필드만 조회
+  // One-to-one 매핑된 ContentsStat의 필드도 함께 조회
+  public Page<ContentResult> findAllByCursor(CursorRequestContentDto request) {
+
+    List<ContentResult> contentList = queryFactory.select(
+            Projections.constructor(
+                ContentResult.class,
+                QContent.content.id,
+                QContent.content.uuid,
+                QContent.content.contentType.stringValue(),
+                QContent.content.title,
+                QContent.content.description,
+                QContent.content.thumbnailUrl,
+                QContent.content.createdAt,
+                QContent.content.updatedAt,
+                QContentsStat.contentsStat.ratingAverage,
+                QContentsStat.contentsStat.ratingCount
+            )
+        )
+        .from(QContent.content)
+        .join(QContentsStat.contentsStat)
+        .on(QContentsStat.contentsStat.content.id.eq(QContent.content.id))
+        .where(buildDynamicQueryByCursor(request))
+        .orderBy(buildOrderBy(request).toArray(OrderSpecifier[]::new))
+        .limit(request.limit() + 1)
+        .fetch();
+
+    boolean hasNext = contentList.size() > request.limit();
+
+    if (hasNext) {
+      contentList.remove(contentList.size() - 1);
+    }
+
+    return new PageImpl<>(
+        contentList,
+        Pageable.ofSize(request.limit()),
+        hasNext ? request.limit() + 1 : contentList.size()
+    );
+
   }
 
   private BooleanBuilder buildDynamicQueryByCursor(CursorRequestContentDto request) {
@@ -128,6 +171,26 @@ public class ContentQueryRepository {
 
     // 검색 키워드
     builder.and(QContent.content.title.containsIgnoreCase(request.keywordLike()));
+
+    if (request.tagsIn() != null && !request.tagsIn().isEmpty()) {
+
+      List<Long> contentIdsWithAllTags = queryFactory
+          .select(QContentTag.contentTag.content.id)
+          .from(QContentTag.contentTag)
+          .join(QContentTag.contentTag.tag, QTag.tag)
+          .where(QTag.tag.name.in(request.tagsIn()))
+          .groupBy(QContentTag.contentTag.content.id)
+          .having(QContentTag.contentTag.content.id.count().eq((long) request.tagsIn().size()))
+          .fetch();
+
+      if (!contentIdsWithAllTags.isEmpty()) {
+        builder.and(QContent.content.id.in(contentIdsWithAllTags));
+      } else {
+        // 조건에 맞는 콘텐츠가 없을 경우 빈 결과를 반환하기 위해 항상 거짓인 조건 추가
+        builder.and(QContent.content.id.eq(-1L));
+      }
+
+    }
 
     // 커서 : createdAt, watcherCount, rate
     // 보조 커서 : uuid

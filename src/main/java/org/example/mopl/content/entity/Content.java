@@ -2,6 +2,7 @@ package org.example.mopl.content.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EntityListeners;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
@@ -14,24 +15,17 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import org.example.mopl.content.entity.basic.BasicContentUuidEntity;
 import org.hibernate.annotations.UuidGenerator;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 @Getter
 @Entity
 @RequiredArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(name = "contents")
-public class Content {
-
-  @Id
-  @GeneratedValue(strategy = GenerationType.IDENTITY)
-  @Column(name = "id", nullable = false)
-  private Long id;
-
-  @UuidGenerator
-  @Column(name = "uuid", nullable = false, unique = true)
-  private UUID uuid;
+public class Content extends BasicContentUuidEntity {
 
   @Column(name = "external_id", nullable = true, unique = true)
   private String externalId;
@@ -48,14 +42,6 @@ public class Content {
 
   @Column(name = "thumbnail_url", nullable = true)
   private String thumbnailUrl;
-
-  @CreatedDate
-  @Column(name = "created_at", nullable = false)
-  private Instant createdAt;
-
-  @LastModifiedDate
-  @Column(name = "updated_at")
-  private Instant updatedAt;
 
   @Builder(access = AccessLevel.PROTECTED)
   public Content(String type, String title, String description, String thumbnailUrl) {
@@ -76,12 +62,10 @@ public class Content {
 
   public void update(
       String title,
-      String description,
-      String thumbnailUrl
+      String description
   ) {
     this.title = title;
     this.description = description;
-    this.thumbnailUrl = thumbnailUrl;
   }
 
 }

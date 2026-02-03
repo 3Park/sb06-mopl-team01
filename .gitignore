@@ -5,6 +5,7 @@ build/
 !**/src/main/**/build/
 !**/src/test/**/build/
 .DS_Store
+env.local
 
 ### STS ###
 .apt_generated

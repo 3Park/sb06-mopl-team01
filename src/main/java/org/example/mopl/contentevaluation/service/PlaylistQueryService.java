@@ -8,13 +8,12 @@ import org.example.mopl.content.dto.response.ContentDto;
 import org.example.mopl.content.entity.ContentsStat;
 import org.example.mopl.content.repository.ContentTagQueryRepository;
 import org.example.mopl.content.repository.ContentsStatQueryRepository;
+import org.example.mopl.contentevaluation.dto.ContentEvaluationQueryDto.PlaylistResult;
 import org.example.mopl.contentevaluation.dto.request.CursorRequestPlaylistDto;
 import org.example.mopl.contentevaluation.dto.response.CursorResponsePlaylistDto;
 import org.example.mopl.contentevaluation.dto.response.OwnerDto;
 import org.example.mopl.contentevaluation.dto.response.PlaylistDto;
-import org.example.mopl.contentevaluation.entity.Playlist;
 import org.example.mopl.contentevaluation.entity.PlaylistContent;
-import org.example.mopl.contentevaluation.entity.PlaylistsStat;
 import org.example.mopl.contentevaluation.exception.NoSuchPlaylistException;
 import org.example.mopl.contentevaluation.repository.PlaylistContentQueryRepository;
 import org.example.mopl.contentevaluation.repository.PlaylistQueryRepository;
@@ -37,18 +36,15 @@ public class PlaylistQueryService {
   private final SubscribeQueryRepository subscribeQueryRepository;
   private final WatchTogetherService watchTogetherService;
 
-  // Todo : 쿼리 최적화 필요
+  // 플레이리스트 단건 조회
   @Transactional(readOnly = true)
   public PlaylistDto getPlaylistDtoByUuid(UUID uuid) {
 
-    Playlist playlist = playlistQueryRepository.findByUuid(uuid)
+    PlaylistResult playlist = playlistQueryRepository.findByUuidWithStats(uuid)
         .orElseThrow(() -> new NoSuchPlaylistException(uuid));
 
     List<PlaylistContent> playlistContents = playlistContentQueryRepository
-        .findAllByPlaylistId(playlist.getId());
-
-    PlaylistsStat playlistsStat = playlistsStatQueryRepository.findByPlaylistId(playlist.getId())
-        .orElseThrow(() -> new NoSuchPlaylistException(uuid));
+        .findAllByPlaylistId(playlist.id());
 
     Map<Long, List<String>> contentTagsMap = contentTagQueryRepository
         .findTagsByContentIds(
@@ -65,19 +61,19 @@ public class PlaylistQueryService {
         );
 
     return PlaylistDto.of(
-        playlist.getUuid(),
+        playlist.uuid(),
         OwnerDto.of(
-            playlist.getUser().getUuid(),
-            playlist.getUser().getProfile().getName(),
-            playlist.getUser().getProfile().getProfileImageUrl()
+            playlist.userUuid(),
+            playlist.userName(),
+            playlist.userProfileUrl()
         ),
-        playlist.getTitle(),
-        playlist.getDescription(),
-        playlist.getUpdatedAt(),
-        playlistsStat.getSubscribeCount(),
+        playlist.title(),
+        playlist.description(),
+        playlist.updatedAt(),
+        playlist.subscriberCount(),
         subscribeQueryRepository.existsByUserIdAndPlaylistId(
-            playlist.getUser().getId(),
-            playlist.getId()
+            playlist.userId(),
+            playlist.id()
         ),
         playlistContents.stream()
             .map(content ->
@@ -98,57 +94,52 @@ public class PlaylistQueryService {
 
   }
 
-  // Todo : 쿼리 최적화 필요
+  // 플레이리스트 커서 기반 페이징
   @Transactional(readOnly = true)
   public CursorResponsePlaylistDto getPlaylistListByCursor(CursorRequestPlaylistDto request) {
 
-    Page<Playlist> playlists = playlistQueryRepository.findAllByCursor(request);
+    Page<PlaylistResult> playlistPage = playlistQueryRepository.findAllByCursor(request);
 
     Map<Long, List<PlaylistContent>> playlistContentsMap = playlistContentQueryRepository
         .findAllByPlaylistIds(
-            playlists.stream()
-                .map(Playlist::getId)
-                .toList()
-        );
-
-    Map<Long, PlaylistsStat> playlistsStatMap = playlistsStatQueryRepository
-        .findByPlaylistIds(
-            playlists.stream()
-                .map(Playlist::getId)
+            playlistPage.getContent().stream()
+                .map(PlaylistResult::id)
                 .toList()
         );
 
     Map<Long, List<String>> contentTagsMap = contentTagQueryRepository
         .findTagsByContentIds(
-            playlists.stream()
-                .map(Playlist::getId)
+            playlistContentsMap.values().stream()
+                .flatMap(List::stream)
+                .map(content -> content.getContent().getId())
                 .toList()
         );
 
     Map<Long, ContentsStat> contentsStatMap = contentsStatQueryRepository
         .findAllByContentIds(
-            playlists.stream()
-                .map(Playlist::getId)
+            playlistContentsMap.values().stream()
+                .flatMap(List::stream)
+                .map(content -> content.getContent().getId())
                 .toList()
         );
 
-    List<PlaylistDto> playlistDtoList = playlists.stream()
+    List<PlaylistDto> playlistDtoList = playlistPage.getContent().stream()
         .map(playlist -> PlaylistDto.of(
-            playlist.getUuid(),
+            playlist.uuid(),
             OwnerDto.of(
-                playlist.getUser().getUuid(),
-                playlist.getUser().getProfile().getName(),
-                playlist.getUser().getProfile().getProfileImageUrl()
+                playlist.userUuid(),
+                playlist.userName(),
+                playlist.userProfileUrl()
             ),
-            playlist.getTitle(),
-            playlist.getDescription(),
-            playlist.getUpdatedAt(),
-            playlistsStatMap.get(playlist.getId()).getSubscribeCount(),
+            playlist.title(),
+            playlist.description(),
+            playlist.updatedAt(),
+            playlist.subscriberCount(),
             subscribeQueryRepository.existsByUserIdAndPlaylistId(
-                playlist.getUser().getId(),
-                playlist.getId()
+                playlist.userId(),
+                playlist.id()
             ),
-            playlistContentsMap.get(playlist.getId()).stream()
+            playlistContentsMap.get(playlist.id()).stream()
                 .map(content ->
                     ContentDto.of(
                         content.getContent().getUuid(),
@@ -168,11 +159,11 @@ public class PlaylistQueryService {
 
     return CursorResponsePlaylistDto.builder()
         .data(playlistDtoList)
-        .nextCursor(playlists.hasNext() ?
-            playlists.getContent()
-                .get(playlists.getContent().size() - 1).getUuid().toString() : null)
-        .hasNext(playlists.hasNext())
-        .totalCount(playlists.getTotalElements())
+        .nextCursor(playlistPage.hasNext() ?
+            playlistPage.getContent()
+                .get(playlistPage.getContent().size() - 1).uuid().toString() : null)
+        .hasNext(playlistPage.hasNext())
+        .totalCount(playlistPage.getTotalElements())
         .sortBy(request.sortBy())
         .sortDirection(request.sortDirection())
         .build();

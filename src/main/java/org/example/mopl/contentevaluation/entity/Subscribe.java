@@ -15,6 +15,7 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import org.example.mopl.contentevaluation.entity.basic.BasicContentEvaluationEntity;
 import org.example.mopl.user.entity.User;
 import org.hibernate.annotations.UuidGenerator;
 import org.springframework.data.annotation.CreatedDate;
@@ -23,12 +24,7 @@ import org.springframework.data.annotation.CreatedDate;
 @Entity
 @RequiredArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(name = "subscribes")
-public class Subscribe {
-
-  @Id
-  @GeneratedValue(strategy = GenerationType.IDENTITY)
-  @Column(name = "id", nullable = false)
-  private Long id;
+public class Subscribe extends BasicContentEvaluationEntity {
 
   @UuidGenerator
   @Column(name = "uuid", nullable = false, unique = true)
@@ -41,10 +37,6 @@ public class Subscribe {
   @JoinColumn(name = "playlist_id", nullable = false)
   @ManyToOne(optional = false, fetch = FetchType.LAZY)
   private Playlist playlist;
-
-  @CreatedDate
-  @Column(name = "created_at", nullable = false)
-  private Instant createdAt;
 
   @Builder(access = AccessLevel.PROTECTED)
   public Subscribe(User user, Playlist playlist) {

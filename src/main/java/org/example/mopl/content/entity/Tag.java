@@ -12,6 +12,7 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import org.example.mopl.content.entity.basic.BasicContentUuidEntity;
 import org.hibernate.annotations.UuidGenerator;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
@@ -20,27 +21,10 @@ import org.springframework.data.annotation.LastModifiedDate;
 @Entity
 @RequiredArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(name = "tags")
-public class Tag {
-
-  @Id
-  @GeneratedValue(strategy = GenerationType.IDENTITY)
-  @Column(name = "id", nullable = false)
-  private Long id;
-
-  @UuidGenerator
-  @Column(name = "uuid", nullable = false, unique = true)
-  private UUID uuid;
+public class Tag extends BasicContentUuidEntity {
 
   @Column(name = "name", nullable = false)
   private String name;
-
-  @CreatedDate
-  @Column(name = "created_at", nullable = false)
-  private Instant createdAt;
-
-  @LastModifiedDate
-  @Column(name = "updated_at")
-  private Instant updatedAt;
 
   @Builder(access = AccessLevel.PRIVATE)
   public Tag(String name) {

@@ -3,6 +3,7 @@ package org.example.mopl.contentevaluation.service;
 import java.util.ArrayList;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.example.mopl.content.exception.NoSuchAuthorException;
 import org.example.mopl.contentevaluation.dto.request.PlaylistCreateRequest;
 import org.example.mopl.contentevaluation.dto.request.PlaylistUpdateRequest;
 import org.example.mopl.contentevaluation.dto.response.OwnerDto;
@@ -16,8 +17,10 @@ import org.example.mopl.contentevaluation.repository.PlaylistContentCommandRepos
 import org.example.mopl.contentevaluation.repository.PlaylistQueryRepository;
 import org.example.mopl.contentevaluation.repository.PlaylistsStatCommandRepository;
 import org.example.mopl.contentevaluation.repository.PlaylistsStatQueryRepository;
+import org.example.mopl.event.message.PlaylistCreatedKafkaEvent;
 import org.example.mopl.user.entity.User;
 import org.example.mopl.user.repository.UserRepository;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,13 +34,13 @@ public class PlaylistCommandService {
   private final PlaylistsStatCommandRepository playlistsStatCommandRepository;
   private final PlaylistsStatQueryRepository playlistsStatQueryRepository;
   private final UserRepository userRepository;
+  private final ApplicationEventPublisher eventPublisher;
 
   @Transactional
   public PlaylistDto createPlaylist(String email, PlaylistCreateRequest request) {
 
-    // Todo : 예외 클래스 변경 필요
     User user = userRepository.findByEmail(email)
-        .orElseThrow(() -> new IllegalArgumentException("User not found with email: " + email));
+        .orElseThrow(() -> new NoSuchAuthorException(email));
 
     Playlist playlist = Playlist.of(request.title(), user, request.description());
 
@@ -46,6 +49,17 @@ public class PlaylistCommandService {
     playlistsStatCommandRepository.save(
         PlaylistsStat.of(playlist)
     );
+
+    // 팔로우 중인 사용자에게 플레이리스트 생성 알림
+    eventPublisher.publishEvent(
+        PlaylistCreatedKafkaEvent.of(
+          user.getUuid(),
+          user.getProfile().getName(),
+          savedPlaylist.getTitle(),
+          savedPlaylist.getDescription()
+      )
+    );
+
 
     return PlaylistDto.of(
         playlist.getUuid(),
@@ -70,13 +84,13 @@ public class PlaylistCommandService {
     Playlist playlist = playlistQueryRepository.findByUuid(playlistId)
         .orElseThrow(() -> new NoSuchPlaylistException(playlistId));
 
-    // Todo : 예외 클래스 변경 필요
     User user = userRepository.findByEmail(email)
-        .orElseThrow(() -> new IllegalArgumentException("User not found with email: " + email));
+        .orElseThrow(() -> new NoSuchAuthorException(email));
 
     boolean isAdmin = user.getUserRoles().stream()
         .anyMatch(role -> role.getRole().getIsAdmin());
 
+    // 작성자 본인이나 관리자가 아닌 경우 예외 발생
     if (!isAdmin && !playlist.getUser().getId().equals(user.getId())) {
       throw new UnauthorizedPlaylistException(email, playlistId);
     }
@@ -109,19 +123,21 @@ public class PlaylistCommandService {
     Playlist playlist = playlistQueryRepository.findByUuid(playlistId)
         .orElseThrow(() -> new NoSuchPlaylistException(playlistId));
 
-    // Todo : 예외 클래스 변경 필요
     User user = userRepository.findByEmail(email)
-        .orElseThrow(() -> new IllegalArgumentException("User not found with email: " + email));
+        .orElseThrow(() -> new NoSuchAuthorException(email));
 
     boolean isAdmin = user.getUserRoles().stream()
         .anyMatch(role -> role.getRole().getIsAdmin());
 
+    // 작성자 본인이나 관리자가 아닌 경우 예외 발생
     if (!isAdmin && !playlist.getUser().getId().equals(user.getId())) {
       throw new UnauthorizedPlaylistException(email, playlistId);
     }
 
+    // 연관관계 삭제
     playlistContentCommandRepository.deleteByPlaylist_Id(playlist.getId());
     playlistsStatCommandRepository.deleteByPlaylist_Id(playlist.getId());
+
     playlistCommandRepository.deleteById(playlist.getId());
 
   }

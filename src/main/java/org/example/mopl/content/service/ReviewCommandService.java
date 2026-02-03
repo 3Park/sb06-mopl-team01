@@ -9,6 +9,7 @@ import org.example.mopl.content.dto.response.ReviewDto;
 import org.example.mopl.content.entity.Content;
 import org.example.mopl.content.entity.Review;
 import org.example.mopl.content.event.RatingEvent;
+import org.example.mopl.content.exception.NoSuchAuthorException;
 import org.example.mopl.content.exception.NoSuchContentException;
 import org.example.mopl.content.exception.NoSuchReviewException;
 import org.example.mopl.content.exception.UnauthorizedReviewException;
@@ -16,7 +17,6 @@ import org.example.mopl.content.repository.ContentQueryRepository;
 import org.example.mopl.content.repository.ReviewCommandRepository;
 import org.example.mopl.content.repository.ReviewQueryRepository;
 import org.example.mopl.user.entity.User;
-import org.example.mopl.user.entity.UserRoleType;
 import org.example.mopl.user.repository.UserRepository;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
@@ -35,9 +35,8 @@ public class ReviewCommandService {
   @Transactional
   public ReviewDto createReview(String email, ReviewCreateRequest request) {
 
-    // Todo : 예외 클래스 변경 필요
     User user = userRepository.findByEmail(email)
-        .orElseThrow(() -> new RuntimeException("No such user with email: " + email));
+        .orElseThrow(() -> new NoSuchAuthorException(email));
 
     Content content = contentQueryRepository.findByUuid(request.contentId())
         .orElseThrow(() -> new NoSuchContentException(request.contentId().toString()));
@@ -51,6 +50,7 @@ public class ReviewCommandService {
         )
     );
 
+    // 평점 증가 이벤트 발행
     eventPublisher.publishEvent(
         RatingEvent.IncreaseRatingEvent.of(content.getId(), review.getUuid(), request.rating())
     );
@@ -75,13 +75,13 @@ public class ReviewCommandService {
     Review review = reviewQueryRepository.findByUuid(reviewId)
         .orElseThrow(() -> new NoSuchReviewException(reviewId.toString()));
 
-    // Todo : 예외 클래스 변경 필요
     User user = userRepository.findByEmail(email)
-        .orElseThrow(() -> new RuntimeException("No such user with email: " + email));
+        .orElseThrow(() -> new NoSuchAuthorException(email));
 
     boolean isAdmin = user.getUserRoles().stream()
         .anyMatch(role -> role.getRole().getIsAdmin());
 
+    // 작성자 본인이나 관리자가 아닌 경우 예외 발생
     if (!isAdmin && !review.getUser().getUuid().equals(user.getUuid())) {
       throw new UnauthorizedReviewException(email);
     }
@@ -116,17 +116,18 @@ public class ReviewCommandService {
     Review review = reviewQueryRepository.findByUuid(reviewId)
         .orElseThrow(() -> new NoSuchReviewException(reviewId.toString()));
 
-    // Todo : 예외 클래스 변경 필요
     User user = userRepository.findByEmail(email)
-        .orElseThrow(() -> new RuntimeException("No such user with email: " + email));
+        .orElseThrow(() -> new NoSuchAuthorException(email));
 
     boolean isAdmin = user.getUserRoles().stream()
         .anyMatch(role -> role.getRole().getIsAdmin());
 
+    // 작성자 본인이나 관리자가 아닌 경우 예외 발생
     if (!isAdmin && !review.getUser().getUuid().equals(user.getUuid())) {
       throw new UnauthorizedReviewException(email);
     }
 
+    // 평점 감소 이벤트 발행
     eventPublisher.publishEvent(
         RatingEvent.DecreaseRatingEvent.of(review.getContent().getId(), review.getUuid(), review.getRating())
     );

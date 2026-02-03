@@ -2,6 +2,7 @@ package org.example.mopl.auth.service;
 
 import lombok.RequiredArgsConstructor;
 import org.example.mopl.auth.jwt.JwtTokenProvider;
+import org.example.mopl.auth.port.adapter.AuthAdapter;
 import org.example.mopl.auth.repository.RefreshTokenRepository;
 import org.example.mopl.auth.CustomUserDetails;
 import org.example.mopl.auth.dto.JwtDto;
