@@ -41,11 +41,25 @@ public class ContentQueryRepository {
         .fetchFirst() != null;
   }
 
-  @Transactional(readOnly = true)
+  public boolean existsByExternalId(String externalId) {
+    return queryFactory.selectFrom(QContent.content)
+        .where(QContent.content.externalId.eq(externalId))
+        .fetchFirst() != null;
+  }
+
+
   public Optional<Content> findByUuid(UUID uuid) {
     return Optional.ofNullable(
         queryFactory.selectFrom(QContent.content)
             .where(QContent.content.uuid.eq(uuid))
+            .fetchOne()
+    );
+  }
+
+  public Optional<Content> findByExternalId(String externalId) {
+    return Optional.ofNullable(
+        queryFactory.selectFrom(QContent.content)
+            .where(QContent.content.externalId.eq(externalId))
             .fetchOne()
     );
   }
