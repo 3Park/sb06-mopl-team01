@@ -22,7 +22,7 @@ public class DirectMessageSocketController {
 
     @MessageMapping("/conversations/{conversationId}/direct-messages")
     public void sendDirectMessages(
-            @DestinationVariable UUID conversationUuid,
+            @DestinationVariable("conversationId") UUID conversationUuid,
             @Payload @Valid DirectMessageCreateRequest request,
             Principal principal) {
         log.info("directmessage 전송, conversationId={}", conversationUuid);
