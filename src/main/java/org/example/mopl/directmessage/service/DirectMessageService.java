@@ -30,27 +30,50 @@ public class DirectMessageService {
     @Transactional
     public void saveAndSendMessage(UUID conversationUuid, UUID senderUuid, String content) {
 
-        Conversation conversation = conversationRepository.findByUuid(conversationUuid)
-                .orElseThrow(() -> new ConversationNotFoundException(conversationUuid));
+        Conversation conversation = getConversationOrThrow(conversationUuid);
+        User sender = getSenderOrThrow(senderUuid);
 
-        User sender = userRepository.findUserAndProfileOnlyByUuid(senderUuid)
-                .orElseThrow(() -> new ParticipantNotFoundException(senderUuid));
-        Long receiverId = conversation.findCounterpartId(sender.getId());
-        User receiver = userRepository.findUserAndProfileOnlyById(receiverId)
-                .orElseThrow(() -> new ParticipantNotFoundException());
+        User receiver = getCounterpartOrThrow(conversation, sender.getId());
 
-        DirectMessage directMessage = DirectMessage.of(conversation, sender.getId(), receiver.getId(), content);
-        directMessageRepository.save(directMessage);
+        DirectMessage directMessage = saveMessage(conversation, sender, receiver, content);
         log.debug("메시지 저장 완료, messageId={}", directMessage.getUuid());
 
-        DirectMessageDto dto = DirectMessageDto.from(directMessage, sender, receiver);
-        messagingTemplate.convertAndSend(resolveDestination(conversationUuid), dto);
-
+        sendToSocket(conversationUuid, directMessage, sender, receiver);
         log.info("메시지 전송 완료, messageId={}", directMessage.getUuid());
     }
 
 
+
+
     private String resolveDestination(UUID conversationUuid) {
         return "/sub/conversations/" + conversationUuid + "/direct-messages";
+    }
+
+
+    private Conversation getConversationOrThrow(UUID conversationUuid) {
+        return conversationRepository.findByUuid(conversationUuid)
+                .orElseThrow(() -> new ConversationNotFoundException(conversationUuid));
+    }
+
+    private User getSenderOrThrow(UUID senderUuid) {
+        return userRepository.findUserAndProfileOnlyByUuid(senderUuid)
+                .orElseThrow(() -> new ParticipantNotFoundException(senderUuid));
+    }
+
+    private User getCounterpartOrThrow(Conversation conversation, Long senderId) {
+        if(!conversation.isValidParticipant(senderId)) throw new ParticipantNotFoundException();
+        Long receiverId = conversation.getCounterpartId(senderId);
+        return userRepository.findUserAndProfileOnlyById(receiverId)
+                .orElseThrow(ParticipantNotFoundException::new);
+    }
+
+    private DirectMessage saveMessage(Conversation conversation, User sender, User receiver, String content) {
+        DirectMessage directMessage = DirectMessage.of(conversation, sender.getId(), receiver.getId(), content);
+        return directMessageRepository.save(directMessage);
+    }
+
+    private void sendToSocket(UUID conversationUuid, DirectMessage directMessage, User sender, User receiver) {
+        DirectMessageDto dto = DirectMessageDto.from(directMessage, sender, receiver);
+        messagingTemplate.convertAndSend(resolveDestination(conversationUuid), dto);
     }
 }
