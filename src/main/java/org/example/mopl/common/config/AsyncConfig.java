@@ -33,7 +33,7 @@ public class AsyncConfig {
         return executor;
     }
 
-    @Bean(name = "batchTaskExecutor")
+    //@Bean(name = "batchTaskExecutor")
     public TaskExecutor batchExecutor() {
         ThreadPoolTaskExecutor executor =new ThreadPoolTaskExecutor();
         executor.setCorePoolSize(3);
