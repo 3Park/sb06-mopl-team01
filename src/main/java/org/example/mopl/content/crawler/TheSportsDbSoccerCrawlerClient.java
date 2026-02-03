@@ -67,6 +67,10 @@ public class TheSportsDbSoccerCrawlerClient implements SportCrawlerClient {
         })
         .body(JsonNode.class);
 
+    if (result.get("events") == null || result.get("events").isNull()) {
+      return List.of();
+    }
+
     ArrayNode events = (ArrayNode) result.get("events");
 
     return events.valueStream()
