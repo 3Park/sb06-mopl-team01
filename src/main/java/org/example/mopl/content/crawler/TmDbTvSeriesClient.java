@@ -104,7 +104,7 @@ public class TmDbTvSeriesClient implements MediaCrawlerClient {
 
     return Optional.ofNullable(ContentFetchResultDto.of(
         result.get("id").asText(),
-        result.get("title").asText(),
+        result.get("name").asText(),
         result.get("overview").asText(),
         result.get("poster_path").asText(),
         result.get("genres").findValuesAsText("name")

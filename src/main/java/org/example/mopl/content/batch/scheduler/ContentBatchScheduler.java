@@ -25,7 +25,8 @@ public class ContentBatchScheduler {
   private final TmDbBatchConfig tmDbBatchConfig;
 
   @Async("batchTaskExecutor")
-  @Scheduled(cron = "0 0 2 * * ?") // 매일 새벽 2시 실행
+  //@Scheduled(cron = "0 0 2 * * ?") // 매일 새벽 2시 실행
+  @Scheduled(fixedRate = 86400000) // 24시간마다 실행
   public void runContentBatchJob() {
     try {
       log.info("Starting TMDb Content Batch Job");
