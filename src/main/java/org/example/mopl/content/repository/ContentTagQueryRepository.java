@@ -16,6 +16,18 @@ public class ContentTagQueryRepository {
 
   private final JPAQueryFactory queryFactory;
 
+  public boolean existsByContentIdAndTagId(Long contentId, Long tagId) {
+    Integer count = queryFactory.selectOne()
+        .from(QContentTag.contentTag)
+        .where(
+            QContentTag.contentTag.content.id.eq(contentId),
+            QContentTag.contentTag.tag.id.eq(tagId)
+        )
+        .fetchFirst();
+
+    return count != null;
+  }
+
   public Map<Long, List<String>> findTagsByContentIds(List<Long> contentIds) {
     List<Tuple> tagTuples = queryFactory.select(
             QContentTag.contentTag.content.id,

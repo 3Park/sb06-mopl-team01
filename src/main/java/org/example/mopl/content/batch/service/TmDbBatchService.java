@@ -13,6 +13,7 @@ import org.example.mopl.content.exception.NoSuchTagException;
 import org.example.mopl.content.repository.ContentCommandRepository;
 import org.example.mopl.content.repository.ContentQueryRepository;
 import org.example.mopl.content.repository.ContentTagCommandRepository;
+import org.example.mopl.content.repository.ContentTagQueryRepository;
 import org.example.mopl.content.repository.ContentsStatCommandRepository;
 import org.example.mopl.content.repository.TagCommandReposiotry;
 import org.example.mopl.content.repository.TagQueryRepository;
@@ -31,6 +32,7 @@ public class TmDbBatchService {
   private final ContentsStatCommandRepository contentsStatCommandRepository;
   private final TagCommandReposiotry tagCommandReposiotry;
   private final TagQueryRepository tagQueryRepository;
+  private final ContentTagQueryRepository contentTagQueryRepository;
 
   public void importMovieGenres() {
 
@@ -189,6 +191,11 @@ public class TmDbBatchService {
                 return ContentTag.of(existingContent, tag);
               });
         })
+        .toList();
+
+    List<ContentTag> newContentTags = contentTagList.stream()
+        .filter(tag -> !contentTagQueryRepository.existsByContentIdAndTagId(
+            tag.getContent().getId(), tag.getTag().getId()))
         .toList();
 
     contentTagCommandRepository.saveAll(contentTagList);
