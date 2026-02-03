@@ -193,12 +193,11 @@ public class TmDbBatchService {
         })
         .toList();
 
-    List<ContentTag> newContentTags = contentTagList.stream()
+    contentTagCommandRepository.saveAll(contentTagList.stream()
         .filter(tag -> !contentTagQueryRepository.existsByContentIdAndTagId(
             tag.getContent().getId(), tag.getTag().getId()))
-        .toList();
+        .toList());
 
-    contentTagCommandRepository.saveAll(contentTagList);
   }
 
 }
