@@ -14,4 +14,6 @@ public interface QueryDslUserRepository {
     List<User> findAllUsers(UserCursorRequest request);
     //N+1을 해결하기 위한 페이지네이션 후속 쿼리
     List<User> findUsersByIds(List<UUID> ids);
+    Optional<User> findUserAndProfileOnlyById(Long id);
+    Optional<User> findUserAndProfileOnlyByUuid(UUID uuid);
 }

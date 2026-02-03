@@ -65,6 +65,20 @@ public class QueryDslUserRepositoryImpl implements QueryDslUserRepository {
                 .fetch();
     }
 
+    @Override
+    public Optional<User> findUserAndProfileOnlyById(Long id) {
+        return Optional.ofNullable(findUserOnlyProfileExpression()
+                .where(user.id.eq(id))
+                .fetchFirst());
+    }
+
+    @Override
+    public Optional<User> findUserAndProfileOnlyByUuid(UUID uuid) {
+        return Optional.ofNullable(findUserOnlyProfileExpression()
+                .where(user.uuid.eq(uuid))
+                .fetchFirst());
+    }
+
     private BooleanExpression cursorExpression(UserCursorRequest request) {
         if (request.cursor() == null || request.idAfter() == null) {
             return null; // 최초 페이지 → 커서 조건 없음
@@ -202,5 +216,14 @@ public class QueryDslUserRepositoryImpl implements QueryDslUserRepository {
         }
 
         return  query;
+    }
+
+    private JPAQuery<User> findUserOnlyProfileExpression()
+    {
+        return  jpaQueryFactory
+                    .select(user)
+                    .from(user)
+                    .join(user.profile,profile).fetchJoin()
+                    .distinct();
     }
 }
