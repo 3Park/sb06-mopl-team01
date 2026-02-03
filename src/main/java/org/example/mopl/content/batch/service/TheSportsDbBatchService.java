@@ -2,6 +2,8 @@ package org.example.mopl.content.batch.service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.example.mopl.content.crawler.SportCrawlerClient;
 import org.example.mopl.content.dto.ContentFetchResultDto;
@@ -67,14 +69,26 @@ public class TheSportsDbBatchService {
     List<ContentsStat> contentsStatList = new ArrayList<>();
     List<ContentTag> contentTagList = new ArrayList<>();
 
-    sportEvents.stream().flatMap(
-        sportEvent -> sportEvent.tags().stream()
-    ).forEach(tagName -> {
-      if (!tagQueryRepository.existsByName(tagName)) {
-        Tag tag = Tag.of(tagName);
-        tagList.add(tag);
-      }
-    });
+    // 1. 모든 태그 이름 수집
+    Set<String> allTagNames = sportEvents.stream()
+        .flatMap(sportEvent -> sportEvent.tags().stream())
+        .collect(Collectors.toSet());
+
+    // 2. 기존 태그들을 한 번에 조회
+    List<Tag> existingTags = tagQueryRepository.findByNameIn(allTagNames);
+    Set<String> existingTagNames = existingTags.stream()
+        .map(Tag::getName)
+        .collect(Collectors.toSet());
+
+    // 3. 새로운 태그들만 필터링하여 생성
+    List<Tag> newTags = allTagNames.stream()
+        .filter(tagName -> !existingTagNames.contains(tagName))
+        .map(Tag::of)
+        .collect(Collectors.toList());
+
+    if (!newTags.isEmpty()) {
+      tagCommandReposiotry.saveAll(newTags);
+    }
 
     tagCommandReposiotry.saveAll(tagList);
 

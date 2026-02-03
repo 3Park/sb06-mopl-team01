@@ -3,6 +3,7 @@ package org.example.mopl.content.repository;
 import static com.querydsl.core.group.GroupBy.groupBy;
 
 import com.querydsl.jpa.impl.JPAQueryFactory;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -29,7 +30,7 @@ public class TagQueryRepository {
         .fetchOne());
   }
 
-  public List<Tag> findByNameIn(List<String> names) {
+  public List<Tag> findByNameIn(Collection<String> names) {
     return queryFactory.selectFrom(QTag.tag)
         .where(QTag.tag.name.in(names))
         .fetch();

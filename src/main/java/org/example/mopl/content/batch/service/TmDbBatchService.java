@@ -2,6 +2,8 @@ package org.example.mopl.content.batch.service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.example.mopl.content.crawler.MediaCrawlerClient;
 import org.example.mopl.content.dto.ContentFetchResultDto;
@@ -101,12 +103,23 @@ public class TmDbBatchService {
   @Transactional
   public void writeImportedGenres(List<String> genres) {
 
-    List<Tag> tagList = genres.stream()
-        .filter(genre -> !tagQueryRepository.existsByName(genre))
-        .map(Tag::of)
-        .toList();
+    List<Tag> tagList = new ArrayList<>();
 
-    tagCommandReposiotry.saveAll(tagList);
+    // 1. 기존 태그들을 한 번에 조회
+    List<Tag> existingTags = tagQueryRepository.findByNameIn(genres);
+    Set<String> existingTagNames = existingTags.stream()
+        .map(Tag::getName)
+        .collect(Collectors.toSet());
+
+    // 3\2. 새로운 태그들만 필터링하여 생성
+    List<Tag> newTags = genres.stream()
+        .filter(tagName -> !existingTagNames.contains(tagName))
+        .map(Tag::of)
+        .collect(Collectors.toList());
+
+    if (!newTags.isEmpty()) {
+      tagCommandReposiotry.saveAll(newTags);
+    }
 
   }
 
