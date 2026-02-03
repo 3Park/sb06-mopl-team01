@@ -63,8 +63,20 @@ public class TheSportsDbBatchService {
         leagueId);
 
     List<Content> contentList = new ArrayList<>();
+    List<Tag> tagList = new ArrayList<>();
     List<ContentsStat> contentsStatList = new ArrayList<>();
     List<ContentTag> contentTagList = new ArrayList<>();
+
+    sportEvents.stream().flatMap(
+        sportEvent -> sportEvent.tags().stream()
+    ).forEach(tagName -> {
+      if (!tagQueryRepository.existsByName(tagName)) {
+        Tag tag = Tag.of(tagName);
+        tagList.add(tag);
+      }
+    });
+
+    tagCommandReposiotry.saveAll(tagList);
 
     for (ContentFetchResultDto sportEvent : sportEvents) {
 
