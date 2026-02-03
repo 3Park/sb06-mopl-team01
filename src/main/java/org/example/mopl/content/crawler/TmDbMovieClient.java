@@ -12,7 +12,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
-@Component
+@Component("tmDbMovieClient")
 @Slf4j
 @RequiredArgsConstructor
 public class TmDbMovieClient implements MediaCrawlerClient {
