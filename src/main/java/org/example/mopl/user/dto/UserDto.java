@@ -4,6 +4,8 @@ import lombok.Builder;
 import lombok.Getter;
 
 import org.example.mopl.user.entity.User;
+import org.example.mopl.user.exception.UserErrorCode;
+import org.example.mopl.user.exception.UserException;
 
 import java.time.Instant;
 import java.util.UUID;
@@ -25,7 +27,7 @@ public class UserDto {
                 || user.getProfile() ==null
                 || user.getUserRoles() ==null
                 || user.getUserRoles().isEmpty())
-            throw new IllegalArgumentException("User and Profile are both null");
+            throw new UserException(UserErrorCode.INVALID_DATA);
 
         this.id = user.getUuid();
         this.createdAt = user.getCreatedAt();

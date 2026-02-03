@@ -1,7 +1,7 @@
 package org.example.mopl.user.repository;
 
 import org.example.mopl.user.entity.UserRole;
-import org.example.mopl.user.entity.UserRoleType;
+import org.example.mopl.user.enums.UserRoleType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
