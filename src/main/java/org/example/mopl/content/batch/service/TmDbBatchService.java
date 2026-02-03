@@ -8,6 +8,7 @@ import org.example.mopl.content.entity.Content;
 import org.example.mopl.content.entity.ContentTag;
 import org.example.mopl.content.entity.ContentType;
 import org.example.mopl.content.entity.Tag;
+import org.example.mopl.content.exception.NoSuchContentException;
 import org.example.mopl.content.exception.NoSuchTagException;
 import org.example.mopl.content.repository.ContentCommandRepository;
 import org.example.mopl.content.repository.ContentQueryRepository;
@@ -23,6 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class TmDbBatchService {
 
   private final MediaCrawlerClient tmDbMovieClient;
+  private final MediaCrawlerClient tmDbTvSeriesClient;
   private final ContentQueryRepository contentQueryRepository;
   private final ContentCommandRepository contentCommandRepository;
   private final ContentTagCommandRepository contentTagCommandRepository;
@@ -31,6 +33,19 @@ public class TmDbBatchService {
   private final TagQueryRepository tagQueryRepository;
 
   public void importMovieGenres() {
+
+    List<String> genres = tmDbMovieClient.fetchGenres();
+
+    List<Tag> tagList = genres.stream()
+        .filter(genre -> !tagQueryRepository.existsByName(genre))
+        .map(Tag::of)
+        .toList();
+
+    tagCommandReposiotry.saveAll(tagList);
+
+  }
+
+  public void importTvSeriesGenres() {
 
     List<String> genres = tmDbMovieClient.fetchGenres();
 
@@ -54,6 +69,23 @@ public class TmDbBatchService {
             return result.get();
           } else {
             throw new RuntimeException("Failed to fetch movie details from TMDb");
+          }
+        })
+        .toList();
+
+  }
+
+  public List<ContentFetchResultDto> importTvSeriesByPage(int page) {
+
+    List<String> tvSeriesIdList = tmDbTvSeriesClient.fetchContentIdByPage(page);
+
+    return tvSeriesIdList.stream()
+        .map(tmDbTvSeriesClient::fetchContentDetailsByExternalId)
+        .map(result -> {
+          if (result.isPresent()) {
+            return result.get();
+          } else {
+            throw new RuntimeException("Failed to fetch TV series details from TMDb");
           }
         })
         .toList();
@@ -92,12 +124,30 @@ public class TmDbBatchService {
   }
 
   @Transactional
-  public void writeImportedMovieTags(List<ContentFetchResultDto> fetchResultDtoList) {
+  public void writeImportedTvSeries(List<ContentFetchResultDto> fetchResultDtoList) {
 
+   List<Content> contentList = fetchResultDtoList.stream()
+       .map(content -> {
+         return Content.of(
+             ContentType.TVSERIES.getValue(),
+             content.title(),
+             content.description(),
+             content.thumbnailUrl(),
+             content.externalId()
+         );
+       })
+        .toList();
+
+   contentCommandRepository.saveAll(contentList);
+
+  }
+
+  @Transactional
+  public void writeImportedContentTags(List<ContentFetchResultDto> fetchResultDtoList) {
     List<ContentTag> contentTagList = fetchResultDtoList.stream()
         .flatMap(content -> {
           Content existingContent = contentQueryRepository.findByExternalId(content.externalId())
-              .orElseThrow(() -> new RuntimeException("Content not found for externalId: " + content.externalId()));
+              .orElseThrow(() -> new NoSuchContentException(content.externalId()));
 
           return content.tags().stream()
               .map(genre -> {
@@ -110,7 +160,6 @@ public class TmDbBatchService {
         .toList();
 
     contentTagCommandRepository.saveAll(contentTagList);
-
   }
 
 }
