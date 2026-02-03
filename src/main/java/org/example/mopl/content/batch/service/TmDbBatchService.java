@@ -47,7 +47,7 @@ public class TmDbBatchService {
 
   public void importTvSeriesGenres() {
 
-    List<String> genres = tmDbMovieClient.fetchGenres();
+    List<String> genres = tmDbTvSeriesClient.fetchGenres();
 
     List<Tag> tagList = genres.stream()
         .filter(genre -> !tagQueryRepository.existsByName(genre))
