@@ -10,6 +10,7 @@ import java.util.UUID;
 
 public interface ConversationRepository extends JpaRepository<Conversation, Long> {
 
+    // TODO: Querydsl로 변경?
     @Query("SELECT COUNT(c) > 0 " +
             "FROM User u " +
             "JOIN Conversation c ON (c.creatorId = u.id OR c.joinId = u.id) " +

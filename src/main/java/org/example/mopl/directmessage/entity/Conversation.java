@@ -38,13 +38,16 @@ public class Conversation {
 
 
     @Builder
-    public Conversation(Long creatorId, Long joinId) {
+    private Conversation(Long creatorId, Long joinId) {
         this.uuid = UUID.randomUUID();
 
         this.creatorId = creatorId;
         this.joinId = joinId;
     }
 
+    public static Conversation of(Long creatorId, Long joinId) {
+        return Conversation.builder().creatorId(creatorId).joinId(joinId).build();
+    }
     public boolean isValidParticipant(Long userId) {
         return creatorId.equals(userId) || joinId.equals(userId);
     }

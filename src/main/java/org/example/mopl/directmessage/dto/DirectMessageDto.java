@@ -10,31 +10,16 @@ public record DirectMessageDto(
         UUID id,
         UUID conversationId,
         LocalDateTime createdAt,
-        UserDto sender,
-        UserDto receiver,
+        SimpleUserDto sender,
+        SimpleUserDto receiver,
         String content
 ) {
-
-    private record UserDto(
-            UUID userId,
-            String name,
-            String profileImageUrl
-    ){
-        private static UserDto from(User user) {
-            return new UserDto(
-                    user.getUuid(),
-                    user.getProfile().getName(),
-                    user.getProfile().getProfileImageUrl()
-            );
-        }
-    }
-
     public static DirectMessageDto from(DirectMessage directMessage, User sender, User receiver) {
         return new DirectMessageDto(directMessage.getUuid(),
                 directMessage.getConversation().getUuid(),
                 directMessage.getCreatedAt(),
-                UserDto.from(sender),
-                UserDto.from(receiver),
+                SimpleUserDto.from(sender),
+                SimpleUserDto.from(receiver),
                 directMessage.getContent()
         );
     }
