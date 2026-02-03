@@ -2,6 +2,7 @@ package org.example.mopl.content.batch.scheduler;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.example.mopl.content.batch.config.TheSportsDbBatchConfig;
 import org.example.mopl.content.batch.config.TmDbBatchConfig;
 import org.springframework.batch.core.JobParameters;
 import org.springframework.batch.core.JobParametersBuilder;
@@ -23,11 +24,12 @@ public class ContentBatchScheduler {
 
   private final JobLauncher jobLauncher;
   private final TmDbBatchConfig tmDbBatchConfig;
+  private final TheSportsDbBatchConfig theSportsDbBatchConfig;
 
   @Async("batchTaskExecutor")
   //@Scheduled(cron = "0 0 2 * * ?") // 매일 새벽 2시 실행
   @Scheduled(fixedRate = 86400000) // 24시간마다 실행
-  public void runContentBatchJob() {
+  public void runTmDbBatchJob() {
     try {
       log.info("Starting TMDb Content Batch Job");
 
@@ -42,6 +44,28 @@ public class ContentBatchScheduler {
     } catch (Exception e) {
       log.error("Error occurred while running TMDb Content Batch Job", e);
     }
+  }
+
+  @Async("batchTaskExecutor")
+  //@Scheduled(cron = "0 0 2 * * ?") // 매일 새벽 2시 실행
+  @Scheduled(fixedRate = 86400000) // 24시간마다 실행
+  public void runTheSportsDb() {
+
+    try {
+      log.info("Starting theSportsDb Content Batch Job");
+
+      JobParameters jobParameters = new JobParametersBuilder()
+          .addLong("time", System.currentTimeMillis())
+          .addString("jobName", this.getClass().getSimpleName())
+          .toJobParameters();
+
+      jobLauncher.run(theSportsDbBatchConfig.theSportsDbBatchJob(), jobParameters);
+
+      log.info("Finished theSportsDb Content Batch Job");
+    } catch (Exception e) {
+      log.error("Error occurred while running TheSportsDb Content Batch Job", e);
+    }
+
   }
 
 }

@@ -1,5 +1,6 @@
 package org.example.mopl.content.batch.service;
 
+import java.util.ArrayList;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.example.mopl.content.crawler.MediaCrawlerClient;
@@ -7,6 +8,7 @@ import org.example.mopl.content.dto.ContentFetchResultDto;
 import org.example.mopl.content.entity.Content;
 import org.example.mopl.content.entity.ContentTag;
 import org.example.mopl.content.entity.ContentType;
+import org.example.mopl.content.entity.ContentsStat;
 import org.example.mopl.content.entity.Tag;
 import org.example.mopl.content.exception.NoSuchContentException;
 import org.example.mopl.content.exception.NoSuchTagException;
@@ -17,6 +19,7 @@ import org.example.mopl.content.repository.ContentTagQueryRepository;
 import org.example.mopl.content.repository.ContentsStatCommandRepository;
 import org.example.mopl.content.repository.TagCommandReposiotry;
 import org.example.mopl.content.repository.TagQueryRepository;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -33,6 +36,7 @@ public class TmDbBatchService {
   private final TagCommandReposiotry tagCommandReposiotry;
   private final TagQueryRepository tagQueryRepository;
   private final ContentTagQueryRepository contentTagQueryRepository;
+  private final ApplicationEventPublisher applicationEventPublisher;
 
   public void importMovieGenres() {
 
@@ -109,42 +113,52 @@ public class TmDbBatchService {
   @Transactional
   public void writeImportedMovies(List<ContentFetchResultDto> fetchResultDtoList) {
 
-   List<Content> contentList = fetchResultDtoList.stream()
-       .map(content -> {
+     List<ContentsStat> contentsStatList = new ArrayList<>();
 
-         if (contentQueryRepository.existsByExternalId(content.externalId())) {
+     List<Content> contentList = fetchResultDtoList.stream()
+         .map(content -> {
 
-           Content existingContent = contentQueryRepository.findByExternalId(content.externalId())
-               .orElseThrow(() -> new NoSuchContentException(content.externalId()));
+           if (contentQueryRepository.existsByExternalId(content.externalId())) {
 
-            existingContent.update(
-                content.title(),
-                content.description()
-            );
+             Content existingContent = contentQueryRepository.findByExternalId(content.externalId())
+                 .orElseThrow(() -> new NoSuchContentException(content.externalId()));
 
-            return existingContent;
+              existingContent.update(
+                  content.title(),
+                  content.description()
+              );
 
-         } else {
-           return Content.of(
-               ContentType.MOVIE.getValue(),
-               content.title(),
-               content.description(),
-               content.thumbnailUrl(),
-               content.externalId()
-           );
-         }
+              return existingContent;
 
-       })
-        .toList();
+           } else {
+             return Content.of(
+                 ContentType.MOVIE.getValue(),
+                 content.title(),
+                 content.description(),
+                 content.thumbnailUrl(),
+                 content.externalId()
+             );
+           }
 
-   contentCommandRepository.saveAll(contentList);
+         })
+          .toList();
+
+     contentList.forEach(content -> {
+       ContentsStat contentsStat = ContentsStat.of(content);
+       contentsStatList.add(contentsStat);
+     });
+
+     contentCommandRepository.saveAll(contentList);
+     contentsStatCommandRepository.saveAll(contentsStatList);
 
   }
 
   @Transactional
   public void writeImportedTvSeries(List<ContentFetchResultDto> fetchResultDtoList) {
 
-   List<Content> contentList = fetchResultDtoList.stream()
+    List<ContentsStat> contentsStatList = new ArrayList<>();
+
+    List<Content> contentList = fetchResultDtoList.stream()
        .map(content -> {
 
          if (contentQueryRepository.existsByExternalId(content.externalId())) {
@@ -172,7 +186,13 @@ public class TmDbBatchService {
        })
         .toList();
 
+    contentList.forEach(content -> {
+      ContentsStat contentsStat = ContentsStat.of(content);
+      contentsStatList.add(contentsStat);
+    });
+
    contentCommandRepository.saveAll(contentList);
+    contentsStatCommandRepository.saveAll(contentsStatList);
 
   }
 
