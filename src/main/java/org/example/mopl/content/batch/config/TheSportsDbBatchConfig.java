@@ -40,6 +40,7 @@ public class TheSportsDbBatchConfig {
           List<String> leagues = theSportsDbBatchService.importSportLeagues();
 
           for (String league : leagues) {
+            System.out.println("Importing league " + league);
             theSportsDbBatchService.writeSportEvents(league);
           }
           return RepeatStatus.FINISHED;

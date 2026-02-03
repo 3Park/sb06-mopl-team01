@@ -11,6 +11,7 @@ import org.example.mopl.content.entity.ContentType;
 import org.example.mopl.content.entity.ContentsStat;
 import org.example.mopl.content.entity.Tag;
 import org.example.mopl.content.exception.NoSuchContentException;
+import org.example.mopl.content.exception.NoSuchTagException;
 import org.example.mopl.content.repository.ContentCommandRepository;
 import org.example.mopl.content.repository.ContentQueryRepository;
 import org.example.mopl.content.repository.ContentTagCommandRepository;
@@ -76,7 +77,8 @@ public class TheSportsDbBatchService {
               ContentType.SPORT.getValue(),
               sportEvent.title(),
               sportEvent.description(),
-              sportEvent.thumbnailUrl()
+              sportEvent.thumbnailUrl(),
+              sportEvent.externalId()
           ));
 
     }
@@ -93,7 +95,7 @@ public class TheSportsDbBatchService {
       sportEvent.tags().forEach(tagName -> {
 
         Tag tag = tagQueryRepository.findByName(tagName)
-            .orElseThrow(() -> new NoSuchContentException(tagName));
+            .orElseThrow(() -> new NoSuchTagException(tagName));
 
         contentTagList.add(
             ContentTag.of(content, tag)

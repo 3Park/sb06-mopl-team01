@@ -42,9 +42,10 @@ public class TheSportsDbSoccerCrawlerClient implements SportCrawlerClient {
 
     ArrayNode leagues = (ArrayNode) result.get("leagues");
 
-    return leagues.findValuesAsText("strSport").stream()
-        .filter(sport -> sport.equals("Soccer"))
-        .toList();
+    return leagues.valueStream().filter(
+        league -> "Soccer".equals(league.get("strSport").asText())
+    )
+        .map(league -> league.get("idLeague").asText()).toList();
 
   }
 
