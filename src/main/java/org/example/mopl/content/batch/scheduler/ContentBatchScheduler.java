@@ -29,7 +29,7 @@ public class ContentBatchScheduler {
   @Async("batchTaskExecutor")
   //@Scheduled(cron = "0 0 2 * * ?") // 매일 새벽 2시 실행
   @Scheduled(fixedRate = 86400000) // 24시간마다 실행
-  public void runTmDbBatchJob() {
+  public void runContentBatchJob() {
     try {
       log.info("Starting TMDb Content Batch Job");
 
@@ -41,31 +41,13 @@ public class ContentBatchScheduler {
       jobLauncher.run(tmDbBatchConfig.tmDbBatchJob(), jobParameters);
 
       log.info("Finished TMDb Content Batch Job");
-    } catch (Exception e) {
-      log.error("Error occurred while running TMDb Content Batch Job", e);
-    }
-  }
-
-  @Async("batchTaskExecutor")
-  //@Scheduled(cron = "0 0 2 * * ?") // 매일 새벽 2시 실행
-  @Scheduled(fixedRate = 86400000) // 24시간마다 실행
-  public void runTheSportsDb() {
-
-    try {
-      log.info("Starting theSportsDb Content Batch Job");
-
-      JobParameters jobParameters = new JobParametersBuilder()
-          .addLong("time", System.currentTimeMillis())
-          .addString("jobName", this.getClass().getSimpleName())
-          .toJobParameters();
 
       jobLauncher.run(theSportsDbBatchConfig.theSportsDbBatchJob(), jobParameters);
 
-      log.info("Finished theSportsDb Content Batch Job");
+      log.info("Finished TheSportsDb Content Batch Job");
     } catch (Exception e) {
-      log.error("Error occurred while running TheSportsDb Content Batch Job", e);
+      log.error("Error occurred while running Content Batch Job", e);
     }
-
   }
 
 }
