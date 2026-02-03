@@ -1,10 +1,12 @@
 package org.example.mopl.user.dto;
 
 import lombok.Builder;
+import lombok.Getter;
 
 import java.util.List;
 import java.util.UUID;
 
+@Getter
 public class CursorResponseUserDto {
     List<UserDto> data;
     String nextCursor;

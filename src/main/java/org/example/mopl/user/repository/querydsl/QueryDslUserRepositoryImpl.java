@@ -183,7 +183,7 @@ public class QueryDslUserRepositoryImpl implements QueryDslUserRepository {
     private JPAQuery<User> findUserExpression(boolean isSlice)
     {
         JPAQuery<User> query = jpaQueryFactory
-                                .selectDistinct(user)
+                                .select(user)
                                 .from(user);
 
         //list 인 경우, slice 할때에는 fetch join을 쓰면 안된다. (limit 등 쿼리 select 오동작)
@@ -198,6 +198,7 @@ public class QueryDslUserRepositoryImpl implements QueryDslUserRepository {
             query.join(user.userRoles, userRole).fetchJoin();
             query.join(user.profile,profile).fetchJoin();
             query.join(userRole.role,role).fetchJoin();
+            query.distinct();
         }
 
         return  query;
