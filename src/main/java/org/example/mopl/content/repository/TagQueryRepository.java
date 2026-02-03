@@ -29,6 +29,12 @@ public class TagQueryRepository {
         .fetchOne());
   }
 
+  public List<Tag> findByNameIn(List<String> names) {
+    return queryFactory.selectFrom(QTag.tag)
+        .where(QTag.tag.name.in(names))
+        .fetch();
+  }
+
   public Map<String, Tag> findAllByTagNames(List<String> tagName) {
 
     return queryFactory.from(QTag.tag)
