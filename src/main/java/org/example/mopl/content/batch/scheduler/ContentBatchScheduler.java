@@ -32,6 +32,7 @@ public class ContentBatchScheduler {
 
       JobParameters jobParameters = new JobParametersBuilder()
           .addLong("time", System.currentTimeMillis())
+          .addString("jobName", this.getClass().getSimpleName())
           .toJobParameters();
 
       jobLauncher.run(tmDbBatchConfig.tmDbBatchJob(), jobParameters);
