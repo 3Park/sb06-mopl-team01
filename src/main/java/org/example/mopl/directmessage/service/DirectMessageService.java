@@ -7,7 +7,6 @@ import org.example.mopl.directmessage.dto.DirectMessageDto;
 import org.example.mopl.directmessage.entity.Conversation;
 import org.example.mopl.directmessage.entity.DirectMessage;
 import org.example.mopl.directmessage.exception.ConversationNotFoundException;
-import org.example.mopl.directmessage.exception.DirectMessageForbiddenException;
 import org.example.mopl.directmessage.exception.ParticipantNotFoundException;
 import org.example.mopl.directmessage.repository.ConversationRepository;
 import org.example.mopl.directmessage.repository.DirectMessageRepository;
@@ -69,10 +68,8 @@ public class DirectMessageService {
         return conversationRepository.save(conversation);
     }
 
-    // TODO: creatorId && joinId 둘 다 가진 conversation 존재? -> 반납하는 메소드 생성
-    private Optional<Conversation> getExistingConversation(User creator, User joiner) {
-        // return conversationRepository.~;
-        return Optional.empty();
+    private Optional<Conversation> getExistingConversation(User user1, User user2) {
+        return conversationRepository.findExisting(user1.getId(), user2.getId());
     }
 
     private DirectMessage getLastMessageOrNull(Conversation conversation) {
