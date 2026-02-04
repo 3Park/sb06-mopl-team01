@@ -9,9 +9,12 @@ import org.example.mopl.directmessage.service.DirectMessageService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.UUID;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -30,6 +33,14 @@ public class DirectMessageController {
         return ResponseEntity.status(HttpStatus.CREATED).body(conversationDto);
     }
 
-
-
+    @PostMapping(path = "/{conversationId}/direct-messages/{directMessageId}/read")
+    public ResponseEntity<Void> read(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @PathVariable UUID conversationId,
+            @PathVariable UUID directMessageId
+            ) {
+        log.info("DM 읽음, conversationId={}, directMessageId={}", conversationId, directMessageId);
+        directMessageService.read(conversationId, directMessageId, userDetails.getUserDto().getId());
+        return ResponseEntity.status(HttpStatus.OK).build();
+    }
 }

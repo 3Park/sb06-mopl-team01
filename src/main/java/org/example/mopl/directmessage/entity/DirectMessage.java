@@ -79,4 +79,7 @@ public class DirectMessage {
     public boolean isUnreadBy(Long userId) {
         return !this.isRead && this.receiverId.equals(userId);
     }
+    public void read() {
+        this.isRead = true;
+    }
 }

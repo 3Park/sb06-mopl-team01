@@ -7,11 +7,14 @@ import org.example.mopl.directmessage.dto.DirectMessageDto;
 import org.example.mopl.directmessage.entity.Conversation;
 import org.example.mopl.directmessage.entity.DirectMessage;
 import org.example.mopl.directmessage.exception.ConversationNotFoundException;
+import org.example.mopl.directmessage.exception.DirectMessageNotFoundException;
 import org.example.mopl.directmessage.exception.ParticipantNotFoundException;
 import org.example.mopl.directmessage.repository.ConversationRepository;
 import org.example.mopl.directmessage.repository.DirectMessageRepository;
+import org.example.mopl.event.message.DmMessageReceivedKafkaEvent;
 import org.example.mopl.user.entity.User;
 import org.example.mopl.user.repository.UserRepository;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,6 +31,7 @@ public class DirectMessageService {
     private final ConversationRepository conversationRepository;
     private final UserRepository userRepository;
     private final SimpMessagingTemplate messagingTemplate;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
     public void saveAndSendMessage(UUID conversationUuid, UUID senderUuid, String content) {
@@ -41,6 +45,10 @@ public class DirectMessageService {
         log.debug("메시지 저장 완료, messageId={}", directMessage.getUuid());
 
         sendToSocket(conversationUuid, directMessage, sender, receiver);
+
+        eventPublisher.publishEvent(DmMessageReceivedKafkaEvent.of(
+                receiver.getUuid(), sender.getProfile().getName(), content));
+
         log.info("메시지 전송 완료, messageId={}", directMessage.getUuid());
 
     }
@@ -62,6 +70,17 @@ public class DirectMessageService {
         return conversationDto;
     }
 
+    @Transactional
+    public void read(UUID conversationId, UUID lastDirectMessageId, UUID requesterId) {
+
+        Conversation conversation = getConversationOrThrow(conversationId);
+        User requester = getUserOrThrow(requesterId);
+
+        readUnreadMessagesInAndSave(conversation, requester);
+
+        log.info("DM 읽음 처리 완료, directMessageId={}", lastDirectMessageId);
+    }
+
 
     private Conversation saveConversation(User creator, User joiner) {
         Conversation conversation = Conversation.of(creator.getId(), joiner.getId());
@@ -81,6 +100,15 @@ public class DirectMessageService {
     private Conversation getConversationOrThrow(UUID conversationUuid) {
         return conversationRepository.findByUuid(conversationUuid)
                 .orElseThrow(() -> new ConversationNotFoundException(conversationUuid));
+    }
+
+    private DirectMessage getDirectMessageOrThrow(UUID directMessageUuid) {
+        return directMessageRepository.findByUuid(directMessageUuid)
+                .orElseThrow(() -> new DirectMessageNotFoundException(directMessageUuid));
+    }
+
+    private void readUnreadMessagesInAndSave(Conversation conversation, User requester) {
+        directMessageRepository.readUnreadMessages(conversation.getId(), requester.getId());
     }
 
     private User getUserOrThrow(UUID senderUuid) {
