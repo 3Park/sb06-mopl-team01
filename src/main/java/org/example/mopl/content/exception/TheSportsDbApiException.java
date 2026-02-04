@@ -1,5 +1,8 @@
 package org.example.mopl.content.exception;
 
+import lombok.Getter;
+
+@Getter
 public class TheSportsDbApiException extends RuntimeException {
 
   private final int statusCode;
