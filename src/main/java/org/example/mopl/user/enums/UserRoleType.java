@@ -1,6 +1,8 @@
-package org.example.mopl.user.entity;
+package org.example.mopl.user.enums;
 
 public enum UserRoleType {
     USER,
     ADMIN
+
+
 }

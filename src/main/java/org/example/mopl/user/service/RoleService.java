@@ -2,7 +2,7 @@ package org.example.mopl.user.service;
 
 import lombok.RequiredArgsConstructor;
 import org.example.mopl.user.entity.Role;
-import org.example.mopl.user.entity.UserRoleType;
+import org.example.mopl.user.enums.UserRoleType;
 import org.example.mopl.user.repository.RoleRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

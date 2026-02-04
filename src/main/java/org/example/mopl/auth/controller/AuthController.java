@@ -10,7 +10,6 @@ import org.example.mopl.auth.service.AuthService;
 import org.example.mopl.auth.dto.JwtDto;
 import org.example.mopl.auth.dto.JwtTokenDto;
 import org.example.mopl.auth.service.MailService;
-import org.example.mopl.user.entity.UserRoleType;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.web.csrf.CsrfToken;
