@@ -36,7 +36,8 @@ public class ContentBatchScheduler {
       backoff = @Backoff(delay = 5000, multiplier = 2.0)
   )
   @Async("batchTaskExecutor")
-  @Scheduled(initialDelay = 10000, fixedRate = 86400000) // 24 hours
+  @Scheduled(cron = "0 5 2 * * ?") // 매일 새벽 2시 5분에 실행
+  //@Scheduled(initialDelay = 10000, fixedRate = 86400000) // 24 hours
   public void runContentBatchJob() {
     try {
       log.info("Starting TMDb Content Batch Job");
