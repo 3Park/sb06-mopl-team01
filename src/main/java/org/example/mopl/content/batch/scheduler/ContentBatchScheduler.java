@@ -9,6 +9,9 @@ import org.springframework.batch.core.JobParametersBuilder;
 import org.springframework.batch.core.launch.JobLauncher;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
+import org.springframework.dao.CannotAcquireLockException;
+import org.springframework.retry.annotation.Backoff;
+import org.springframework.retry.annotation.Retryable;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.annotation.EnableScheduling;
@@ -26,6 +29,12 @@ public class ContentBatchScheduler {
   private final TmDbBatchConfig tmDbBatchConfig;
   private final TheSportsDbBatchConfig theSportsDbBatchConfig;
 
+  // 데드락 예외 발생 시 재시도 설정
+  @Retryable(
+      retryFor = {CannotAcquireLockException.class},
+      maxAttempts = 3,
+      backoff = @Backoff(delay = 5000, multiplier = 2.0)
+  )
   @Async("batchTaskExecutor")
   @Scheduled(initialDelay = 10000, fixedRate = 86400000) // 24 hours
   public void runContentBatchJob() {
@@ -45,6 +54,9 @@ public class ContentBatchScheduler {
       jobLauncher.run(theSportsDbBatchConfig.theSportsDbBatchJob(), jobParameters);
 
       log.info("Finished TheSportsDb Content Batch Job");
+    } catch (CannotAcquireLockException e) {
+      throw e;
+      // 데드락 예외는 재시도 대상이므로 다시 던진다.
     } catch (Exception e) {
       log.error("Error occurred while running Content Batch Job", e);
     }
