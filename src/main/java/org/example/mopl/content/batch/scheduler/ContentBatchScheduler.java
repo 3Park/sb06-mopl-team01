@@ -26,16 +26,16 @@ public class ContentBatchScheduler {
   private final TmDbBatchConfig tmDbBatchConfig;
   private final TheSportsDbBatchConfig theSportsDbBatchConfig;
 
-  //@Async("batchTaskExecutor")
-  //@Scheduled(cron = "0 0 2 * * ?") // 매일 새벽 2시 실행
-  @Scheduled(fixedRate = 86400000) // 24시간마다 실행
+  @Async("batchTaskExecutor")
+  @Scheduled(initialDelay = 10000, fixedRate = 86400000) // 24 hours
   public void runContentBatchJob() {
     try {
       log.info("Starting TMDb Content Batch Job");
 
       JobParameters jobParameters = new JobParametersBuilder()
-          .addLong("time", System.currentTimeMillis())
-          .addString("jobName", this.getClass().getSimpleName())
+          .addLong("time", System.currentTimeMillis()) // 고유한 JobParameters를 위해 현재 시간을 추가
+          .addString("jobName", this.getClass().getSimpleName()) // Job 이름 추가
+          .addLong("run.id", System.currentTimeMillis()) // 재실행 가능하도록 유니크 파라미터
           .toJobParameters();
 
       jobLauncher.run(tmDbBatchConfig.tmDbBatchJob(), jobParameters);
