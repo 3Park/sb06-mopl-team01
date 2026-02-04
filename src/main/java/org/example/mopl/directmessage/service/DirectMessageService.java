@@ -6,8 +6,8 @@ import org.example.mopl.directmessage.dto.ConversationDto;
 import org.example.mopl.directmessage.dto.DirectMessageDto;
 import org.example.mopl.directmessage.entity.Conversation;
 import org.example.mopl.directmessage.entity.DirectMessage;
+import org.example.mopl.directmessage.exception.ConversationForbiddenException;
 import org.example.mopl.directmessage.exception.ConversationNotFoundException;
-import org.example.mopl.directmessage.exception.DirectMessageNotFoundException;
 import org.example.mopl.directmessage.exception.ParticipantNotFoundException;
 import org.example.mopl.directmessage.repository.ConversationRepository;
 import org.example.mopl.directmessage.repository.DirectMessageRepository;
@@ -33,6 +33,7 @@ public class DirectMessageService {
     private final SimpMessagingTemplate messagingTemplate;
     private final ApplicationEventPublisher eventPublisher;
 
+    // DM 생성 및 전송
     @Transactional
     public void saveAndSendMessage(UUID conversationUuid, UUID senderUuid, String content) {
 
@@ -53,6 +54,7 @@ public class DirectMessageService {
 
     }
 
+    // 대화 생성
     @Transactional
     public ConversationDto create(UUID creatorId, UUID joinId) {
 
@@ -62,14 +64,14 @@ public class DirectMessageService {
         Conversation conversation = getExistingConversation(creator, joiner)
                 .orElseGet(() -> saveConversation(creator, joiner));
 
-        DirectMessage lastMessage = getLastMessageOrNull(conversation);
-
-        ConversationDto conversationDto = ConversationDto.from(conversation, creator, joiner, lastMessage);
+        ConversationDto conversationDto = ConversationDto.from(
+                conversation, creator, joiner, getLastMessageOrNull(conversation));
 
         log.info("conversation 생성 완료, conversationId={}", conversation.getUuid());
         return conversationDto;
     }
 
+    // DM 읽음 처리
     @Transactional
     public void read(UUID conversationId, UUID lastDirectMessageId, UUID requesterId) {
 
@@ -79,6 +81,40 @@ public class DirectMessageService {
         readUnreadMessagesInAndSave(conversation, requester);
 
         log.info("DM 읽음 처리 완료, directMessageId={}", lastDirectMessageId);
+    }
+
+    // 대화 조회
+    @Transactional(readOnly = true)
+    public ConversationDto get(UUID requesterUuid, UUID conversationUuid) {
+
+        Conversation conversation = getConversationOrThrow(conversationUuid);
+        User requester = getUserOrThrow(requesterUuid);
+        User other = getCounterpartOrThrow(conversation, requester.getId());
+
+        ConversationDto conversationDto = ConversationDto.from(
+                conversation, requester, other, getLastMessageOrNull(conversation)
+        );
+
+        log.info("대화 조회 완료, conversationId={}", conversationUuid);
+        return conversationDto;
+    }
+
+    // 특정 사용자와의 대화 조회
+    @Transactional(readOnly = true)
+    public ConversationDto getWith(UUID requesterUuid, UUID withUserUuid) {
+
+        User requester = getUserOrThrow(requesterUuid);
+        User withUser = getUserOrThrow(withUserUuid);
+
+        Conversation conversation = getExistingConversation(requester, withUser)
+                .orElseThrow(ConversationNotFoundException::new);
+
+        ConversationDto conversationDto = ConversationDto.from(
+                conversation, requester, withUser, getLastMessageOrNull(conversation)
+        );
+
+        log.info("with={} 사용자와의 대화 조회 완료, conversationId={}", withUserUuid, conversation.getUuid());
+        return conversationDto;
     }
 
 
@@ -102,11 +138,6 @@ public class DirectMessageService {
                 .orElseThrow(() -> new ConversationNotFoundException(conversationUuid));
     }
 
-    private DirectMessage getDirectMessageOrThrow(UUID directMessageUuid) {
-        return directMessageRepository.findByUuid(directMessageUuid)
-                .orElseThrow(() -> new DirectMessageNotFoundException(directMessageUuid));
-    }
-
     private void readUnreadMessagesInAndSave(Conversation conversation, User requester) {
         directMessageRepository.readUnreadMessages(conversation.getId(), requester.getId());
     }
@@ -116,10 +147,10 @@ public class DirectMessageService {
                 .orElseThrow(() -> new ParticipantNotFoundException(senderUuid));
     }
 
-    private User getCounterpartOrThrow(Conversation conversation, Long senderId) {
-        if(!conversation.isValidParticipant(senderId)) throw new ParticipantNotFoundException();
-        Long receiverId = conversation.getCounterpartId(senderId);
-        return userRepository.findUserAndProfileOnlyById(receiverId)
+    private User getCounterpartOrThrow(Conversation conversation, Long requesterId) {
+        if(!conversation.isValidParticipant(requesterId)) throw new ConversationForbiddenException(conversation.getUuid());
+        Long counterpartId = conversation.getCounterpartId(requesterId);
+        return userRepository.findUserAndProfileOnlyById(counterpartId)
                 .orElseThrow(ParticipantNotFoundException::new);
     }
 

@@ -10,4 +10,7 @@ public class ConversationNotFoundException extends MoplException {
         super(DirectMessageErrorCode.CONVERSATION_NOT_FOUND);
         addDetail("conversationId", conversationUuid);
     }
+    public ConversationNotFoundException() {
+        super(DirectMessageErrorCode.CONVERSATION_NOT_FOUND);
+    }
 }

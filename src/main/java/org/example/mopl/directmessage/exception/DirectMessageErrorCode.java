@@ -10,6 +10,7 @@ import org.springframework.http.HttpStatus;
 public enum DirectMessageErrorCode implements ErrorCode {
 
     CONVERSATION_NOT_FOUND(HttpStatus.NOT_FOUND, "존재하지 않는 대화방입니다."),
+    CONVERSATION_FORBIDDEN(HttpStatus.FORBIDDEN, "대화방에 대한 접근 권한이 없습니다."),
     PARTICIPANT_NOT_FOUND(HttpStatus.NOT_FOUND, "존재하지 않는 참여자입니다."),
     DIRECT_MESSAGE_NOT_FOUND(HttpStatus.NOT_FOUND, "존재하지 않는 메시지입니다."),
     DIRECT_MESSAGE_FORBIDDEN(HttpStatus.FORBIDDEN, "메시지에 대한 접근 권한이 없습니다.");
