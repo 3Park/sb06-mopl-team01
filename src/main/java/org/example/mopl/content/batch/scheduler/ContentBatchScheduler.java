@@ -9,7 +9,7 @@ import org.springframework.batch.core.JobParametersBuilder;
 import org.springframework.batch.core.launch.JobLauncher;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
-import org.springframework.dao.CannotAcquireLockException;
+import org.springframework.dao.PessimisticLockingFailureException;
 import org.springframework.retry.annotation.Backoff;
 import org.springframework.retry.annotation.Retryable;
 import org.springframework.scheduling.annotation.Async;
@@ -31,7 +31,7 @@ public class ContentBatchScheduler {
 
   // 데드락 예외 발생 시 재시도 설정
   @Retryable(
-      retryFor = {CannotAcquireLockException.class},
+      retryFor = {PessimisticLockingFailureException.class},
       maxAttempts = 3,
       backoff = @Backoff(delay = 5000, multiplier = 2.0)
   )
@@ -55,7 +55,7 @@ public class ContentBatchScheduler {
       jobLauncher.run(theSportsDbBatchConfig.theSportsDbBatchJob(), jobParameters);
 
       log.info("Finished TheSportsDb Content Batch Job");
-    } catch (CannotAcquireLockException e) {
+    } catch (PessimisticLockingFailureException e) {
       throw e;
       // 데드락 예외는 재시도 대상이므로 다시 던진다.
     } catch (Exception e) {
