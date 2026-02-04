@@ -143,14 +143,22 @@ public class UserService {
         //JpaRepository 기본 메서드 count 호출
         Long totalCount = userRepository.count();
 
+        if(users.size() > request.limit())
+        {
+            hasNext = true;
+            users.remove(users.size() - 1);
+            idAfter = users.get(users.size() - 1).getUuid();
+            nextCursor = getNextCursor(request, users);
+        }
+
         //userroles n+1 해결을 위해 fetch join을 해오기 위한 부분
         List<UUID> ids = users.stream().map(User::getUuid).toList();
         if(ids.isEmpty())
             return new CursorResponseUserDto(
+                    List.of(),
                     null,
-                    nextCursor,
-                    idAfter,
-                    hasNext,
+                    null,
+                    false,
                     totalCount,
                     request.sortBy().name(),
                     request.sortDirection().name());
@@ -164,14 +172,6 @@ public class UserService {
 
         //ids 는 paging 조건에 맞는 정렬형태. userMap에서 가져와 기존 정렬된 형태로 복구
         List<User> orderedUsers = ids.stream().map(userMap::get).toList();
-
-        if(users.size() > request.limit())
-        {
-            hasNext = true;
-            users.remove(users.size() - 1);
-            idAfter = users.get(users.size() - 1).getUuid();
-            nextCursor = getNextCursor(request, users);
-        }
 
         return CursorResponseUserDto.builder()
                 .data(orderedUsers.stream()

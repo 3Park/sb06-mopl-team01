@@ -80,6 +80,7 @@ public class SecurityConfig {
                                         "/api/auth/csrf-token",
                                         "/api/auth/sign-in",
                                         "/api/auth/reset-password",
+                                        "/api/auth/refresh",
                                         "/actuator/health",
                                         "/actuator/info",
                                         "/ws/**"
