@@ -47,10 +47,13 @@ public class TheSportsDbBatchService {
 
     List<Tag> tagList = new ArrayList<>();
 
+    List<Tag> existingTags = tagQueryRepository.findAllByNameIn(leagueIds);
+
     leagueIds.forEach(tagName -> {
-      if (!tagQueryRepository.existsByName(tagName)) {
-        Tag tag = Tag.of(tagName);
-        tagList.add(tag);
+      boolean exists = existingTags.stream()
+          .anyMatch(tag -> tag.getName().equals(tagName));
+      if (!exists) {
+        tagList.add(Tag.of(tagName));
       }
     });
 
