@@ -42,6 +42,10 @@ class TheSportsDbSoccerCrawlerClientTest {
     assertNotNull(leagues);
     assertFalse(leagues.isEmpty());
 
+    leagues.forEach(
+        league -> System.out.println(league)
+    );
+
   }
 
   @Test

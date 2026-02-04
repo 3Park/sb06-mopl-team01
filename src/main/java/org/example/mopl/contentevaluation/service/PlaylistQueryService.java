@@ -101,7 +101,7 @@ public class PlaylistQueryService {
     Page<PlaylistResult> playlistPage = playlistQueryRepository.findAllByCursor(request);
 
     Map<Long, List<PlaylistContent>> playlistContentsMap = playlistContentQueryRepository
-        .findAllByPlaylistIds(
+        .findAllMapByPlaylistIds(
             playlistPage.getContent().stream()
                 .map(PlaylistResult::id)
                 .toList()

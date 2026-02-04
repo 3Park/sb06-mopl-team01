@@ -36,7 +36,7 @@ public class PlaylistContentQueryRepository {
         .fetch();
   }
 
-  public Map<Long, List<PlaylistContent>> findAllByPlaylistIds(List<Long> playlistIds) {
+  public Map<Long, List<PlaylistContent>> findAllMapByPlaylistIds(List<Long> playlistIds) {
     List<PlaylistContent> playlistContents = queryFactory
         .selectFrom(QPlaylistContent.playlistContent)
         .join(QPlaylistContent.playlistContent.content, QContent.content)
