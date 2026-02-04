@@ -24,7 +24,7 @@ public class PlaylistsStatQueryRepository {
     );
   }
 
-  public Map<Long, PlaylistsStat> findByPlaylistIds(List<Long> playlistIds) {
+  public Map<Long, PlaylistsStat> findAllMapByPlaylistIds(List<Long> playlistIds) {
     List<PlaylistsStat> playlistsStats = queryFactory
         .selectFrom(QPlaylistsStat.playlistsStat)
         .where(QPlaylistsStat.playlistsStat.playlist.id.in(playlistIds))

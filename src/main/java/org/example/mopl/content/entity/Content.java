@@ -44,11 +44,12 @@ public class Content extends BasicContentUuidEntity {
   private String thumbnailUrl;
 
   @Builder(access = AccessLevel.PROTECTED)
-  public Content(String type, String title, String description, String thumbnailUrl) {
+  public Content(String type, String title, String description, String thumbnailUrl, String externalId) {
     this.contentType = ContentType.fromValue(type);
     this.title = title;
     this.description = description;
     this.thumbnailUrl = thumbnailUrl;
+    this.externalId = externalId;
   }
 
   public static Content of(String type, String title, String description, String thumbnailUrl) {
@@ -57,6 +58,16 @@ public class Content extends BasicContentUuidEntity {
         .title(title)
         .description(description)
         .thumbnailUrl(thumbnailUrl)
+        .build();
+  }
+
+  public static Content of(String type, String title, String description, String thumbnailUrl, String externalId) {
+    return Content.builder()
+        .type(type)
+        .title(title)
+        .description(description)
+        .thumbnailUrl(thumbnailUrl)
+        .externalId(externalId)
         .build();
   }
 
