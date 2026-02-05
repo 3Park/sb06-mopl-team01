@@ -2,6 +2,7 @@ package org.example.mopl.content.listener;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.example.mopl.content.event.WatchingCountEvent;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionalEventListener;
@@ -15,7 +16,9 @@ public class WatchingCountEventListener {
 
   @Async("eventTaskExecutor")
   @TransactionalEventListener
-  public void handleUpdateWatchingCountEvent() {
+  public void handleUpdateWatchingCountEvent(WatchingCountEvent.UpdateWatchingCountEvent event) {
+
+
 
 
 

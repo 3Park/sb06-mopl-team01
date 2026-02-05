@@ -1,17 +1,18 @@
 package org.example.mopl.content.event;
 
-import java.util.Map;
+import java.util.List;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
+import org.example.mopl.content.dto.ContentWatchingCountDto.ContentWatchingCountUpdate;
 
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class WatchingCountEvent {
 
-  public record updateWatchingCountEvent(
-        Map<Long, Long> contentWatchingCountMap
+  public record UpdateWatchingCountEvent(
+        List<ContentWatchingCountUpdate> contentWatchingCountUpdateList
     ) {
-      public static updateWatchingCountEvent of(Map<Long, Long> contentWatchingCountMap) {
-        return new updateWatchingCountEvent(contentWatchingCountMap);
+      public static UpdateWatchingCountEvent of(List<ContentWatchingCountUpdate> contentWatchingCountUpdateList) {
+        return new UpdateWatchingCountEvent(contentWatchingCountUpdateList);
       }
     }
 
