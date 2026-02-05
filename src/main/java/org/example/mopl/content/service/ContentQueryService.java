@@ -47,7 +47,6 @@ public class ContentQueryService {
 
   }
 
-  // Todo : 커서 기반 페이지네이션 (watcherCount로 정렬해야 하므로 실시간 같이보기 모듈 필요)
   public CursorResponseContentDto getContentsByCursor(CursorRequestContentDto request) {
 
     Page<ContentResult> contentPage = contentQueryRepository

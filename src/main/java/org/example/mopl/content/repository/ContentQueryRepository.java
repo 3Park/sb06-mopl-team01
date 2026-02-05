@@ -218,7 +218,20 @@ public class ContentQueryRepository {
     if (request.sortDirection().equals("DESCENDING")) {
       switch (request.sortBy()) {
         case "watcherCount":
-          // ToDo: 구현 필요
+          if (request.cursor() != null && request.idAfter() != null) {
+            builder.and(
+                QContentsWatchingCount.contentsWatchingCount.watcherCount.lt(
+                        Long.parseLong(request.cursor()))
+                    .or(QContentsWatchingCount.contentsWatchingCount.watcherCount.eq(
+                            Long.parseLong(request.cursor()))
+                        .and(QContent.content.uuid.lt(request.idAfter())))
+            );
+          } else if (request.cursor() != null) {
+            // 첫 페이지
+            builder.and(
+                QContentsWatchingCount.contentsWatchingCount.watcherCount.lt(
+                    Long.parseLong(request.cursor())));
+          }
           break;
         case "rate":
           if (request.cursor() != null && request.idAfter() != null) {
@@ -252,7 +265,20 @@ public class ContentQueryRepository {
     } else {
       switch (request.sortBy()) {
         case "watcherCount":
-          // ToDo: 구현 필요
+          if (request.cursor() != null && request.idAfter() != null) {
+            builder.and(
+                QContentsWatchingCount.contentsWatchingCount.watcherCount.gt(
+                        Long.parseLong(request.cursor()))
+                    .or(QContentsWatchingCount.contentsWatchingCount.watcherCount.eq(
+                            Long.parseLong(request.cursor()))
+                        .and(QContent.content.uuid.gt(request.idAfter())))
+            );
+          } else if (request.cursor() != null) {
+            // 첫 페이지
+            builder.and(
+                QContentsWatchingCount.contentsWatchingCount.watcherCount.gt(
+                    Long.parseLong(request.cursor())));
+          }
           break;
         case "rate":
           if (request.cursor() != null && request.idAfter() != null) {
@@ -298,7 +324,7 @@ public class ContentQueryRepository {
 
       switch (request.sortBy()) {
         case "watcherCount":
-          // ToDo: 구현 필요
+          orders.add(QContentsWatchingCount.contentsWatchingCount.watcherCount.desc());
           break;
         case "rate":
           orders.add(QContentsStat.contentsStat.ratingAverage.desc());
@@ -312,7 +338,7 @@ public class ContentQueryRepository {
 
       switch (request.sortBy()) {
         case "watcherCount":
-          // ToDo: 구현 필요
+          orders.add(QContentsWatchingCount.contentsWatchingCount.watcherCount.asc());
           break;
         case "rate":
           orders.add(QContentsStat.contentsStat.ratingAverage.asc());
