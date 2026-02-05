@@ -140,6 +140,8 @@ public class TheSportsDbBatchService {
       );
     });
 
+    // Todo : 콘텐츠 시청자 수 테이블 저장
+
     contentTagCommandRepository.saveAll(contentTagList);
     contentsStatCommandRepository.saveAll(contentsStatList);
 

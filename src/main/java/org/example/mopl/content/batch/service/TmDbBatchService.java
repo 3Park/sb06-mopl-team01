@@ -165,6 +165,8 @@ public class TmDbBatchService {
 
      contentsStatCommandRepository.saveAll(contentsStatList);
 
+    // Todo : 콘텐츠 시청자 수 테이블 저장
+
   }
 
   @Transactional

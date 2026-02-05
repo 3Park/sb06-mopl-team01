@@ -67,6 +67,8 @@ public class ContentCommandService {
         ContentsStat.of(savedContent)
     );
 
+    // Todo : 콘텐츠 시청자 수 테이블 저장
+
     //ContentTag 매핑 저장
     List<ContentTag> contentTagList = new ArrayList<>();
 
@@ -173,6 +175,7 @@ public class ContentCommandService {
     // 연관관계 삭제
     contentTagCommandRepository.deleteByContent_Id(content.getId());
     contentsStatCommandRepository.deleteByContent_id(content.getId());
+    // Todo : 콘텐츠 시청자 수 테이블 연관관계 삭제
 
     // 콘텐츠 삭제
     contentCommandRepository.delete(content);
