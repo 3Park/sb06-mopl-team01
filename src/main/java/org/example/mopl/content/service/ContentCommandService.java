@@ -11,6 +11,7 @@ import org.example.mopl.content.dto.response.ContentDto;
 import org.example.mopl.content.entity.Content;
 import org.example.mopl.content.entity.ContentTag;
 import org.example.mopl.content.entity.ContentsStat;
+import org.example.mopl.content.entity.ContentsWatchingCount;
 import org.example.mopl.content.entity.Tag;
 import org.example.mopl.content.exception.NoSuchContentException;
 import org.example.mopl.content.exception.NoSuchTagException;
@@ -19,6 +20,7 @@ import org.example.mopl.content.repository.ContentCommandRepository;
 import org.example.mopl.content.repository.ContentQueryRepository;
 import org.example.mopl.content.repository.ContentTagCommandRepository;
 import org.example.mopl.content.repository.ContentsStatCommandRepository;
+import org.example.mopl.content.repository.ContentsWatchingCountCommandRepository;
 import org.example.mopl.content.repository.TagCommandReposiotry;
 import org.example.mopl.content.repository.TagQueryRepository;
 import org.springframework.stereotype.Service;
@@ -34,6 +36,7 @@ public class ContentCommandService {
   private final TagQueryRepository tagQueryRepository;
   private final ContentTagCommandRepository contentTagCommandRepository;
   private final ContentsStatCommandRepository contentsStatCommandRepository;
+  private final ContentsWatchingCountCommandRepository contentsWatchingCountCommandRepository;
   private final ContentMapper contentMapper;
 
   @Transactional
@@ -67,7 +70,11 @@ public class ContentCommandService {
         ContentsStat.of(savedContent)
     );
 
-    // Todo : 콘텐츠 시청자 수 테이블 저장
+    // 콘텐츠 시청자 수 테이블 저장
+    contentsWatchingCountCommandRepository.save(
+        ContentsWatchingCount.of(savedContent)
+    );
+
 
     //ContentTag 매핑 저장
     List<ContentTag> contentTagList = new ArrayList<>();
@@ -175,7 +182,7 @@ public class ContentCommandService {
     // 연관관계 삭제
     contentTagCommandRepository.deleteByContent_Id(content.getId());
     contentsStatCommandRepository.deleteByContent_id(content.getId());
-    // Todo : 콘텐츠 시청자 수 테이블 연관관계 삭제
+    contentsWatchingCountCommandRepository.deleteByContent_id(content.getId());
 
     // 콘텐츠 삭제
     contentCommandRepository.delete(content);
