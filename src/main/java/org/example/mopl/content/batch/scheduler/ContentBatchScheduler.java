@@ -34,7 +34,7 @@ public class ContentBatchScheduler {
   // 데드락 예외 발생 시 재시도 설정
   @Retryable(
       retryFor = {PessimisticLockingFailureException.class},
-      maxAttempts = 3,
+      maxAttempts = 5, // 실행 간격이 길기 때문에 5회
       backoff = @Backoff(delay = 5000, multiplier = 2.0)
   )
   @Async("batchTaskExecutor")
