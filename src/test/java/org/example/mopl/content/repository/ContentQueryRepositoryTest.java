@@ -84,7 +84,7 @@ class ContentQueryRepositoryTest {
         null,
         10,
         "DESC",
-        "createdAt"
+        "watcherCount"
     );
 
     when(watchTogetherService.getWatcherCount(any())).thenReturn(1L);
