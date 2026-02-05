@@ -7,7 +7,7 @@ import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
-public class ContentWatchingCountBatchService {
+public class ContentsWatchingCountBatchService {
 
   private final WatchTogetherService watchTogetherService;
 

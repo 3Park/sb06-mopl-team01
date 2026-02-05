@@ -10,7 +10,7 @@ import org.springframework.stereotype.Component;
 
 @Component("contentWatchingCountItemProcessor")
 @RequiredArgsConstructor
-public class ContentWatchingCountItemProcessor implements ItemProcessor<ContentsWatchingCount, ContentsWatchingCount> {
+public class ContentsWatchingCountItemProcessor implements ItemProcessor<ContentsWatchingCount, ContentsWatchingCount> {
 
   private final WatchTogetherService watchTogetherService;
 
