@@ -6,6 +6,7 @@ import org.example.mopl.profile.entity.Profile;
 import org.example.mopl.profile.repository.ProfileRepository;
 import org.example.mopl.user.dto.CursorResponseUserDto;
 import org.example.mopl.user.dto.UserDto;
+import org.example.mopl.user.dto.request.ChangeRoleRequest;
 import org.example.mopl.user.dto.request.UserCreateRequest;
 import org.example.mopl.user.dto.request.UserCursorRequest;
 import org.example.mopl.user.entity.Role;
@@ -186,6 +187,27 @@ public class UserService {
                 .sortBy(request.sortBy().name())
                 .build();
 
+    }
+
+    @Transactional(readOnly = true)
+    public UserDto getDetailsUser(UUID userId)
+    {
+        User user = userRepository.findByUuid(userId).orElseThrow(()-> new UserException(UserErrorCode.INVALID_USER));
+        return UserDto.builder().user(user).build();
+    }
+
+    @Transactional
+    @PreAuthorize("hasRole('ADMIN')")
+    public void changeRole(UUID userId, ChangeRoleRequest request)
+    {
+        User user = userRepository.findByUuid(userId).orElseThrow(()-> new UserException(UserErrorCode.INVALID_USER));
+        if(user.getUserRoles() == null ||  user.getUserRoles().isEmpty())
+            throw new UserException(UserErrorCode.INVALID_DATA);
+
+        Role role = roleRepository.findByName(request.getRole()).orElseThrow(()-> new UserException(UserErrorCode.INVALID_ROLE));
+        user.getUserRoles().get(0).setRole(role);
+        userRoleRepository.save(user.getUserRoles().get(0));
+        userRepository.save(user);
     }
 
     private String getNextCursor(UserCursorRequest request, List<User> users)

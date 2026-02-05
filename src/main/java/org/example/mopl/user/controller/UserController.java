@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import org.example.mopl.user.dto.CursorResponseUserDto;
 import org.example.mopl.user.dto.UserDto;
 import org.example.mopl.user.dto.request.ChangePasswordRequest;
+import org.example.mopl.user.dto.request.ChangeRoleRequest;
 import org.example.mopl.user.dto.request.UserCreateRequest;
 import org.example.mopl.user.dto.request.UserCursorRequest;
 import org.example.mopl.user.enums.UserRoleType;
@@ -61,6 +62,17 @@ public class UserController {
     public ResponseEntity<Void> changePassword(@PathVariable UUID userId, @RequestBody @Valid ChangePasswordRequest request) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         userService.changePassword(authentication, userId, request.getPassword());
+        return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/{userId}")
+    public ResponseEntity<UserDto> getDetailsUser(@PathVariable UUID userId) {
+        return ResponseEntity.status(HttpStatus.OK).body(userService.getDetailsUser(userId));
+    }
+
+    @PatchMapping("/{userId}/role")
+    public ResponseEntity<Void> updateUserRole(@PathVariable UUID userId, @RequestBody @Valid ChangeRoleRequest request) {
+        userService.changeRole(userId, request);
         return ResponseEntity.ok().build();
     }
 }
