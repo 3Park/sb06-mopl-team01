@@ -11,6 +11,7 @@ import org.example.mopl.content.entity.Content;
 import org.example.mopl.content.entity.ContentTag;
 import org.example.mopl.content.entity.ContentType;
 import org.example.mopl.content.entity.ContentsStat;
+import org.example.mopl.content.entity.ContentsWatchingCount;
 import org.example.mopl.content.entity.Tag;
 import org.example.mopl.content.exception.NoSuchContentException;
 import org.example.mopl.content.exception.NoSuchTagException;
@@ -19,6 +20,7 @@ import org.example.mopl.content.repository.ContentQueryRepository;
 import org.example.mopl.content.repository.ContentTagCommandRepository;
 import org.example.mopl.content.repository.ContentTagQueryRepository;
 import org.example.mopl.content.repository.ContentsStatCommandRepository;
+import org.example.mopl.content.repository.ContentsWatchingCountCommandRepository;
 import org.example.mopl.content.repository.TagCommandReposiotry;
 import org.example.mopl.content.repository.TagQueryRepository;
 import org.springframework.context.ApplicationEventPublisher;
@@ -35,6 +37,7 @@ public class TmDbBatchService {
   private final ContentCommandRepository contentCommandRepository;
   private final ContentTagCommandRepository contentTagCommandRepository;
   private final ContentsStatCommandRepository contentsStatCommandRepository;
+  private final ContentsWatchingCountCommandRepository contentsWatchingCountCommandRepository;
   private final TagCommandReposiotry tagCommandReposiotry;
   private final TagQueryRepository tagQueryRepository;
   private final ContentTagQueryRepository contentTagQueryRepository;
@@ -127,6 +130,7 @@ public class TmDbBatchService {
   public void writeImportedMovies(List<ContentFetchResultDto> fetchResultDtoList) {
 
      List<ContentsStat> contentsStatList = new ArrayList<>();
+     List<ContentsWatchingCount> contentsWatchingCountList = new ArrayList<>();
 
      List<Content> contentList = fetchResultDtoList.stream()
          .map(content -> {
@@ -159,11 +163,16 @@ public class TmDbBatchService {
      contentList = contentCommandRepository.saveAll(contentList);
 
      contentList.forEach(content -> {
-       ContentsStat contentsStat = ContentsStat.of(content);
-       contentsStatList.add(contentsStat);
+       contentsStatList.add(
+           ContentsStat.of(content)
+       );
+       contentsWatchingCountList.add(
+            ContentsWatchingCount.of(content)
+       );
      });
 
      contentsStatCommandRepository.saveAll(contentsStatList);
+     contentsWatchingCountCommandRepository.saveAll(contentsWatchingCountList);
 
   }
 
