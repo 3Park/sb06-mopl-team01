@@ -1,5 +1,7 @@
 package org.example.mopl.content.batch.config;
 
+import java.util.HashMap;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.example.mopl.content.batch.item.ContentsWatchingCountItemProcessor;
 import org.example.mopl.content.entity.ContentsWatchingCount;
@@ -18,6 +20,8 @@ import org.springframework.batch.item.data.builder.RepositoryItemWriterBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.Sort.Direction;
 import org.springframework.transaction.PlatformTransactionManager;
 
 @Configuration
@@ -56,6 +60,7 @@ public class ContentsWatchingCountBatchConfig {
         .repository(contentsWatchingCountQueryRepository)
         .methodName("findAll")
         .pageSize(100)
+        .sorts(Map.of("id", Sort.Direction.ASC))
         .build();
   }
 
