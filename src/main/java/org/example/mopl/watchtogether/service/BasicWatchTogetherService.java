@@ -17,11 +17,9 @@ import org.springframework.messaging.simp.SimpMessageSendingOperations;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Comparator;
-import java.util.List;
-import java.util.Objects;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -103,6 +101,19 @@ public class BasicWatchTogetherService implements WatchTogetherService{
     @Override
     public long getWatcherCount(String contentId) {
         return watchingRooms.get(contentId).getWatcherCount();
+    }
+
+    @Override
+    public HashMap<Long,Long> getWatchingRooms() {
+
+        return watchingRooms.values().stream()
+                .collect(Collectors.toMap(
+                        watchingRoom -> watchingRoom.getContent().getId(),
+                        WatchingRoom::getWatcherCount,
+                        (oldVal, newVal) -> newVal, // Merge Function (키 중복 시 새 값 사용)
+                        HashMap::new
+                        )
+                );
     }
 
     @Override
