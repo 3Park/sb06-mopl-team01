@@ -53,4 +53,8 @@ public class ContentsWatchingCount {
     this.watcherCount = newCount;
   }
 
+  public boolean isSameCount(Long count) {
+    return this.watcherCount.equals(count);
+  }
+
 }

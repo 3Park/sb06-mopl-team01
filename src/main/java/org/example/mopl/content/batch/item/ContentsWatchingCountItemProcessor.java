@@ -17,9 +17,13 @@ public class ContentsWatchingCountItemProcessor implements ItemProcessor<Content
   @Override
   public @Nullable ContentsWatchingCount process(@NonNull ContentsWatchingCount item) throws Exception {
 
-    item.updateCount(
-        watchTogetherService.getWatchingRooms().getOrDefault(item.getContent().getId(), 0L)
-    );
+    Long currentCount = watchTogetherService.getWatchingRooms().getOrDefault(item.getContent().getId(), 0L);
+
+    if (item.isSameCount(currentCount)) {
+      return null; // 업데이트 필요 없음
+    }
+
+    item.updateCount(currentCount);
 
     return item;
   }
