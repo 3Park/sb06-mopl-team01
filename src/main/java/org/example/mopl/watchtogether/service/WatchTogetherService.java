@@ -1,14 +1,12 @@
 package org.example.mopl.watchtogether.service;
 
 import org.example.mopl.user.dto.UserDto;
-import org.example.mopl.watchtogether.dto.ContentChatDto;
 import org.example.mopl.watchtogether.dto.ContentChatSendRequest;
 import org.example.mopl.watchtogether.dto.CursorResponseWatchingSessionDto;
 import org.example.mopl.watchtogether.dto.WatchingSessionDto;
 import org.example.mopl.watchtogether.model.Watcher;
 
-import java.util.List;
-import java.util.UUID;
+import java.util.HashMap;
 
 public interface WatchTogetherService {
 
@@ -19,6 +17,8 @@ public interface WatchTogetherService {
     void sendMessageToRoom(String contentId, ContentChatSendRequest message, Watcher watcher);
 
     long getWatcherCount(String contentId);
+
+    HashMap<Long, Long> getWatchingRooms();
 
     WatchingSessionDto getWatcher(String watcherId);
 
