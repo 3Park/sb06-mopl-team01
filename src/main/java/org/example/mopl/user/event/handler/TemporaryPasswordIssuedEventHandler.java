@@ -1,8 +1,7 @@
-package org.example.mopl.user.event;
+package org.example.mopl.user.event.handler;
 
 import lombok.RequiredArgsConstructor;
 import org.example.mopl.auth.event.TemporaryPasswordIssuedEvent;
-import org.example.mopl.user.entity.TemporaryPassword;
 import org.example.mopl.user.service.TemporaryPasswordService;
 import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Async;

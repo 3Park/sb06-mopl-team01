@@ -52,6 +52,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                                     cookie.getValue())){
                                 SecurityContextHolder.getContext().setAuthentication(authentication);
                             }
+                            else
+                            {
+                                response.addCookie(tokenUtils.emptyRefreshCookie());
+                            }
                         });
                 }
         }

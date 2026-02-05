@@ -7,17 +7,20 @@ import org.example.mopl.profile.repository.ProfileRepository;
 import org.example.mopl.user.dto.CursorResponseUserDto;
 import org.example.mopl.user.dto.UserDto;
 import org.example.mopl.user.dto.request.ChangeRoleRequest;
+import org.example.mopl.user.dto.request.ChangeUserLockStatus;
 import org.example.mopl.user.dto.request.UserCreateRequest;
 import org.example.mopl.user.dto.request.UserCursorRequest;
 import org.example.mopl.user.entity.Role;
 import org.example.mopl.user.entity.User;
 import org.example.mopl.user.entity.UserRole;
 import org.example.mopl.user.enums.UserRoleType;
+import org.example.mopl.user.event.UserRoleLockStatusChangedEvent;
 import org.example.mopl.user.exception.UserErrorCode;
 import org.example.mopl.user.exception.UserException;
 import org.example.mopl.user.repository.RoleRepository;
 import org.example.mopl.user.repository.UserRepository;
 import org.example.mopl.user.repository.UserRoleRepository;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Slice;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
@@ -41,6 +44,7 @@ public class UserService {
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
     private final TemporaryPasswordService temporaryPasswordService;
+    private final ApplicationEventPublisher applicationEventPublisher;
 
     @Transactional
     public void addAdmin(String password) {
@@ -208,6 +212,26 @@ public class UserService {
         user.getUserRoles().get(0).setRole(role);
         userRoleRepository.save(user.getUserRoles().get(0));
         userRepository.save(user);
+
+        applicationEventPublisher.publishEvent(UserRoleLockStatusChangedEvent.builder()
+                .userEmail(user.getEmail())
+                .build());
+    }
+
+    @Transactional
+    @PreAuthorize("hasRole('ADMIN')")
+    public void changeLockStatus(UUID userId, ChangeUserLockStatus request)
+    {
+        User user = userRepository.findByUuid(userId).orElseThrow(()-> new UserException(UserErrorCode.INVALID_USER));
+        if(user.getUserRoles() == null ||  user.getUserRoles().isEmpty())
+            throw new UserException(UserErrorCode.INVALID_DATA);
+
+        user.setLocked(request.getLocked());
+        userRepository.save(user);
+
+        applicationEventPublisher.publishEvent(UserRoleLockStatusChangedEvent.builder()
+                .userEmail(user.getEmail())
+                .build());
     }
 
     private String getNextCursor(UserCursorRequest request, List<User> users)

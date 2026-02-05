@@ -34,6 +34,9 @@ public class AuthService {
         String userEmail = userDetails.getUserDto().getEmail();
         String userRole = userDetails.getUserDto().getRole();
 
+        if(validateToken(userEmail, userRole) == false)
+            throw new AuthException(AuthErrorCode.OLD_USER);
+
         String newAccessToken = jwtTokenProvider.generateAccessToken(userEmail, userRole);
         String newRefreshToken = jwtTokenProvider.generateAccessToken(userEmail, userRole);
 
