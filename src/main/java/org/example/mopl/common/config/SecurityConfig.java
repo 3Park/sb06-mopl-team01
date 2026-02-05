@@ -44,6 +44,7 @@ public class SecurityConfig {
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final CustomAccessDeniedHandler customAccessDeniedHandler;
     private final CustomAuthenticationEntryPointHandler  customAuthenticationEntryPointHandler;
+    private final SpaCsrfTokenRequestHandler  spaCsrfTokenRequestHandler;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -67,7 +68,7 @@ public class SecurityConfig {
                         }))
                 .csrf(csrf -> csrf
                         .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
-                        .csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler())
+                        .csrfTokenRequestHandler(spaCsrfTokenRequestHandler)
                         .ignoringRequestMatchers(
                             "/api/auth/sign-in"
                                     , "/api/auth/sign-out"
