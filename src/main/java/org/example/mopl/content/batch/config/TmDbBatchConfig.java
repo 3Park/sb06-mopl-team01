@@ -2,6 +2,7 @@ package org.example.mopl.content.batch.config;
 
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.example.mopl.content.batch.service.TmDbBatchService;
 import org.example.mopl.content.dto.ContentFetchResultDto;
 import org.springframework.batch.core.Job;
@@ -18,6 +19,7 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.transaction.PlatformTransactionManager;
 
 @Configuration
+@Slf4j
 @EnableBatchProcessing
 @RequiredArgsConstructor
 @Profile("!test")
@@ -55,6 +57,9 @@ public class TmDbBatchConfig {
         .tasklet((contribution, chunkContext) -> {
 
           for (int page = 1; page <= pageSize; page++) {
+
+            log.info("Processing TMDb data for page: {}", page);
+
             // 영화 데이터 처리
             List<ContentFetchResultDto> movies = tmDbBatchService.importMoviesByPage(page);
             tmDbBatchService.writeImportedMovies(movies);
