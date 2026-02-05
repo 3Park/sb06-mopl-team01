@@ -11,6 +11,7 @@ import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.example.mopl.content.dto.ContentQueryDto.ContentResult;
+import org.example.mopl.content.dto.ContentQueryDto.ContentWithTagsResult;
 import org.example.mopl.content.dto.request.CursorRequestContentDto;
 import org.example.mopl.content.dto.response.ContentDto;
 import org.example.mopl.content.entity.Content;
@@ -19,6 +20,7 @@ import org.example.mopl.content.entity.ContentType;
 import org.example.mopl.content.entity.QContent;
 import org.example.mopl.content.entity.QContentTag;
 import org.example.mopl.content.entity.QContentsStat;
+import org.example.mopl.content.entity.QContentsWatchingCount;
 import org.example.mopl.content.entity.QReview;
 import org.example.mopl.content.entity.QTag;
 import org.example.mopl.watchtogether.service.WatchTogetherService;
@@ -33,7 +35,6 @@ import org.springframework.transaction.annotation.Transactional;
 public class ContentQueryRepository {
 
   private final JPAQueryFactory queryFactory;
-  private final WatchTogetherService watchTogetherService;
 
   public boolean existsByUuid(UUID uuid) {
     return queryFactory.selectFrom(QContent.content)
@@ -65,7 +66,7 @@ public class ContentQueryRepository {
   }
 
   @Transactional(readOnly = true)
-  public Optional<ContentDto> findByUuidWithContentTag(UUID uuid) {
+  public Optional<ContentWithTagsResult> findByUuidWithContentTag(UUID uuid) {
 
     Content content = queryFactory.selectFrom(QContent.content)
         .where(QContent.content.uuid.eq(uuid))
@@ -92,20 +93,23 @@ public class ContentQueryRepository {
       return Optional.empty();
     }
 
-    return Optional.of(ContentDto.of(
-        content.getUuid(),
-        content.getContentType().getValue(), // ContentType의 getValue() 사용
-        content.getTitle(),
-        content.getDescription(),
-        content.getThumbnailUrl(),
-        contentTagList.stream().map(
-            tag -> tag.getTag().getName()
-        ).toList(
-        ), // tags는 별도 조회 필요
-        (double) (reviewStat.sum / reviewStat.count),
-        Long.valueOf(reviewStat.count),
-        watchTogetherService.getWatcherCount(String.valueOf(content.getId()))
-    ));
+    return Optional.of(ContentWithTagsResult.builder()
+        .id(content.getId())
+        .uuid(content.getUuid())
+        .contentType(content.getContentType().toString())
+        .title(content.getTitle())
+        .description(content.getDescription())
+        .thumbnailUrl(content.getThumbnailUrl())
+        .createdAt(content.getCreatedAt())
+        .updatedAt(content.getUpdatedAt())
+        .tags(contentTagList.stream()
+            .map(contentTag -> contentTag.getTag().getName())
+            .toList())
+        .averageRating(reviewStat.count() != 0 ?
+            reviewStat.sum().doubleValue() / reviewStat.count() : 0.0)
+        .reviewCount(reviewStat.count().longValue())
+        .watcherCount(reviewStat.count().longValue())
+        .build());
 
   }
 
@@ -149,12 +153,15 @@ public class ContentQueryRepository {
                 QContent.content.createdAt,
                 QContent.content.updatedAt,
                 QContentsStat.contentsStat.ratingAverage,
-                QContentsStat.contentsStat.ratingCount
+                QContentsStat.contentsStat.ratingCount,
+                QContentsWatchingCount.contentsWatchingCount.watcherCount
             )
         )
         .from(QContent.content)
         .join(QContentsStat.contentsStat)
         .on(QContentsStat.contentsStat.content.id.eq(QContent.content.id))
+        .leftJoin(QContentsWatchingCount.contentsWatchingCount)
+        .on(QContentsWatchingCount.contentsWatchingCount.content.id.eq(QContent.content.id))
         .where(buildDynamicQueryByCursor(request))
         .orderBy(buildOrderBy(request).toArray(OrderSpecifier[]::new))
         .limit(request.limit() + 1)

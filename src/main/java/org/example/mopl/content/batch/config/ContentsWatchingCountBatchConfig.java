@@ -1,6 +1,5 @@
 package org.example.mopl.content.batch.config;
 
-import java.util.HashMap;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.example.mopl.content.batch.item.ContentsWatchingCountItemProcessor;
@@ -21,7 +20,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.data.domain.Sort;
-import org.springframework.data.domain.Sort.Direction;
 import org.springframework.transaction.PlatformTransactionManager;
 
 @Configuration
