@@ -8,9 +8,9 @@ import lombok.NoArgsConstructor;
 public class WatchingCountEvent {
 
   public record updateWatchingCountEvent(
-        Map<String, Long> contentWatchingCountMap
+        Map<Long, Long> contentWatchingCountMap
     ) {
-      public static updateWatchingCountEvent of(Map<String, Long> contentWatchingCountMap) {
+      public static updateWatchingCountEvent of(Map<Long, Long> contentWatchingCountMap) {
         return new updateWatchingCountEvent(contentWatchingCountMap);
       }
     }
