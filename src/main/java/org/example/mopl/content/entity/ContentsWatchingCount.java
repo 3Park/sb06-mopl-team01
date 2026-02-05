@@ -11,6 +11,7 @@ import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import java.time.Instant;
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.annotation.LastModifiedDate;
@@ -36,5 +37,20 @@ public class ContentsWatchingCount {
   @LastModifiedDate
   @Column(name = "updated_at")
   protected Instant updatedAt;
+
+  @Builder(access = AccessLevel.PROTECTED)
+  public ContentsWatchingCount(Content content) {
+    this.content = content;
+  }
+
+  public static ContentsWatchingCount of(Content content) {
+    return ContentsWatchingCount.builder()
+        .content(content)
+        .build();
+  }
+
+  public void updateCount(Long newCount) {
+    this.watcherCount = newCount;
+  }
 
 }
