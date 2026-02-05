@@ -45,7 +45,7 @@ public class ContentCommandService {
     Content content = contentMapper.createRequestToEntity(request);
 
     //현재 존재하는 태그만 map으로 가져와 비교
-    Map<String, Tag> tagMap = tagQueryRepository.findAllByTagNames(request.tags());
+    Map<String, Tag> tagMap = tagQueryRepository.findAllMapByNameIn(request.tags());
 
     // 없는 태그는 새로 생성
     List<Tag> newTagList = new ArrayList<>();
@@ -119,7 +119,7 @@ public class ContentCommandService {
     contentTagCommandRepository.deleteByContent_Id(content.getId());
 
     //현재 존재하는 태그만 map으로 가져와 비교
-    Map<String, Tag> tagMap = tagQueryRepository.findAllByTagNames(request.tags());
+    Map<String, Tag> tagMap = tagQueryRepository.findAllMapByNameIn(request.tags());
 
     // 없는 태그는 새로 생성
     List<Tag> newTagList = new ArrayList<>();
