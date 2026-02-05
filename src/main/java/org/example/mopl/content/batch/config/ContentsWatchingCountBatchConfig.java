@@ -57,7 +57,7 @@ public class ContentsWatchingCountBatchConfig {
         .name("ContentsWatchingCountItemReader")
         .repository(contentsWatchingCountQueryRepository)
         .methodName("findAll")
-        .pageSize(100)
+        .pageSize(1000)
         .sorts(Map.of("id", Sort.Direction.ASC))
         .build();
   }
