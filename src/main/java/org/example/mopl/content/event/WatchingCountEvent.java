@@ -1,5 +1,6 @@
 package org.example.mopl.content.event;
 
+import java.util.Map;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 
@@ -7,11 +8,10 @@ import lombok.NoArgsConstructor;
 public class WatchingCountEvent {
 
   public record updateWatchingCountEvent(
-        Long contentId,
-        long watchingCount
+        Map<String, Long> contentWatchingCountMap
     ) {
-      public static updateWatchingCountEvent of(Long contentId, long watchingCount) {
-        return new updateWatchingCountEvent(contentId, watchingCount);
+      public static updateWatchingCountEvent of(Map<String, Long> contentWatchingCountMap) {
+        return new updateWatchingCountEvent(contentWatchingCountMap);
       }
     }
 
