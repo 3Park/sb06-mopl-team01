@@ -44,7 +44,7 @@ public class ContentsWatchingCountBatchConfig {
   @Bean
   public Step updateContentsWatchingCountStep() {
     return new StepBuilder("updateContentsWatchingCountStep", jobRepository)
-        .<ContentsWatchingCount, ContentsWatchingCount>chunk(100, transactionManager)
+        .<ContentsWatchingCount, ContentsWatchingCount>chunk(1000, transactionManager)
         .reader(contentsWatchingCountItemReader())
         .processor(contentsWatchingCountItemProcessor)
         .writer(contentsWatchingCountItemWriter())
