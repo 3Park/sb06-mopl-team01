@@ -364,8 +364,8 @@ public class ContentQueryRepository {
   }
 
   private record ReviewStat(
-      Long sum,
-      Integer count
+      Double sum,
+      Long count
   ) {
 
   }
