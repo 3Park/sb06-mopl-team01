@@ -58,6 +58,7 @@ public class ContentCommandService {
       UUID fileUuid = UUID.randomUUID();
 
       savedContent.updateThumbnailUrl(contentS3Client.putObject(String.valueOf(fileUuid), thumbnail.getBytes()));
+      contentCommandRepository.save(savedContent);
     } catch (IOException e) {
       throw new S3UploadFailedException(request.title());
     }
