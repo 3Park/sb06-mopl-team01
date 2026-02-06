@@ -51,9 +51,9 @@ public class AsyncConfig {
     @Bean(name = "tdDbCrawlTaskExecutor")
     public TaskExecutor tmDbCrawlExecutor() {
         ThreadPoolTaskExecutor executor =new ThreadPoolTaskExecutor();
-        executor.setCorePoolSize(4);
-        executor.setMaxPoolSize(6);
-        executor.setQueueCapacity(10);
+        executor.setCorePoolSize(10);
+        executor.setMaxPoolSize(20);
+        executor.setQueueCapacity(41); // TMDb API rate limit 고려
         executor.setThreadNamePrefix("tmdb-crawl-task-");
         executor.setTaskDecorator(
                 new CompositeTaskDecorator(List.of(mdcTaskDecorator(),securityContext()))
