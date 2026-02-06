@@ -4,6 +4,7 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.example.mopl.common.config.property.JwtProperties;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.server.ServerHttpRequest;
 import org.springframework.stereotype.Component;
 
@@ -16,8 +17,9 @@ public class TokenUtils {
     public Cookie getRefreshCookie(String refreshToken) {
         Cookie cookie = new Cookie(REFRESH_TOKEN, refreshToken);
         cookie.setPath("/");
-        cookie.setMaxAge(Math.toIntExact(jwtProperties.getRefreshKeyExpiration()));
+        cookie.setMaxAge(Math.toIntExact(jwtProperties.getRefreshKeyExpiration()) / 1000);
         cookie.setHttpOnly(true);
+        cookie.setSecure(true);
         return cookie;
     }
 
@@ -26,6 +28,7 @@ public class TokenUtils {
         cookie.setPath("/");
         cookie.setMaxAge(0);
         cookie.setHttpOnly(true);
+        cookie.setSecure(true);
         return cookie;
     }
 

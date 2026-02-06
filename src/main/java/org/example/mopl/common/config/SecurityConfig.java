@@ -4,6 +4,8 @@ import lombok.RequiredArgsConstructor;
 import org.example.mopl.auth.jwt.handler.*;
 import org.example.mopl.auth.jwt.JwtAuthenticationFilter;
 import org.example.mopl.auth.provider.CustomDaoAuthenticationProvider;
+import org.example.mopl.auth.service.OAuthService;
+import org.example.mopl.common.config.encoder.PasswordEncoderConfig;
 import org.example.mopl.user.enums.UserRoleType;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -45,6 +47,8 @@ public class SecurityConfig {
     private final CustomAccessDeniedHandler customAccessDeniedHandler;
     private final CustomAuthenticationEntryPointHandler  customAuthenticationEntryPointHandler;
     private final SpaCsrfTokenRequestHandler  spaCsrfTokenRequestHandler;
+    private final OAuthService oAuthService;
+    private final OAuthSuccessHandler  oAuthSuccessHandler;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -94,11 +98,17 @@ public class SecurityConfig {
                                 .requestMatchers(
                                         "/index.html",
                                         "/assets/**",
-                                        "/favicon.svg",
+                                        "/favicon.*",
                                         "/v3/api-docs/**",
                                         "/swagger-ui/**",
                                         "/swagger-ui.html").permitAll()
                                 .anyRequest().authenticated())
+                .oauth2Login(oauth -> oauth
+                        .userInfoEndpoint(
+                        info -> info.userService(oAuthService))
+                        .successHandler(oAuthSuccessHandler)
+                        .failureHandler(jwtLoginFailureHandler)
+                )
                 .formLogin(x -> x
                         .loginProcessingUrl("/api/auth/sign-in")
                         .successHandler(jwtLoginSuccessHandler)
@@ -118,10 +128,7 @@ public class SecurityConfig {
         return http.build();
     }
 
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
-    }
+
 
     @Bean
     public RoleHierarchy roleHierarchy() {

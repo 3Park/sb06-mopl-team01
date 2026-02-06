@@ -54,6 +54,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                             }
                             else
                             {
+                                //old 유저일 경우 (로그인 중복 방지)
                                 response.addCookie(tokenUtils.emptyRefreshCookie());
                             }
                         });
