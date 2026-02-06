@@ -14,6 +14,7 @@ import org.example.mopl.content.repository.ContentQueryRepository;
 import org.example.mopl.content.repository.ContentTagQueryRepository;
 import org.example.mopl.content.repository.ContentsStatQueryRepository;
 import org.example.mopl.content.repository.ReviewQueryRepository;
+import org.example.mopl.content.s3.ContentS3Client;
 import org.example.mopl.watchtogether.service.WatchTogetherService;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
@@ -27,6 +28,7 @@ public class ContentQueryService {
   private final ContentsStatQueryRepository contentsStatQueryRepository;
   private final WatchTogetherService watchTogetherService;
   private final ReviewQueryRepository reviewQueryRepository;
+  private final ContentS3Client contentS3Client;
 
   public ContentDto getContentByUuid(UUID uuid) {
 
@@ -38,7 +40,7 @@ public class ContentQueryService {
         content.contentType(),
         content.title(),
         content.description(),
-        content.thumbnailUrl(),
+        contentS3Client.getPresignedUrl(content.thumbnailUrl()),
         content.tags(),
         content.averageRating(),
         content.reviewCount(),
@@ -65,7 +67,7 @@ public class ContentQueryService {
             content.contentType(),
             content.title(),
             content.description(),
-            content.thumbnailUrl(),
+            contentS3Client.getPresignedUrl(content.thumbnailUrl()),
             tagListMap.getOrDefault(content.id(), List.of()),
             content.averageRating() != null ? content.averageRating() : 0.0,
             content.reviewCount() != null ? content.reviewCount() : 0,

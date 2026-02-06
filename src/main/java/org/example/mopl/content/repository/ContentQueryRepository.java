@@ -191,7 +191,9 @@ public class ContentQueryRepository {
     }
 
     // 검색 키워드
-    builder.and(QContent.content.title.containsIgnoreCase(request.keywordLike()));
+    if (request.keywordLike() != null && !request.keywordLike().isBlank()) {
+      builder.and(QContent.content.title.containsIgnoreCase(request.keywordLike()));
+    }
 
     if (request.tagsIn() != null && !request.tagsIn().isEmpty()) {
 
@@ -362,8 +364,8 @@ public class ContentQueryRepository {
   }
 
   private record ReviewStat(
-      Long sum,
-      Integer count
+      Double sum,
+      Long count
   ) {
 
   }

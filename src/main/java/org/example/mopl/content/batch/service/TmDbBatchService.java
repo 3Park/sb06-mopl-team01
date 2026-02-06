@@ -4,11 +4,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.example.mopl.content.crawler.MediaCrawlerClient;
 import org.example.mopl.content.dto.ContentFetchResultDto;
+import org.example.mopl.content.dto.S3FileDto;
 import org.example.mopl.content.entity.Content;
 import org.example.mopl.content.entity.ContentTag;
 import org.example.mopl.content.entity.ContentType;
@@ -17,6 +20,7 @@ import org.example.mopl.content.entity.ContentsWatchingCount;
 import org.example.mopl.content.entity.Tag;
 import org.example.mopl.content.exception.NoSuchContentException;
 import org.example.mopl.content.exception.NoSuchTagException;
+import org.example.mopl.content.exception.S3UploadFailedException;
 import org.example.mopl.content.repository.ContentCommandRepository;
 import org.example.mopl.content.repository.ContentQueryRepository;
 import org.example.mopl.content.repository.ContentTagCommandRepository;
@@ -25,10 +29,13 @@ import org.example.mopl.content.repository.ContentsStatCommandRepository;
 import org.example.mopl.content.repository.ContentsWatchingCountCommandRepository;
 import org.example.mopl.content.repository.TagCommandReposiotry;
 import org.example.mopl.content.repository.TagQueryRepository;
+import org.example.mopl.content.s3.ContentS3Client;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.RestClient;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class TmDbBatchService {
@@ -44,6 +51,7 @@ public class TmDbBatchService {
   private final TagQueryRepository tagQueryRepository;
   private final ContentTagQueryRepository contentTagQueryRepository;
   private final ApplicationEventPublisher applicationEventPublisher;
+  private final ContentS3Client contentS3Client;
 
   public void importMovieGenres() {
 
@@ -190,11 +198,24 @@ public class TmDbBatchService {
               return existingContent;
 
            } else {
+
+             String thumbnailUrl;
+             try {
+               UUID fileUuid = UUID.randomUUID();
+               thumbnailUrl = contentS3Client.putObject(
+                   String.valueOf(fileUuid),
+                   fetchImageData(content.thumbnailUrl())
+               );
+             } catch (Exception e) {
+               log.error(e.getMessage());
+               throw new S3UploadFailedException(content.title());
+             }
+
              return Content.of(
                  ContentType.MOVIE.getValue(),
                  content.title(),
                  content.description(),
-                 content.thumbnailUrl(),
+                 thumbnailUrl,
                  content.externalId()
              );
            }
@@ -239,11 +260,24 @@ public class TmDbBatchService {
            return existingContent;
 
          } else {
+
+           String thumbnailUrl;
+           try {
+             UUID fileUuid = UUID.randomUUID();
+             thumbnailUrl = contentS3Client.putObject(
+                 String.valueOf(fileUuid),
+                 fetchImageData(content.thumbnailUrl())
+             );
+           } catch (Exception e) {
+             log.error(e.getMessage());
+             throw new S3UploadFailedException(content.title());
+           }
+
            return Content.of(
                ContentType.TVSERIES.getValue(),
                content.title(),
                content.description(),
-               content.thumbnailUrl(),
+               thumbnailUrl,
                content.externalId()
            );
          }
@@ -283,6 +317,61 @@ public class TmDbBatchService {
         .filter(tag -> !contentTagQueryRepository.existsByContentIdAndTagId(
             tag.getContent().getId(), tag.getTag().getId()))
         .toList());
+
+  }
+
+  private S3FileDto fetchImageData(String imageUrl) {
+
+    RestClient restClient = RestClient.builder()
+        .baseUrl(imageUrl)
+        .build();
+
+    byte[] imageData = restClient.get()
+        .retrieve()
+        .body(byte[].class);
+
+    // 파일 이름과 콘텐츠 타입 추출
+    String fileName = extractFileNameFromUrl(imageUrl);
+    String contentType = getContentTypeFromFileName(fileName);
+
+    return S3FileDto.of(
+        fileName,
+        contentType,
+        imageData
+    );
+
+  }
+
+  private String extractFileNameFromUrl(String url) {
+
+    if (url == null || url.isEmpty()) {
+      return "image.jpg";
+    }
+
+    String path = url.substring(url.lastIndexOf('/') + 1);
+    if (path.contains("?")) {
+      path = path.substring(0, path.indexOf('?'));
+    }
+
+    return path.isEmpty() ? "image.jpg" : path;
+
+  }
+
+  private String getContentTypeFromFileName(String fileName) {
+
+    if (fileName == null || fileName.isEmpty()) {
+      return "image/jpeg";
+    }
+
+    String extension = fileName.substring(fileName.lastIndexOf('.') + 1).toLowerCase();
+
+    return switch (extension) {
+      case "jpg", "jpeg" -> "image/jpeg";
+      case "png" -> "image/png";
+      case "gif" -> "image/gif";
+      case "webp" -> "image/webp";
+      default -> "image/jpeg";
+    };
 
   }
 

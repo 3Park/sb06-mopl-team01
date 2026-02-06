@@ -79,4 +79,8 @@ public class Content extends BasicContentUuidEntity {
     this.description = description;
   }
 
+  public void updateThumbnailUrl(String thumbnailUrl) {
+    this.thumbnailUrl = thumbnailUrl;
+  }
+
 }
