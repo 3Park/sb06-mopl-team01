@@ -1,6 +1,7 @@
 package org.example.mopl.user.dto.request;
 
 import jakarta.validation.constraints.*;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -21,4 +22,11 @@ public class UserCreateRequest {
             message = "영문, 숫자, 특수문자를 포함해야 합니다."
     )
     private String password;
+
+    @Builder
+    UserCreateRequest(String name, String email, String password) {
+        this.name = name;
+        this.email = email;
+        this.password = password;
+    }
 }

@@ -154,7 +154,7 @@ public class QueryDslUserRepositoryImpl implements QueryDslUserRepository {
 
     private BooleanExpression getEmailExpression(UserCursorRequest request)
     {
-        return StringUtils.hasText(request.emailLike()) ? user.email.like(request.emailLike()) : null;
+        return StringUtils.hasText(request.emailLike()) ? user.email.contains(request.emailLike()) : null;
     }
 
     private BooleanExpression getRoleExpression(UserCursorRequest request)

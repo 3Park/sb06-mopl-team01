@@ -5,37 +5,29 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
-import org.example.mopl.common.exception.ErrorResponse;
 import org.example.mopl.auth.exception.AuthErrorCode;
 import org.example.mopl.auth.exception.AuthException;
+import org.example.mopl.common.exception.ErrorResponse;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.authentication.LockedException;
 import org.springframework.security.core.AuthenticationException;
-import org.springframework.security.web.authentication.AuthenticationFailureHandler;
+import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 
 @Component
 @RequiredArgsConstructor
-public class JwtLoginFailureHandler implements AuthenticationFailureHandler {
-
+public class CustomAuthenticationEntryPointHandler implements AuthenticationEntryPoint {
     private final ObjectMapper objectMapper;
 
     @Override
-    public void onAuthenticationFailure(HttpServletRequest request, HttpServletResponse response, AuthenticationException exception) throws IOException, ServletException {
-
+    public void commence(HttpServletRequest request, HttpServletResponse response, AuthenticationException authException) throws IOException, ServletException {
         response.setContentType("application/json");
-        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+        response.setStatus(HttpStatus.UNAUTHORIZED.value());
         response.setCharacterEncoding("UTF-8");
 
-        AuthErrorCode errorCode = AuthErrorCode.INVALID_USER_CREDENTIALS;
-        if(exception.getClass().equals(LockedException.class)) {
-            errorCode = AuthErrorCode.INVALID_USER;
-        }
-
         ErrorResponse errorResponse = new ErrorResponse(
-                new AuthException(errorCode)
+                new AuthException(AuthErrorCode.OLD_USER)
                 , HttpStatus.UNAUTHORIZED.value());
 
         response.getWriter().write(objectMapper.writeValueAsString(errorResponse));

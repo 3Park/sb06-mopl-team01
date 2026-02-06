@@ -11,7 +11,10 @@ public enum AuthErrorCode implements ErrorCode {
 
     INVALID_USER_DATA(HttpStatus.BAD_REQUEST, "유저 정보가 없습니다."),
     INVALID_USER_CREDENTIALS(HttpStatus.UNAUTHORIZED, "ID / Password를 확인하세요."),
-    INVALID_EMAIL(HttpStatus.NOT_FOUND,"없는 이메일 주소 입니다.");
+    INVALID_EMAIL(HttpStatus.NOT_FOUND,"없는 이메일 주소 입니다."),
+    OLD_USER(HttpStatus.UNAUTHORIZED,"다시 로그인해 주세요."),
+    INVALID_USER(HttpStatus.UNAUTHORIZED,"잠긴 계정입니다."),
+    ACCESS_DENIED(HttpStatus.FORBIDDEN,"권한이 없습니다.");
 
     private final HttpStatus httpStatus;
     private final String message;

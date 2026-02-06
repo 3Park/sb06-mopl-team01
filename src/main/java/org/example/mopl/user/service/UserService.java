@@ -6,19 +6,21 @@ import org.example.mopl.profile.entity.Profile;
 import org.example.mopl.profile.repository.ProfileRepository;
 import org.example.mopl.user.dto.CursorResponseUserDto;
 import org.example.mopl.user.dto.UserDto;
+import org.example.mopl.user.dto.request.ChangeRoleRequest;
+import org.example.mopl.user.dto.request.ChangeUserLockStatus;
 import org.example.mopl.user.dto.request.UserCreateRequest;
 import org.example.mopl.user.dto.request.UserCursorRequest;
 import org.example.mopl.user.entity.Role;
 import org.example.mopl.user.entity.User;
 import org.example.mopl.user.entity.UserRole;
 import org.example.mopl.user.enums.UserRoleType;
+import org.example.mopl.user.event.UserRoleLockStatusChangedEvent;
 import org.example.mopl.user.exception.UserErrorCode;
 import org.example.mopl.user.exception.UserException;
 import org.example.mopl.user.repository.RoleRepository;
 import org.example.mopl.user.repository.UserRepository;
 import org.example.mopl.user.repository.UserRoleRepository;
-import org.springframework.data.domain.Slice;
-import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -40,6 +42,7 @@ public class UserService {
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
     private final TemporaryPasswordService temporaryPasswordService;
+    private final ApplicationEventPublisher applicationEventPublisher;
 
     @Transactional
     public void addAdmin(String password) {
@@ -129,7 +132,6 @@ public class UserService {
     }
 
     @Transactional(readOnly = true)
-    @PreAuthorize("hasRole('ADMIN')")
     public CursorResponseUserDto getAllUsers(UserCursorRequest request)
     {
         if(request == null)
@@ -143,14 +145,22 @@ public class UserService {
         //JpaRepository 기본 메서드 count 호출
         Long totalCount = userRepository.count();
 
+        if(users.size() > request.limit())
+        {
+            hasNext = true;
+            users.remove(users.size() - 1);
+            idAfter = users.get(users.size() - 1).getUuid();
+            nextCursor = getNextCursor(request, users);
+        }
+
         //userroles n+1 해결을 위해 fetch join을 해오기 위한 부분
         List<UUID> ids = users.stream().map(User::getUuid).toList();
         if(ids.isEmpty())
             return new CursorResponseUserDto(
+                    List.of(),
                     null,
-                    nextCursor,
-                    idAfter,
-                    hasNext,
+                    null,
+                    false,
                     totalCount,
                     request.sortBy().name(),
                     request.sortDirection().name());
@@ -165,14 +175,6 @@ public class UserService {
         //ids 는 paging 조건에 맞는 정렬형태. userMap에서 가져와 기존 정렬된 형태로 복구
         List<User> orderedUsers = ids.stream().map(userMap::get).toList();
 
-        if(users.size() > request.limit())
-        {
-            hasNext = true;
-            users.remove(users.size() - 1);
-            idAfter = users.get(users.size() - 1).getUuid();
-            nextCursor = getNextCursor(request, users);
-        }
-
         return CursorResponseUserDto.builder()
                 .data(orderedUsers.stream()
                         .map(x -> UserDto.builder()
@@ -186,6 +188,45 @@ public class UserService {
                 .sortBy(request.sortBy().name())
                 .build();
 
+    }
+
+    @Transactional(readOnly = true)
+    public UserDto getDetailsUser(UUID userId)
+    {
+        User user = userRepository.findByUuid(userId).orElseThrow(()-> new UserException(UserErrorCode.INVALID_USER));
+        return UserDto.builder().user(user).build();
+    }
+
+    @Transactional
+    public void changeRole(UUID userId, ChangeRoleRequest request)
+    {
+        User user = userRepository.findByUuid(userId).orElseThrow(()-> new UserException(UserErrorCode.INVALID_USER));
+        if(user.getUserRoles() == null ||  user.getUserRoles().isEmpty())
+            throw new UserException(UserErrorCode.INVALID_DATA);
+
+        Role role = roleRepository.findByName(request.getRole()).orElseThrow(()-> new UserException(UserErrorCode.INVALID_ROLE));
+        user.getUserRoles().get(0).setRole(role);
+        userRoleRepository.save(user.getUserRoles().get(0));
+        userRepository.save(user);
+
+        applicationEventPublisher.publishEvent(UserRoleLockStatusChangedEvent.builder()
+                .userEmail(user.getEmail())
+                .build());
+    }
+
+    @Transactional
+    public void changeLockStatus(UUID userId, ChangeUserLockStatus request)
+    {
+        User user = userRepository.findByUuid(userId).orElseThrow(()-> new UserException(UserErrorCode.INVALID_USER));
+        if(user.getUserRoles() == null ||  user.getUserRoles().isEmpty())
+            throw new UserException(UserErrorCode.INVALID_DATA);
+
+        user.setLocked(request.getLocked());
+        userRepository.save(user);
+
+        applicationEventPublisher.publishEvent(UserRoleLockStatusChangedEvent.builder()
+                .userEmail(user.getEmail())
+                .build());
     }
 
     private String getNextCursor(UserCursorRequest request, List<User> users)
