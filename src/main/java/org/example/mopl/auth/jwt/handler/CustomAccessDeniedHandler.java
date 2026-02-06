@@ -28,8 +28,8 @@ public class CustomAccessDeniedHandler implements AccessDeniedHandler {
         response.setCharacterEncoding("UTF-8");
 
         ErrorResponse errorResponse = new ErrorResponse(
-                new AuthException(AuthErrorCode.INVALID_USER_CREDENTIALS)
-                , HttpStatus.UNAUTHORIZED.value());
+                new AuthException(AuthErrorCode.ACCESS_DENIED)
+                , HttpStatus.FORBIDDEN.value());
 
         response.getWriter().write(objectMapper.writeValueAsString(errorResponse));
     }
