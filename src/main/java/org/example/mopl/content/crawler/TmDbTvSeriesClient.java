@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Future;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.example.mopl.content.dto.ContentFetchResultDto;
@@ -12,6 +14,7 @@ import org.example.mopl.content.exception.TmDbApiException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.retry.annotation.Backoff;
 import org.springframework.retry.annotation.Retryable;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
@@ -119,13 +122,14 @@ public class TmDbTvSeriesClient implements MediaCrawlerClient {
 
   }
 
+  @Async("tmDbCrawlTaskExecutor")
   @Retryable(
       retryFor = {RetryableTmDbApiException.class},
       maxAttempts = 5,
       backoff = @Backoff(delay = 1000, multiplier = 2.0)
   )
   @Override
-  public Optional<ContentFetchResultDto> fetchContentDetailsByExternalId(String externalId) {
+  public Future<Optional<ContentFetchResultDto>> fetchContentDetailsByExternalId(String externalId) {
 
     try {
       RestClient restClient = RestClient.builder()
@@ -139,13 +143,13 @@ public class TmDbTvSeriesClient implements MediaCrawlerClient {
           .retrieve()
           .body(JsonNode.class);
 
-      return Optional.ofNullable(ContentFetchResultDto.of(
+      return CompletableFuture.supplyAsync(() -> Optional.ofNullable(ContentFetchResultDto.of(
           result.get("id").asText(),
           result.get("name").asText(),
           result.get("overview").asText(),
           result.get("poster_path").asText(),
           result.get("genres").findValuesAsText("name")
-      ));
+      )));
     } catch (TmDbApiException e) {
       throw RetryableTmDbApiException.createIfRetryable(e);
     }

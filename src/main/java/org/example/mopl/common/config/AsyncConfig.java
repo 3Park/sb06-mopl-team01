@@ -47,6 +47,21 @@ public class AsyncConfig {
 
         return executor;
     }
+
+    @Bean(name = "tdDbCrawlTaskExecutor")
+    public TaskExecutor tmDbCrawlExecutor() {
+        ThreadPoolTaskExecutor executor =new ThreadPoolTaskExecutor();
+        executor.setCorePoolSize(4);
+        executor.setMaxPoolSize(6);
+        executor.setQueueCapacity(10);
+        executor.setThreadNamePrefix("tmdb-crawl-task-");
+        executor.setTaskDecorator(
+                new CompositeTaskDecorator(List.of(mdcTaskDecorator(),securityContext()))
+        );
+        executor.initialize();
+
+        return executor;
+    }
     
     public TaskDecorator mdcTaskDecorator(){
         return runnable -> {
