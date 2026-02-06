@@ -50,7 +50,7 @@ public class AsyncConfig {
 
     /*TMDB RATE LIMIT = 40 requests/second
     이를 고려하여 스레드풀 크기 조정*/
-    @Bean(name = "tdDbCrawlTaskExecutor")
+    @Bean(name = "tmDbCrawlTaskExecutor")
     public TaskExecutor tmDbCrawlExecutor() {
         ThreadPoolTaskExecutor executor =new ThreadPoolTaskExecutor();
         executor.setCorePoolSize(6); // API 호출 간격 300ms 고려
