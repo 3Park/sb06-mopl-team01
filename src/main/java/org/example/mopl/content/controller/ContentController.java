@@ -26,8 +26,8 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class ContentController {
 
-  private ContentQueryService contentQueryService;
-  private ContentCommandService contentCommandService;
+  private final ContentQueryService contentQueryService;
+  private final ContentCommandService contentCommandService;
 
   // 콘텐츠 단건 조회
   @GetMapping("/{contentId}")
