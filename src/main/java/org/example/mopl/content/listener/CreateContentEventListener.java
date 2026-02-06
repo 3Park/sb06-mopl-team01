@@ -2,6 +2,8 @@ package org.example.mopl.content.listener;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.example.mopl.content.entity.ContentsStat;
+import org.example.mopl.content.entity.ContentsWatchingCount;
 import org.example.mopl.content.event.CreateContentEvent;
 import org.example.mopl.content.repository.ContentsStatCommandRepository;
 import org.example.mopl.content.repository.ContentsWatchingCountCommandRepository;
@@ -23,12 +25,12 @@ public class CreateContentEventListener {
 
     // 콘텐츠 통계 초기화
     contentsStatCommandRepository.save(
-        org.example.mopl.content.entity.ContentsStat.of(event.content())
+        ContentsStat.of(event.content())
     );
 
     // 콘텐츠 시청 횟수 초기화
     contentsWatchingCountCommandRepository.save(
-        org.example.mopl.content.entity.ContentsWatchingCount.of(event.content())
+        ContentsWatchingCount.of(event.content())
     );
 
     log.info("콘텐츠 생성 이벤트 처리 완료 for contentId: {}", event.content().getId());
