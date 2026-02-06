@@ -42,8 +42,6 @@ public class ContentCommandService {
   @Transactional
   public ContentDto createContent(ContentCreateRequest request) {
 
-    // request에 식별자 없으므로 중복 체크 불가
-
     // DTO를 엔티티로 변환
     Content content = contentMapper.createRequestToEntity(request);
 
