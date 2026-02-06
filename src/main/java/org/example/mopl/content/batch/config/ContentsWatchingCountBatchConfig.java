@@ -66,6 +66,7 @@ public class ContentsWatchingCountBatchConfig {
   public RepositoryItemWriter<ContentsWatchingCount> contentsWatchingCountItemWriter() {
     return new RepositoryItemWriterBuilder<ContentsWatchingCount>()
         .repository(contentsWatchingCountCommandRepository)
+        .methodName("saveAll") // bulk save
         .build();
   }
 
