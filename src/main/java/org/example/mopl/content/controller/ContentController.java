@@ -11,6 +11,7 @@ import org.example.mopl.content.dto.response.CursorResponseContentDto;
 import org.example.mopl.content.service.ContentCommandService;
 import org.example.mopl.content.service.ContentQueryService;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -43,6 +44,7 @@ public class ContentController {
   }
 
   // 콘텐츠 생성
+  @PreAuthorize("hasRole('ADMIN')")
   @PostMapping
   public ResponseEntity<ContentDto> createContent(
       @Valid @ModelAttribute ContentCreateRequest request
@@ -51,6 +53,7 @@ public class ContentController {
   }
 
   // 콘텐츠 수정
+  @PreAuthorize("hasRole('ADMIN')")
   @PatchMapping("/{contentId}")
   public ResponseEntity<ContentDto> updateContentById(
       @PathVariable UUID contentId, @Valid @ModelAttribute ContentUpdateRequest request
@@ -59,6 +62,7 @@ public class ContentController {
   }
 
   // 콘텐츠 삭제
+  @PreAuthorize("hasRole('ADMIN')")
   @DeleteMapping("/{contentId}")
   public ResponseEntity<Void> deleteContentById(
       @PathVariable UUID contentId
