@@ -34,21 +34,6 @@ class ContentBatchSchedulerTest {
   @Autowired
   private ContentsWatchingCountBatchConfig contentsWatchingCountBatchConfig;
 
-  /*@TestConfiguration
-  static class TestConfig {
-    @Bean(name = "tmDbCrawlTaskExecutor")
-    public TaskExecutor tmDbCrawlExecutor() {
-      ThreadPoolTaskExecutor executor =new ThreadPoolTaskExecutor();
-      executor.setCorePoolSize(6);
-      executor.setMaxPoolSize(10);
-      executor.setQueueCapacity(100);
-      executor.setThreadNamePrefix("tmdb-crawl-task-");
-      executor.initialize();
-
-      return executor;
-    }
-  }*/
-
   // 성능 테스트
   @Test
   void runTmDbBatchJob_PerformanceTest() throws Exception {
