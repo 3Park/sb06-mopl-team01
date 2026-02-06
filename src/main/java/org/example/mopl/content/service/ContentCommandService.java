@@ -1,5 +1,6 @@
 package org.example.mopl.content.service;
 
+import java.io.IOException;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.example.mopl.content.dto.ContentQueryDto.ContentWithTagsResult;
@@ -7,20 +8,20 @@ import org.example.mopl.content.dto.request.ContentCreateRequest;
 import org.example.mopl.content.dto.request.ContentUpdateRequest;
 import org.example.mopl.content.dto.response.ContentDto;
 import org.example.mopl.content.entity.Content;
-import org.example.mopl.content.entity.ContentsStat;
-import org.example.mopl.content.entity.ContentsWatchingCount;
 import org.example.mopl.content.event.CreateContentEvent;
 import org.example.mopl.content.exception.NoSuchContentException;
+import org.example.mopl.content.exception.S3UploadFailedException;
 import org.example.mopl.content.mapper.ContentMapper;
 import org.example.mopl.content.repository.ContentCommandRepository;
 import org.example.mopl.content.repository.ContentQueryRepository;
 import org.example.mopl.content.repository.ContentsStatCommandRepository;
 import org.example.mopl.content.repository.ContentsWatchingCountCommandRepository;
-import org.example.mopl.content.repository.TagQueryRepository;
+import org.example.mopl.content.s3.ContentS3Client;
 import org.example.mopl.watchtogether.service.WatchTogetherService;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 @Service
 @RequiredArgsConstructor
@@ -33,13 +34,14 @@ public class ContentCommandService {
   private final WatchTogetherService watchTogetherService;
   private final ContentMapper contentMapper;
   public final ApplicationEventPublisher eventPublisher;
+  private final ContentS3Client contentS3Client;
 
   //Content의 자식 엔티티 서비스 클래스
   private final TagCommandService tagCommandService;
   private final ContentTagCommandService contentTagCommandService;
 
   @Transactional
-  public ContentDto createContent(ContentCreateRequest request) {
+  public ContentDto createContent(ContentCreateRequest request, MultipartFile thumbnail) {
 
     // DTO를 엔티티로 변환
     Content content = contentMapper.createRequestToEntity(request);
@@ -49,6 +51,16 @@ public class ContentCommandService {
 
     // 콘텐츠 저장
     Content savedContent = contentCommandRepository.save(content);
+
+    // 썸네일 S3 업로드
+    try {
+
+      UUID fileUuid = UUID.randomUUID();
+
+      savedContent.updateThumbnailUrl(contentS3Client.putObject(String.valueOf(fileUuid), thumbnail.getBytes()));
+    } catch (IOException e) {
+      throw new S3UploadFailedException(request.title());
+    }
 
     //ContentTag 매핑 저장
     contentTagCommandService.createContentTags(
@@ -117,6 +129,9 @@ public class ContentCommandService {
 
     Content content = contentQueryRepository.findByUuid(contentUuid)
         .orElseThrow(() -> new NoSuchContentException(contentUuid.toString()));
+
+    // S3 객체 삭제
+    contentS3Client.deleteObject(content.getThumbnailUrl());
 
     // 연관관계 삭제
     contentTagCommandService.deleteByContentId(content.getId());

@@ -1,4 +1,4 @@
-package org.example.mopl.content.service;
+package org.example.mopl.content.s3;
 
 import java.time.Duration;
 import java.util.HashMap;
@@ -12,7 +12,6 @@ import org.springframework.stereotype.Service;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
-import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.S3Exception;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
@@ -21,7 +20,7 @@ import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignReques
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class ContentS3Service {
+public class ContentS3Client {
 
   @Value("${spring.cloud.aws.s3.presigned-url-expiration}")
   private String presignedUrlExpiration;

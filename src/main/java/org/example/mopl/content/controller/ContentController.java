@@ -19,7 +19,9 @@ import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/api/contents")
@@ -47,9 +49,10 @@ public class ContentController {
   @PreAuthorize("hasRole('ADMIN')")
   @PostMapping
   public ResponseEntity<ContentDto> createContent(
-      @Valid @ModelAttribute ContentCreateRequest request
+      @Valid @ModelAttribute ContentCreateRequest request,
+      @RequestPart("thumbnail") MultipartFile thumbnail
   ) {
-    return ResponseEntity.ok(contentCommandService.createContent(request));
+    return ResponseEntity.ok(contentCommandService.createContent(request, thumbnail));
   }
 
   // 콘텐츠 수정
