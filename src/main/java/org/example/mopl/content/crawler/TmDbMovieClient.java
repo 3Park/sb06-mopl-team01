@@ -28,6 +28,8 @@ public class TmDbMovieClient implements MediaCrawlerClient {
   @Value("${content.api.tmdb.url}")
   private String baseUrl;
 
+  private static final String IMAGE_BASE_URL = "https://image.tmdb.org/t/p/";
+
   @Retryable(
       retryFor = {RetryableTmDbApiException.class},
       maxAttempts = 5,
@@ -162,13 +164,23 @@ public class TmDbMovieClient implements MediaCrawlerClient {
           result.get("id").asText(),
           result.get("title").asText(),
           result.get("overview").asText(),
-          result.get("poster_path").asText(),
+          buildImageUrl(
+              result.get("poster_path") != null ? result.get("poster_path").asText() : null,
+              "w500"
+          ),
           result.get("genres").findValuesAsText("name")
       )));
     } catch (TmDbApiException e) {
       throw RetryableTmDbApiException.createIfRetryable(e);
     }
 
+  }
+
+  private static String buildImageUrl(String filePath, String size) {
+    if (filePath == null || filePath.isEmpty()) {
+      return null;
+    }
+    return IMAGE_BASE_URL + size + filePath;
   }
 
 }
