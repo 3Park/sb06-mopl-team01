@@ -150,7 +150,7 @@ public class PlaylistQueryRepository {
     BooleanBuilder builder = new BooleanBuilder();
 
     // 검색 키워드
-    if (request.keywordLike() != null) {
+    if (request.keywordLike() != null && !request.keywordLike().isBlank()) {
       builder.and(QPlaylist.playlist.title.containsIgnoreCase(request.keywordLike()));
     }
 
