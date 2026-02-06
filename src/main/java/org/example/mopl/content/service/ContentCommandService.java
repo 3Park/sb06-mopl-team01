@@ -28,7 +28,6 @@ public class ContentCommandService {
 
   private final ContentCommandRepository contentCommandRepository;
   private final ContentQueryRepository contentQueryRepository;
-  private final TagQueryRepository tagQueryRepository;
   private final ContentsStatCommandRepository contentsStatCommandRepository;
   private final ContentsWatchingCountCommandRepository contentsWatchingCountCommandRepository;
   private final WatchTogetherService watchTogetherService;
