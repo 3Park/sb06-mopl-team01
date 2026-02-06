@@ -4,6 +4,16 @@ server:
 spring:
   config:
     import: optional:file:${user.dir}/.env[.properties]
+  cloud:
+    aws:
+      credentials:
+        access-key: ${AWS_S3_ACCESS_KEY:aaa}
+        secret-key: ${AWS_S3_SECRET_KEY:aaa}
+      region:
+        static: ${AWS_REGION:ap-northeast-2}
+      s3:
+        bucket: ${AWS_S3_BUCKET:aaa}
+        presigned-url-expiration: ${AWS_S3_PRESIGNED_URL_EXPIRATION:PT10H}
   datasource:
     url: ${SPRING_DATASOURCE_URL}
     driver-class-name: org.postgresql.Driver
