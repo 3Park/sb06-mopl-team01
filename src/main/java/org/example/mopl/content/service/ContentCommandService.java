@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.example.mopl.content.dto.ContentQueryDto.ContentWithTagsResult;
+import org.example.mopl.content.dto.S3FileDto;
 import org.example.mopl.content.dto.request.ContentCreateRequest;
 import org.example.mopl.content.dto.request.ContentUpdateRequest;
 import org.example.mopl.content.dto.response.ContentDto;
@@ -47,7 +48,14 @@ public class ContentCommandService {
     String thumbnailUrl;
     try {
       UUID fileUuid = UUID.randomUUID();
-      thumbnailUrl = contentS3Client.putObject(String.valueOf(fileUuid), thumbnail.getBytes());
+      thumbnailUrl = contentS3Client.putObject(
+          String.valueOf(fileUuid),
+          S3FileDto.of(
+              thumbnail.getOriginalFilename(),
+              thumbnail.getContentType(),
+              thumbnail.getBytes()
+          )
+      );
     } catch (IOException e) {
       throw new S3UploadFailedException(request.title());
     }

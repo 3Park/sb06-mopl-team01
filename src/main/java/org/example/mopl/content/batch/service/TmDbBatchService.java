@@ -1,8 +1,6 @@
 package org.example.mopl.content.batch.service;
 
-import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -13,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.example.mopl.content.crawler.MediaCrawlerClient;
 import org.example.mopl.content.dto.ContentFetchResultDto;
+import org.example.mopl.content.dto.S3FileDto;
 import org.example.mopl.content.entity.Content;
 import org.example.mopl.content.entity.ContentTag;
 import org.example.mopl.content.entity.ContentType;
@@ -205,7 +204,7 @@ public class TmDbBatchService {
                UUID fileUuid = UUID.randomUUID();
                thumbnailUrl = contentS3Client.putObject(
                    String.valueOf(fileUuid),
-                   fetchImageData(content.thumbnailUrl()).getBytes()
+                   fetchImageData(content.thumbnailUrl())
                );
              } catch (Exception e) {
                log.error(e.getMessage());
@@ -267,7 +266,7 @@ public class TmDbBatchService {
              UUID fileUuid = UUID.randomUUID();
              thumbnailUrl = contentS3Client.putObject(
                  String.valueOf(fileUuid),
-                 fetchImageData(content.thumbnailUrl()).getBytes()
+                 fetchImageData(content.thumbnailUrl())
              );
            } catch (Exception e) {
              log.error(e.getMessage());
@@ -321,7 +320,8 @@ public class TmDbBatchService {
 
   }
 
-  private String fetchImageData(String imageUrl) {
+  private S3FileDto fetchImageData(String imageUrl) {
+
     RestClient restClient = RestClient.builder()
         .baseUrl(imageUrl)
         .build();
@@ -330,7 +330,48 @@ public class TmDbBatchService {
         .retrieve()
         .body(byte[].class);
 
-    return Base64.getEncoder().encodeToString(imageData);
+    // 파일 이름과 콘텐츠 타입 추출
+    String fileName = extractFileNameFromUrl(imageUrl);
+    String contentType = getContentTypeFromFileName(fileName);
+
+    return S3FileDto.of(
+        fileName,
+        contentType,
+        imageData
+    );
+
+  }
+
+  private String extractFileNameFromUrl(String url) {
+
+    if (url == null || url.isEmpty()) {
+      return "image.jpg";
+    }
+
+    String path = url.substring(url.lastIndexOf('/') + 1);
+    if (path.contains("?")) {
+      path = path.substring(0, path.indexOf('?'));
+    }
+
+    return path.isEmpty() ? "image.jpg" : path;
+
+  }
+
+  private String getContentTypeFromFileName(String fileName) {
+
+    if (fileName == null || fileName.isEmpty()) {
+      return "image/jpeg";
+    }
+
+    String extension = fileName.substring(fileName.lastIndexOf('.') + 1).toLowerCase();
+
+    return switch (extension) {
+      case "jpg", "jpeg" -> "image/jpeg";
+      case "png" -> "image/png";
+      case "gif" -> "image/gif";
+      case "webp" -> "image/webp";
+      default -> "image/jpeg";
+    };
 
   }
 

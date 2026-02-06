@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.example.mopl.content.dto.S3FileDto;
 import org.example.mopl.content.exception.NoSuchS3ObjectException;
 import org.example.mopl.content.exception.S3DeleteFailedException;
 import org.springframework.beans.factory.annotation.Value;
@@ -30,16 +31,17 @@ public class ContentS3Client {
   private final S3Client s3Client;
   private final S3Presigner s3Presigner;
 
-  public String putObject(String id, byte[] data) {
+  public String putObject(String id, S3FileDto file) {
 
     PutObjectRequest putObjectRequest = PutObjectRequest.builder()
         .bucket(bucket)
         .key(id)
+        .contentType(file.fileType())
         .build();
 
-    s3Client.putObject(putObjectRequest, RequestBody.fromBytes(data));
+    s3Client.putObject(putObjectRequest, RequestBody.fromBytes(file.fileData()));
 
-    log.info("Success to put object to S3 with id: {}", id);
+    log.info("Success to put object to S3 with id: {}", file.fileName());
 
     return id;
 
