@@ -1,6 +1,7 @@
 package org.example.mopl.content.batch.config;
 
 import java.util.List;
+import java.util.stream.IntStream;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.example.mopl.content.batch.service.TmDbBatchService;
@@ -11,6 +12,9 @@ import org.springframework.batch.core.configuration.annotation.EnableBatchProces
 import org.springframework.batch.core.job.builder.JobBuilder;
 import org.springframework.batch.core.repository.JobRepository;
 import org.springframework.batch.core.step.builder.StepBuilder;
+import org.springframework.batch.item.ItemReader;
+import org.springframework.batch.item.ItemWriter;
+import org.springframework.batch.item.support.ListItemReader;
 import org.springframework.batch.repeat.RepeatStatus;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -54,26 +58,44 @@ public class TmDbBatchConfig {
   @Bean
   public Step tmDbBatchStep() {
     return new StepBuilder("tmDbBatchStep", jobRepository)
-        .tasklet((contribution, chunkContext) -> {
-
-          for (int page = 1; page <= pageSize; page++) {
-
-            log.info("Processing TMDb data for page: {}", page);
-
-            // 영화 데이터 처리
-            List<ContentFetchResultDto> movies = tmDbBatchService.importMoviesByPage(page);
-            tmDbBatchService.writeImportedMovies(movies);
-            tmDbBatchService.writeImportedContentTags(movies);
-
-            // TV 시리즈 데이터 처리
-            List<ContentFetchResultDto> tvSeries = tmDbBatchService.importTvSeriesByPage(page);
-            tmDbBatchService.writeImportedTvSeries(tvSeries);
-            tmDbBatchService.writeImportedContentTags(tvSeries);
-
-          }
-          return RepeatStatus.FINISHED;
-        }, transactionManager)
+        .<Integer, Integer>chunk(1, transactionManager)
+        .reader(tmDbPageReader())
+        .writer(tmDbPageWriter())
         .build();
+  }
+
+  @Bean
+  public ItemReader<Integer> tmDbPageReader() {
+    // 1부터 pageSize까지의 페이지 번호를 생성하는 Reader
+    return new ListItemReader<>(IntStream
+        .rangeClosed(1, pageSize)
+        .boxed()
+        .toList());
+  }
+
+  @Bean
+  public ItemWriter<Integer> tmDbPageWriter() {
+    return pages -> {
+      for (Integer page : pages) {
+
+        log.info("Processing TMDb data for page: {}", page);
+
+        // 영화 데이터 가져오기 및 저장
+        List<ContentFetchResultDto> movies = tmDbBatchService.importMoviesByPage(page);
+        if (!movies.isEmpty()) {
+          tmDbBatchService.writeImportedMovies(movies);
+          tmDbBatchService.writeImportedContentTags(movies);
+        }
+
+        // TV 시리즈 데이터 가져오기 및 저장
+        List<ContentFetchResultDto> tvSeries = tmDbBatchService.importTvSeriesByPage(page);
+        if (!tvSeries.isEmpty()) {
+          tmDbBatchService.writeImportedTvSeries(tvSeries);
+          tmDbBatchService.writeImportedContentTags(tvSeries);
+        }
+
+      }
+    };
   }
 
 }

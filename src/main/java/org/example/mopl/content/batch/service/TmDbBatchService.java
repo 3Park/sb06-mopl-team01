@@ -2,7 +2,9 @@ package org.example.mopl.content.batch.service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.example.mopl.content.crawler.MediaCrawlerClient;
@@ -73,16 +75,36 @@ public class TmDbBatchService {
 
     List<String> movieIdList = tmDbMovieClient.fetchContentIdByPage(page);
 
-    return movieIdList.stream()
+    // 모든 Future 생성
+    List<CompletableFuture<Optional<ContentFetchResultDto>>> futures = movieIdList.stream()
         .map(tmDbMovieClient::fetchContentDetailsByExternalId)
-        .map(result -> {
-          if (result.isPresent()) {
-            return result.get();
-          } else {
-            throw new RuntimeException("Failed to fetch movie details from TMDb");
-          }
-        })
         .toList();
+
+    // 모든 Future가 완료될 때까지 기다림
+    CompletableFuture<Void> allFutures = CompletableFuture.allOf(
+        futures.toArray(new CompletableFuture[0])
+    );
+
+    try {
+      // 모든 Future가 완료될 때까지 대기
+      allFutures.get();
+
+      // 모든 결과 수집
+      return futures.stream()
+          .map(future -> {
+            try {
+              return future.get();
+            } catch (Exception e) {
+              throw new RuntimeException("Failed to fetch movie details from TMDb", e);
+            }
+          })
+          .filter(Optional::isPresent)
+          .map(Optional::get)
+          .collect(Collectors.toList());
+
+    } catch (Exception e) {
+      throw new RuntimeException("Failed to process movie futures", e);
+    }
 
   }
 
@@ -90,16 +112,36 @@ public class TmDbBatchService {
 
     List<String> tvSeriesIdList = tmDbTvSeriesClient.fetchContentIdByPage(page);
 
-    return tvSeriesIdList.stream()
+    // 모든 Future 생성
+    List<CompletableFuture<Optional<ContentFetchResultDto>>> futures = tvSeriesIdList.stream()
         .map(tmDbTvSeriesClient::fetchContentDetailsByExternalId)
-        .map(result -> {
-          if (result.isPresent()) {
-            return result.get();
-          } else {
-            throw new RuntimeException("Failed to fetch TV series details from TMDb");
-          }
-        })
         .toList();
+
+    // 모든 Future가 완료될 때까지 기다림
+    CompletableFuture<Void> allFutures = CompletableFuture.allOf(
+        futures.toArray(new CompletableFuture[0])
+    );
+
+    try {
+      // 모든 Future가 완료될 때까지 대기
+      allFutures.get();
+
+      // 모든 결과 수집
+      return futures.stream()
+          .map(future -> {
+            try {
+              return future.get();
+            } catch (Exception e) {
+              throw new RuntimeException("Failed to fetch TV series details from TMDb", e);
+            }
+          })
+          .filter(Optional::isPresent)
+          .map(Optional::get)
+          .collect(Collectors.toList());
+
+    } catch (Exception e) {
+      throw new RuntimeException("Failed to process TV series futures", e);
+    }
 
   }
 
