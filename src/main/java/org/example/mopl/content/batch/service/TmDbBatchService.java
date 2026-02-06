@@ -2,7 +2,9 @@ package org.example.mopl.content.batch.service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.example.mopl.content.crawler.MediaCrawlerClient;
@@ -11,6 +13,7 @@ import org.example.mopl.content.entity.Content;
 import org.example.mopl.content.entity.ContentTag;
 import org.example.mopl.content.entity.ContentType;
 import org.example.mopl.content.entity.ContentsStat;
+import org.example.mopl.content.entity.ContentsWatchingCount;
 import org.example.mopl.content.entity.Tag;
 import org.example.mopl.content.exception.NoSuchContentException;
 import org.example.mopl.content.exception.NoSuchTagException;
@@ -19,6 +22,7 @@ import org.example.mopl.content.repository.ContentQueryRepository;
 import org.example.mopl.content.repository.ContentTagCommandRepository;
 import org.example.mopl.content.repository.ContentTagQueryRepository;
 import org.example.mopl.content.repository.ContentsStatCommandRepository;
+import org.example.mopl.content.repository.ContentsWatchingCountCommandRepository;
 import org.example.mopl.content.repository.TagCommandReposiotry;
 import org.example.mopl.content.repository.TagQueryRepository;
 import org.springframework.context.ApplicationEventPublisher;
@@ -35,6 +39,7 @@ public class TmDbBatchService {
   private final ContentCommandRepository contentCommandRepository;
   private final ContentTagCommandRepository contentTagCommandRepository;
   private final ContentsStatCommandRepository contentsStatCommandRepository;
+  private final ContentsWatchingCountCommandRepository contentsWatchingCountCommandRepository;
   private final TagCommandReposiotry tagCommandReposiotry;
   private final TagQueryRepository tagQueryRepository;
   private final ContentTagQueryRepository contentTagQueryRepository;
@@ -70,16 +75,36 @@ public class TmDbBatchService {
 
     List<String> movieIdList = tmDbMovieClient.fetchContentIdByPage(page);
 
-    return movieIdList.stream()
+    // 모든 Future 생성
+    List<CompletableFuture<Optional<ContentFetchResultDto>>> futures = movieIdList.stream()
         .map(tmDbMovieClient::fetchContentDetailsByExternalId)
-        .map(result -> {
-          if (result.isPresent()) {
-            return result.get();
-          } else {
-            throw new RuntimeException("Failed to fetch movie details from TMDb");
-          }
-        })
         .toList();
+
+    // 모든 Future가 완료될 때까지 기다림
+    CompletableFuture<Void> allFutures = CompletableFuture.allOf(
+        futures.toArray(new CompletableFuture[0])
+    );
+
+    try {
+      // 모든 Future가 완료될 때까지 대기
+      allFutures.get();
+
+      // 모든 결과 수집
+      return futures.stream()
+          .map(future -> {
+            try {
+              return future.get();
+            } catch (Exception e) {
+              throw new RuntimeException("Failed to fetch movie details from TMDb", e);
+            }
+          })
+          .filter(Optional::isPresent)
+          .map(Optional::get)
+          .collect(Collectors.toList());
+
+    } catch (Exception e) {
+      throw new RuntimeException("Failed to process movie futures", e);
+    }
 
   }
 
@@ -87,16 +112,36 @@ public class TmDbBatchService {
 
     List<String> tvSeriesIdList = tmDbTvSeriesClient.fetchContentIdByPage(page);
 
-    return tvSeriesIdList.stream()
+    // 모든 Future 생성
+    List<CompletableFuture<Optional<ContentFetchResultDto>>> futures = tvSeriesIdList.stream()
         .map(tmDbTvSeriesClient::fetchContentDetailsByExternalId)
-        .map(result -> {
-          if (result.isPresent()) {
-            return result.get();
-          } else {
-            throw new RuntimeException("Failed to fetch TV series details from TMDb");
-          }
-        })
         .toList();
+
+    // 모든 Future가 완료될 때까지 기다림
+    CompletableFuture<Void> allFutures = CompletableFuture.allOf(
+        futures.toArray(new CompletableFuture[0])
+    );
+
+    try {
+      // 모든 Future가 완료될 때까지 대기
+      allFutures.get();
+
+      // 모든 결과 수집
+      return futures.stream()
+          .map(future -> {
+            try {
+              return future.get();
+            } catch (Exception e) {
+              throw new RuntimeException("Failed to fetch TV series details from TMDb", e);
+            }
+          })
+          .filter(Optional::isPresent)
+          .map(Optional::get)
+          .collect(Collectors.toList());
+
+    } catch (Exception e) {
+      throw new RuntimeException("Failed to process TV series futures", e);
+    }
 
   }
 
@@ -127,6 +172,7 @@ public class TmDbBatchService {
   public void writeImportedMovies(List<ContentFetchResultDto> fetchResultDtoList) {
 
      List<ContentsStat> contentsStatList = new ArrayList<>();
+     List<ContentsWatchingCount> contentsWatchingCountList = new ArrayList<>();
 
      List<Content> contentList = fetchResultDtoList.stream()
          .map(content -> {
@@ -159,11 +205,16 @@ public class TmDbBatchService {
      contentList = contentCommandRepository.saveAll(contentList);
 
      contentList.forEach(content -> {
-       ContentsStat contentsStat = ContentsStat.of(content);
-       contentsStatList.add(contentsStat);
+       contentsStatList.add(
+           ContentsStat.of(content)
+       );
+       contentsWatchingCountList.add(
+            ContentsWatchingCount.of(content)
+       );
      });
 
      contentsStatCommandRepository.saveAll(contentsStatList);
+     contentsWatchingCountCommandRepository.saveAll(contentsWatchingCountList);
 
   }
 

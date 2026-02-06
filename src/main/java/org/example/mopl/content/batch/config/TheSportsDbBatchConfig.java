@@ -32,6 +32,7 @@ public class TheSportsDbBatchConfig {
         .build();
   }
 
+  // 리그가 9개 정도 밖에 안되서 chunk 단위 처리 의미 없음
   @Bean
   public Step importSportsStep() {
     return new StepBuilder("importSportsStep", jobRepository)
