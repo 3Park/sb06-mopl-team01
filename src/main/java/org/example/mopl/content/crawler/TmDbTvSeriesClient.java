@@ -5,7 +5,6 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Future;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.example.mopl.content.dto.ContentFetchResultDto;
@@ -129,7 +128,7 @@ public class TmDbTvSeriesClient implements MediaCrawlerClient {
       backoff = @Backoff(delay = 1000, multiplier = 2.0)
   )
   @Override
-  public Future<Optional<ContentFetchResultDto>> fetchContentDetailsByExternalId(String externalId) {
+  public CompletableFuture<Optional<ContentFetchResultDto>> fetchContentDetailsByExternalId(String externalId) {
 
     try {
       RestClient restClient = RestClient.builder()
