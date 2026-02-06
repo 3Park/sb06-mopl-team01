@@ -34,7 +34,7 @@ class ContentBatchSchedulerTest {
   @Autowired
   private ContentsWatchingCountBatchConfig contentsWatchingCountBatchConfig;
 
-  @TestConfiguration
+  /*@TestConfiguration
   static class TestConfig {
     @Bean(name = "tmDbCrawlTaskExecutor")
     public TaskExecutor tmDbCrawlExecutor() {
@@ -47,7 +47,7 @@ class ContentBatchSchedulerTest {
 
       return executor;
     }
-  }
+  }*/
 
   // 성능 테스트
   @Test
