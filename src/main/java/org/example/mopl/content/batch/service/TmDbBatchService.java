@@ -1,9 +1,12 @@
 package org.example.mopl.content.batch.service;
 
+import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -17,6 +20,7 @@ import org.example.mopl.content.entity.ContentsWatchingCount;
 import org.example.mopl.content.entity.Tag;
 import org.example.mopl.content.exception.NoSuchContentException;
 import org.example.mopl.content.exception.NoSuchTagException;
+import org.example.mopl.content.exception.S3UploadFailedException;
 import org.example.mopl.content.repository.ContentCommandRepository;
 import org.example.mopl.content.repository.ContentQueryRepository;
 import org.example.mopl.content.repository.ContentTagCommandRepository;
@@ -25,9 +29,11 @@ import org.example.mopl.content.repository.ContentsStatCommandRepository;
 import org.example.mopl.content.repository.ContentsWatchingCountCommandRepository;
 import org.example.mopl.content.repository.TagCommandReposiotry;
 import org.example.mopl.content.repository.TagQueryRepository;
+import org.example.mopl.content.s3.ContentS3Client;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.RestClient;
 
 @Service
 @RequiredArgsConstructor
@@ -44,6 +50,7 @@ public class TmDbBatchService {
   private final TagQueryRepository tagQueryRepository;
   private final ContentTagQueryRepository contentTagQueryRepository;
   private final ApplicationEventPublisher applicationEventPublisher;
+  private final ContentS3Client contentS3Client;
 
   public void importMovieGenres() {
 
@@ -190,11 +197,23 @@ public class TmDbBatchService {
               return existingContent;
 
            } else {
+
+             String thumbnailUrl;
+             try {
+               UUID fileUuid = UUID.randomUUID();
+               thumbnailUrl = contentS3Client.putObject(
+                   String.valueOf(fileUuid),
+                   fetchImageData(content.thumbnailUrl()).getBytes()
+               );
+             } catch (Exception e) {
+               throw new S3UploadFailedException(content.title());
+             }
+
              return Content.of(
                  ContentType.MOVIE.getValue(),
                  content.title(),
                  content.description(),
-                 content.thumbnailUrl(),
+                 thumbnailUrl,
                  content.externalId()
              );
            }
@@ -239,11 +258,23 @@ public class TmDbBatchService {
            return existingContent;
 
          } else {
+
+           String thumbnailUrl;
+           try {
+             UUID fileUuid = UUID.randomUUID();
+             thumbnailUrl = contentS3Client.putObject(
+                 String.valueOf(fileUuid),
+                 fetchImageData(content.thumbnailUrl()).getBytes()
+             );
+           } catch (Exception e) {
+             throw new S3UploadFailedException(content.title());
+           }
+
            return Content.of(
                ContentType.TVSERIES.getValue(),
                content.title(),
                content.description(),
-               content.thumbnailUrl(),
+               thumbnailUrl,
                content.externalId()
            );
          }
@@ -283,6 +314,19 @@ public class TmDbBatchService {
         .filter(tag -> !contentTagQueryRepository.existsByContentIdAndTagId(
             tag.getContent().getId(), tag.getTag().getId()))
         .toList());
+
+  }
+
+  private String fetchImageData(String imageUrl) {
+    RestClient restClient = RestClient.builder()
+        .baseUrl(imageUrl)
+        .build();
+
+    byte[] imageData = restClient.get()
+        .retrieve()
+        .body(byte[].class);
+
+    return Base64.getEncoder().encodeToString(imageData);
 
   }
 
