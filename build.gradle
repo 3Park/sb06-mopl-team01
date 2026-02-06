@@ -59,6 +59,8 @@ dependencies {
 
     implementation 'com.querydsl:querydsl-jpa:5.1.0:jakarta'
 
+    implementation 'io.awspring.cloud:spring-cloud-aws-starter-s3:3.0.0'
+
     compileOnly 'org.projectlombok:lombok'
 
     runtimeOnly 'com.h2database:h2'
