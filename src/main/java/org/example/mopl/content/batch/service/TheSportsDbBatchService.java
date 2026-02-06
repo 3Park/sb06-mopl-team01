@@ -7,6 +7,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.example.mopl.content.crawler.SportCrawlerClient;
 import org.example.mopl.content.dto.ContentFetchResultDto;
 import org.example.mopl.content.entity.Content;
@@ -31,6 +32,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestClient;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class TheSportsDbBatchService {
@@ -119,6 +121,7 @@ public class TheSportsDbBatchService {
             fetchImageData(sportEvent.thumbnailUrl()).getBytes()
         );
       } catch (Exception e) {
+        log.error(e.getMessage());
         throw new S3UploadFailedException(sportEvent.title());
       }
 
