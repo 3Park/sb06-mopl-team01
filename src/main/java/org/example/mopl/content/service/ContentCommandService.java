@@ -43,25 +43,24 @@ public class ContentCommandService {
   @Transactional
   public ContentDto createContent(ContentCreateRequest request, MultipartFile thumbnail) {
 
+    // 썸네일 S3 업로드
+    String thumbnailUrl;
+    try {
+      UUID fileUuid = UUID.randomUUID();
+      thumbnailUrl = contentS3Client.putObject(String.valueOf(fileUuid), thumbnail.getBytes());
+    } catch (IOException e) {
+      throw new S3UploadFailedException(request.title());
+    }
+
     // DTO를 엔티티로 변환
     Content content = contentMapper.createRequestToEntity(request);
+    content.updateThumbnailUrl(thumbnailUrl);
 
     // 태그 생성
     tagCommandService.createTags(request.tags());
 
     // 콘텐츠 저장
     Content savedContent = contentCommandRepository.save(content);
-
-    // 썸네일 S3 업로드
-    try {
-
-      UUID fileUuid = UUID.randomUUID();
-
-      savedContent.updateThumbnailUrl(contentS3Client.putObject(String.valueOf(fileUuid), thumbnail.getBytes()));
-      contentCommandRepository.save(savedContent);
-    } catch (IOException e) {
-      throw new S3UploadFailedException(request.title());
-    }
 
     //ContentTag 매핑 저장
     contentTagCommandService.createContentTags(
