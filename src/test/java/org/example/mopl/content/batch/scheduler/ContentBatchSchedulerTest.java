@@ -39,8 +39,8 @@ class ContentBatchSchedulerTest {
     @Bean(name = "tmDbCrawlTaskExecutor")
     public TaskExecutor tmDbCrawlExecutor() {
       ThreadPoolTaskExecutor executor =new ThreadPoolTaskExecutor();
-      executor.setCorePoolSize(10);
-      executor.setMaxPoolSize(20);
+      executor.setCorePoolSize(6);
+      executor.setMaxPoolSize(10);
       executor.setQueueCapacity(100);
       executor.setThreadNamePrefix("tmdb-crawl-task-");
       executor.initialize();
