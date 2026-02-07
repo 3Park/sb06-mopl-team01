@@ -81,7 +81,7 @@ public class ContentQueryRepository {
     ReviewStat reviewStat = queryFactory.select(
             Projections.constructor(
                 ReviewStat.class,
-                QReview.review.rating.sum(),
+                QReview.review.rating.sum().coalesce(0.0), // 리뷰가 없으면 0.0 반환
                 QReview.review.rating.count()
             )
         )
