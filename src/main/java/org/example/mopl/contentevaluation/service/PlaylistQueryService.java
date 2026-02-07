@@ -85,9 +85,9 @@ public class PlaylistQueryService {
                     content.getContent().getTitle(),
                     content.getContent().getDescription(),
                     contentS3Client.getPresignedUrl(content.getContent().getThumbnailUrl()),
-                    contentTagsMap.get(content.getId()),
-                    contentsStatMap.get(content.getId()).getRatingAverage(),
-                    contentsStatMap.get(content.getId()).getRatingCount(),
+                    contentTagsMap.getOrDefault(content.getId(), List.of()),
+                    contentsStatMap.containsKey(content.getId()) ? contentsStatMap.get(content.getId()).getRatingAverage() : 0.0,
+                    contentsStatMap.containsKey(content.getId()) ? contentsStatMap.get(content.getId()).getRatingCount() : 0,
                     watchTogetherService.getWatcherCount(String.valueOf(content.getId()))
                 )
             )
@@ -149,9 +149,9 @@ public class PlaylistQueryService {
                         content.getContent().getTitle(),
                         content.getContent().getDescription(),
                         contentS3Client.getPresignedUrl(content.getContent().getThumbnailUrl()),
-                        contentTagsMap.get(content.getId()),
-                        contentsStatMap.get(content.getId()).getRatingAverage(),
-                        contentsStatMap.get(content.getId()).getRatingCount(),
+                        contentTagsMap.getOrDefault(content.getId(), List.of()),
+                        contentsStatMap.containsKey(content.getId()) ? contentsStatMap.get(content.getId()).getRatingAverage() : 0.0,
+                        contentsStatMap.containsKey(content.getId()) ? contentsStatMap.get(content.getId()).getRatingCount() : 0,
                         watchTogetherService.getWatcherCount(String.valueOf(content.getId()))
                     )
                 )
