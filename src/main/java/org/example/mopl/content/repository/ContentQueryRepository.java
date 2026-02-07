@@ -152,7 +152,7 @@ public class ContentQueryRepository {
                 QContent.content.thumbnailUrl,
                 QContent.content.createdAt,
                 QContent.content.updatedAt,
-                QContentsStat.contentsStat.ratingAverage,
+                QContentsStat.contentsStat.ratingAverage.coalesce(0.0),
                 QContentsStat.contentsStat.ratingCount,
                 QContentsWatchingCount.contentsWatchingCount.watcherCount
             )

@@ -64,7 +64,7 @@ public class PlaylistCommandService {
 
 
     return PlaylistDto.of(
-        playlist.getUuid(),
+        savedPlaylist.getUuid(),
         OwnerDto.of(
             user.getUuid(),
             user.getProfile().getName(),
@@ -74,7 +74,7 @@ public class PlaylistCommandService {
         savedPlaylist.getDescription(),
         savedPlaylist.getUpdatedAt(),
         0L,
-        true,
+        false,
         new ArrayList<>()
     );
 
