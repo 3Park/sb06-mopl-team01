@@ -187,7 +187,7 @@ public class ContentQueryRepository {
 
     // 콘텐츠 타입
     if (request.typeEqual() != null) {
-      builder.and(QContent.content.contentType.eq(ContentType.valueOf(request.typeEqual())));
+      builder.and(QContent.content.contentType.eq(ContentType.fromValue(request.typeEqual())));
     }
 
     // 검색 키워드
