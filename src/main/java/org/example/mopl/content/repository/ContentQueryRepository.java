@@ -106,9 +106,9 @@ public class ContentQueryRepository {
             .map(contentTag -> contentTag.getTag().getName())
             .toList())
         .averageRating(reviewStat.count() != 0 ?
-            reviewStat.sum().doubleValue() / reviewStat.count() : 0.0)
-        .reviewCount(reviewStat.count().longValue())
-        .watcherCount(reviewStat.count().longValue())
+            reviewStat.sum() / reviewStat.count() : 0.0)
+        .reviewCount(reviewStat.count())
+        .watcherCount(reviewStat.count())
         .build());
 
   }
