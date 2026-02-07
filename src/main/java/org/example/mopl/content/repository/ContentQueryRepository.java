@@ -363,7 +363,7 @@ public class ContentQueryRepository {
 
   }
 
-  private record ReviewStat(
+  public record ReviewStat(
       Double sum,
       Long count
   ) {
