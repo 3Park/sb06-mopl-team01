@@ -145,17 +145,6 @@ public class DirectMessageService {
         );
     }
 
-    private Map<Long, User> findCounterpartUserByConversations(User requester, List<Conversation> conversations) {
-        List<Long> counterpartIds = conversations.stream()
-                .map(c -> c.getCounterpartId(requester.getId())).toList();
-        return userRepository.findAllWithProfileByIdIn(counterpartIds).stream()
-                .collect(Collectors.toMap(user -> user.getId(), user -> user));
-    }
-    private Map<Long, DirectMessage> findLastMessagesByConversations(List<Conversation> conversations) {
-        List<Long> conversationIds = conversations.stream().map(Conversation::getId).toList();
-        return directMessageRepository.findAllLastMessagesByConversationIdIn(conversationIds);
-    }
-
     // DM 목록 조회
     @Transactional(readOnly = true)
     public CursorResponseDirectMessageDto getDirectMessages(
@@ -180,6 +169,16 @@ public class DirectMessageService {
         );
     }
 
+    private Map<Long, User> findCounterpartUserByConversations(User requester, List<Conversation> conversations) {
+        List<Long> counterpartIds = conversations.stream()
+                .map(c -> c.getCounterpartId(requester.getId())).toList();
+        return userRepository.findAllWithProfileByIdIn(counterpartIds).stream()
+                .collect(Collectors.toMap(user -> user.getId(), user -> user));
+    }
+    private Map<Long, DirectMessage> findLastMessagesByConversations(List<Conversation> conversations) {
+        List<Long> conversationIds = conversations.stream().map(Conversation::getId).toList();
+        return directMessageRepository.findAllLastMessagesByConversationIdIn(conversationIds);
+    }
 
     private Conversation saveConversation(User creator, User joiner) {
         Conversation conversation = Conversation.of(creator.getId(), joiner.getId());

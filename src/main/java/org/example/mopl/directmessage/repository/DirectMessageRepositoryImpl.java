@@ -6,7 +6,6 @@ import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.JPQLQuery;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
-import org.example.mopl.conversation.entity.QConversation;
 import org.example.mopl.directmessage.dto.condition.DirectMessageSearchCondition;
 import org.example.mopl.directmessage.entity.DirectMessage;
 import org.example.mopl.directmessage.entity.QDirectMessage;
@@ -29,7 +28,7 @@ public class DirectMessageRepositoryImpl implements DirectMessageRepositoryCusto
     public Long readUnreadMessages(Long conversationId, Long requesterId) {
         return jpaQueryFactory
                 .update(directMessage)
-                .set(directMessage.readStatus, true)
+                .set(directMessage.isRead, true)
                 .where(isUnreadIn(conversationId),
                         directMessage.receiverId.eq(requesterId))
                 .execute();
@@ -63,9 +62,6 @@ public class DirectMessageRepositoryImpl implements DirectMessageRepositoryCusto
     public Map<Long, DirectMessage> findAllLastMessagesByConversationIdIn(List<Long> ids) {
         if (ids.isEmpty()) {return Collections.emptyMap();}
 
-        // 리스트에 있는 id conversation에 있는 id max인 message 객체 가져와서 Map 만들어서 반납
-        // conversationId별로 id.max인 directmessage를 찾아서 가져오기
-
         List<Long> lastMessageIds = jpaQueryFactory
                 .select(directMessage.id.max())
                 .from(directMessage)
@@ -74,7 +70,7 @@ public class DirectMessageRepositoryImpl implements DirectMessageRepositoryCusto
                 .fetch();
 
         List<DirectMessage> lastMessages = jpaQueryFactory
-                .select(directMessage)
+                .selectFrom(directMessage)
                 .where(directMessage.id.in(lastMessageIds))
                 .fetch();
 
@@ -84,7 +80,7 @@ public class DirectMessageRepositoryImpl implements DirectMessageRepositoryCusto
 
 
     private BooleanExpression isUnreadIn(Long conversationId) {
-        return directMessage.readStatus.eq(false)
+        return directMessage.isRead.eq(false)
                 .and(directMessage.conversation.id.eq(conversationId));
     }
 
