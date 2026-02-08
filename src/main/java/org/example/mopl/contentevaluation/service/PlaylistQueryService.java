@@ -8,6 +8,7 @@ import org.example.mopl.content.dto.response.ContentDto;
 import org.example.mopl.content.entity.ContentsStat;
 import org.example.mopl.content.repository.ContentTagQueryRepository;
 import org.example.mopl.content.repository.ContentsStatQueryRepository;
+import org.example.mopl.content.s3.ContentS3Client;
 import org.example.mopl.contentevaluation.dto.ContentEvaluationQueryDto.PlaylistResult;
 import org.example.mopl.contentevaluation.dto.request.CursorRequestPlaylistDto;
 import org.example.mopl.contentevaluation.dto.response.CursorResponsePlaylistDto;
@@ -35,6 +36,7 @@ public class PlaylistQueryService {
   private final ContentsStatQueryRepository contentsStatQueryRepository;
   private final SubscribeQueryRepository subscribeQueryRepository;
   private final WatchTogetherService watchTogetherService;
+  private final ContentS3Client contentS3Client;
 
   // 플레이리스트 단건 조회
   @Transactional(readOnly = true)
@@ -82,10 +84,10 @@ public class PlaylistQueryService {
                     content.getContent().getContentType().getValue(),
                     content.getContent().getTitle(),
                     content.getContent().getDescription(),
-                    content.getContent().getThumbnailUrl(),
-                    contentTagsMap.get(content.getId()),
-                    contentsStatMap.get(content.getId()).getRatingAverage(),
-                    contentsStatMap.get(content.getId()).getRatingCount(),
+                    contentS3Client.getPresignedUrl(content.getContent().getThumbnailUrl()),
+                    contentTagsMap.getOrDefault(content.getId(), List.of()),
+                    contentsStatMap.containsKey(content.getId()) ? contentsStatMap.get(content.getId()).getRatingAverage() : 0.0,
+                    contentsStatMap.containsKey(content.getId()) ? contentsStatMap.get(content.getId()).getRatingCount() : 0,
                     watchTogetherService.getWatcherCount(String.valueOf(content.getId()))
                 )
             )
@@ -146,10 +148,10 @@ public class PlaylistQueryService {
                         content.getContent().getContentType().getValue(),
                         content.getContent().getTitle(),
                         content.getContent().getDescription(),
-                        content.getContent().getThumbnailUrl(),
-                        contentTagsMap.get(content.getId()),
-                        contentsStatMap.get(content.getId()).getRatingAverage(),
-                        contentsStatMap.get(content.getId()).getRatingCount(),
+                        contentS3Client.getPresignedUrl(content.getContent().getThumbnailUrl()),
+                        contentTagsMap.getOrDefault(content.getId(), List.of()),
+                        contentsStatMap.containsKey(content.getId()) ? contentsStatMap.get(content.getId()).getRatingAverage() : 0.0,
+                        contentsStatMap.containsKey(content.getId()) ? contentsStatMap.get(content.getId()).getRatingCount() : 0,
                         watchTogetherService.getWatcherCount(String.valueOf(content.getId()))
                     )
                 )
@@ -160,8 +162,13 @@ public class PlaylistQueryService {
     return CursorResponsePlaylistDto.builder()
         .data(playlistDtoList)
         .nextCursor(playlistPage.hasNext() ?
-            playlistPage.getContent()
-                .get(playlistPage.getContent().size() - 1).uuid().toString() : null)
+            switch (request.sortBy()) {
+              case "subscribeCount" ->
+                  playlistPage.getContent().get(playlistPage.getNumberOfElements() - 1).subscriberCount().toString();
+              default ->
+                  String.valueOf(playlistPage.getContent().get(playlistPage.getNumberOfElements() - 1).updatedAt().toString());
+            }
+             : null)
         .hasNext(playlistPage.hasNext())
         .totalCount(playlistPage.getTotalElements())
         .sortBy(request.sortBy())

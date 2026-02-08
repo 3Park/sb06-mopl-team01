@@ -10,6 +10,7 @@ import org.example.mopl.contentevaluation.dto.response.OwnerDto;
 import org.example.mopl.contentevaluation.dto.response.PlaylistDto;
 import org.example.mopl.contentevaluation.entity.Playlist;
 import org.example.mopl.contentevaluation.entity.PlaylistsStat;
+import org.example.mopl.contentevaluation.event.CreatePlaylistEvent;
 import org.example.mopl.contentevaluation.exception.NoSuchPlaylistException;
 import org.example.mopl.contentevaluation.exception.UnauthorizedPlaylistException;
 import org.example.mopl.contentevaluation.repository.PlaylistCommandRepository;
@@ -46,8 +47,9 @@ public class PlaylistCommandService {
 
     Playlist savedPlaylist = playlistCommandRepository.save(playlist);
 
-    playlistsStatCommandRepository.save(
-        PlaylistsStat.of(playlist)
+    // 통계성 엔티티 생성 이벤트 발행
+    eventPublisher.publishEvent(
+        CreatePlaylistEvent.of(savedPlaylist)
     );
 
     // 팔로우 중인 사용자에게 플레이리스트 생성 알림
@@ -62,7 +64,7 @@ public class PlaylistCommandService {
 
 
     return PlaylistDto.of(
-        playlist.getUuid(),
+        savedPlaylist.getUuid(),
         OwnerDto.of(
             user.getUuid(),
             user.getProfile().getName(),
@@ -72,7 +74,7 @@ public class PlaylistCommandService {
         savedPlaylist.getDescription(),
         savedPlaylist.getUpdatedAt(),
         0L,
-        true,
+        false,
         new ArrayList<>()
     );
 

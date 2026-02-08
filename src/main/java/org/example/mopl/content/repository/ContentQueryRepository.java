@@ -11,6 +11,7 @@ import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.example.mopl.content.dto.ContentQueryDto.ContentResult;
+import org.example.mopl.content.dto.ContentQueryDto.ContentWithTagsResult;
 import org.example.mopl.content.dto.request.CursorRequestContentDto;
 import org.example.mopl.content.dto.response.ContentDto;
 import org.example.mopl.content.entity.Content;
@@ -19,6 +20,7 @@ import org.example.mopl.content.entity.ContentType;
 import org.example.mopl.content.entity.QContent;
 import org.example.mopl.content.entity.QContentTag;
 import org.example.mopl.content.entity.QContentsStat;
+import org.example.mopl.content.entity.QContentsWatchingCount;
 import org.example.mopl.content.entity.QReview;
 import org.example.mopl.content.entity.QTag;
 import org.example.mopl.watchtogether.service.WatchTogetherService;
@@ -33,7 +35,6 @@ import org.springframework.transaction.annotation.Transactional;
 public class ContentQueryRepository {
 
   private final JPAQueryFactory queryFactory;
-  private final WatchTogetherService watchTogetherService;
 
   public boolean existsByUuid(UUID uuid) {
     return queryFactory.selectFrom(QContent.content)
@@ -65,7 +66,7 @@ public class ContentQueryRepository {
   }
 
   @Transactional(readOnly = true)
-  public Optional<ContentDto> findByUuidWithContentTag(UUID uuid) {
+  public Optional<ContentWithTagsResult> findByUuidWithContentTag(UUID uuid) {
 
     Content content = queryFactory.selectFrom(QContent.content)
         .where(QContent.content.uuid.eq(uuid))
@@ -80,7 +81,7 @@ public class ContentQueryRepository {
     ReviewStat reviewStat = queryFactory.select(
             Projections.constructor(
                 ReviewStat.class,
-                QReview.review.rating.sum(),
+                QReview.review.rating.sum().coalesce(0.0), // 리뷰가 없으면 0.0 반환
                 QReview.review.rating.count()
             )
         )
@@ -92,20 +93,23 @@ public class ContentQueryRepository {
       return Optional.empty();
     }
 
-    return Optional.of(ContentDto.of(
-        content.getUuid(),
-        content.getContentType().getValue(), // ContentType의 getValue() 사용
-        content.getTitle(),
-        content.getDescription(),
-        content.getThumbnailUrl(),
-        contentTagList.stream().map(
-            tag -> tag.getTag().getName()
-        ).toList(
-        ), // tags는 별도 조회 필요
-        (double) (reviewStat.sum / reviewStat.count),
-        Long.valueOf(reviewStat.count),
-        watchTogetherService.getWatcherCount(String.valueOf(content.getId()))
-    ));
+    return Optional.of(ContentWithTagsResult.builder()
+        .id(content.getId())
+        .uuid(content.getUuid())
+        .contentType(content.getContentType().toString())
+        .title(content.getTitle())
+        .description(content.getDescription())
+        .thumbnailUrl(content.getThumbnailUrl())
+        .createdAt(content.getCreatedAt())
+        .updatedAt(content.getUpdatedAt())
+        .tags(contentTagList.stream()
+            .map(contentTag -> contentTag.getTag().getName())
+            .toList())
+        .averageRating(reviewStat.count() != 0 ?
+            reviewStat.sum() / reviewStat.count() : 0.0)
+        .reviewCount(reviewStat.count())
+        .watcherCount(reviewStat.count())
+        .build());
 
   }
 
@@ -148,13 +152,16 @@ public class ContentQueryRepository {
                 QContent.content.thumbnailUrl,
                 QContent.content.createdAt,
                 QContent.content.updatedAt,
-                QContentsStat.contentsStat.ratingAverage,
-                QContentsStat.contentsStat.ratingCount
+                QContentsStat.contentsStat.ratingAverage.coalesce(0.0),
+                QContentsStat.contentsStat.ratingCount,
+                QContentsWatchingCount.contentsWatchingCount.watcherCount.coalesce(0L)
             )
         )
         .from(QContent.content)
         .join(QContentsStat.contentsStat)
         .on(QContentsStat.contentsStat.content.id.eq(QContent.content.id))
+        .leftJoin(QContentsWatchingCount.contentsWatchingCount)
+        .on(QContentsWatchingCount.contentsWatchingCount.content.id.eq(QContent.content.id))
         .where(buildDynamicQueryByCursor(request))
         .orderBy(buildOrderBy(request).toArray(OrderSpecifier[]::new))
         .limit(request.limit() + 1)
@@ -180,11 +187,13 @@ public class ContentQueryRepository {
 
     // 콘텐츠 타입
     if (request.typeEqual() != null) {
-      builder.and(QContent.content.contentType.eq(ContentType.valueOf(request.typeEqual())));
+      builder.and(QContent.content.contentType.eq(ContentType.fromValue(request.typeEqual())));
     }
 
     // 검색 키워드
-    builder.and(QContent.content.title.containsIgnoreCase(request.keywordLike()));
+    if (request.keywordLike() != null && !request.keywordLike().isBlank()) {
+      builder.and(QContent.content.title.containsIgnoreCase(request.keywordLike()));
+    }
 
     if (request.tagsIn() != null && !request.tagsIn().isEmpty()) {
 
@@ -211,7 +220,20 @@ public class ContentQueryRepository {
     if (request.sortDirection().equals("DESCENDING")) {
       switch (request.sortBy()) {
         case "watcherCount":
-          // ToDo: 구현 필요
+          if (request.cursor() != null && request.idAfter() != null) {
+            builder.and(
+                QContentsWatchingCount.contentsWatchingCount.watcherCount.lt(
+                        (long) Double.parseDouble(request.cursor()))
+                    .or(QContentsWatchingCount.contentsWatchingCount.watcherCount.eq(
+                            (long) Double.parseDouble(request.cursor()))
+                        .and(QContent.content.uuid.lt(request.idAfter())))
+            );
+          } else if (request.cursor() != null) {
+            // 첫 페이지
+            builder.and(
+                QContentsWatchingCount.contentsWatchingCount.watcherCount.lt(
+                    Long.parseLong(request.cursor())));
+          }
           break;
         case "rate":
           if (request.cursor() != null && request.idAfter() != null) {
@@ -245,7 +267,20 @@ public class ContentQueryRepository {
     } else {
       switch (request.sortBy()) {
         case "watcherCount":
-          // ToDo: 구현 필요
+          if (request.cursor() != null && request.idAfter() != null) {
+            builder.and(
+                QContentsWatchingCount.contentsWatchingCount.watcherCount.gt(
+                        (long) Double.parseDouble(request.cursor()))
+                    .or(QContentsWatchingCount.contentsWatchingCount.watcherCount.eq(
+                            (long) Double.parseDouble(request.cursor()))
+                        .and(QContent.content.uuid.gt(request.idAfter())))
+            );
+          } else if (request.cursor() != null) {
+            // 첫 페이지
+            builder.and(
+                QContentsWatchingCount.contentsWatchingCount.watcherCount.gt(
+                    Long.parseLong(request.cursor())));
+          }
           break;
         case "rate":
           if (request.cursor() != null && request.idAfter() != null) {
@@ -291,7 +326,7 @@ public class ContentQueryRepository {
 
       switch (request.sortBy()) {
         case "watcherCount":
-          // ToDo: 구현 필요
+          orders.add(QContentsWatchingCount.contentsWatchingCount.watcherCount.desc());
           break;
         case "rate":
           orders.add(QContentsStat.contentsStat.ratingAverage.desc());
@@ -305,7 +340,7 @@ public class ContentQueryRepository {
 
       switch (request.sortBy()) {
         case "watcherCount":
-          // ToDo: 구현 필요
+          orders.add(QContentsWatchingCount.contentsWatchingCount.watcherCount.asc());
           break;
         case "rate":
           orders.add(QContentsStat.contentsStat.ratingAverage.asc());
@@ -328,9 +363,9 @@ public class ContentQueryRepository {
 
   }
 
-  private record ReviewStat(
-      Long sum,
-      Integer count
+  public record ReviewStat(
+      Double sum,
+      Long count
   ) {
 
   }

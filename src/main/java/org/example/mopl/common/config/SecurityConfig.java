@@ -4,10 +4,13 @@ import lombok.RequiredArgsConstructor;
 import org.example.mopl.auth.jwt.handler.*;
 import org.example.mopl.auth.jwt.JwtAuthenticationFilter;
 import org.example.mopl.auth.provider.CustomDaoAuthenticationProvider;
+import org.example.mopl.auth.service.OAuthService;
+import org.example.mopl.common.config.encoder.PasswordEncoderConfig;
 import org.example.mopl.user.enums.UserRoleType;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.access.expression.method.DefaultMethodSecurityExpressionHandler;
 import org.springframework.security.access.expression.method.MethodSecurityExpressionHandler;
 import org.springframework.security.access.hierarchicalroles.RoleHierarchy;
@@ -21,6 +24,8 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.HttpStatusEntryPoint;
+import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
@@ -40,12 +45,16 @@ public class SecurityConfig {
     private final JwtLogoutSuccessHandler jwtLogoutSuccessHandler;
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final CustomAccessDeniedHandler customAccessDeniedHandler;
+    private final CustomAuthenticationEntryPointHandler  customAuthenticationEntryPointHandler;
+    private final SpaCsrfTokenRequestHandler  spaCsrfTokenRequestHandler;
+    private final OAuthService oAuthService;
+    private final OAuthSuccessHandler  oAuthSuccessHandler;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         //PJG 추후 cors 관련 허용 사이트 설정 변경 필요 있음
         http.sessionManagement(management ->
-                        management.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
+                        management.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .cors(cors -> cors
                         .configurationSource(request -> {
                             CorsConfiguration config = new CorsConfiguration();
@@ -63,12 +72,11 @@ public class SecurityConfig {
                         }))
                 .csrf(csrf -> csrf
                         .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
-                        .csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler())
+                        .csrfTokenRequestHandler(spaCsrfTokenRequestHandler)
                         .ignoringRequestMatchers(
                             "/api/auth/sign-in"
                                     , "/api/auth/sign-out"
                                     , "/api/auth/reset-password"
-                                    , "/api/auth/refresh"
                         ).ignoringRequestMatchers(
                                 request ->
                                 "/api/users".equals(request.getRequestURI())
@@ -80,6 +88,7 @@ public class SecurityConfig {
                                         "/api/auth/csrf-token",
                                         "/api/auth/sign-in",
                                         "/api/auth/reset-password",
+                                        "/api/auth/refresh",
                                         "/actuator/health",
                                         "/actuator/info",
                                         "/ws/**"
@@ -89,11 +98,17 @@ public class SecurityConfig {
                                 .requestMatchers(
                                         "/index.html",
                                         "/assets/**",
-                                        "/favicon.ico",
+                                        "/favicon.*",
                                         "/v3/api-docs/**",
                                         "/swagger-ui/**",
                                         "/swagger-ui.html").permitAll()
                                 .anyRequest().authenticated())
+                .oauth2Login(oauth -> oauth
+                        .userInfoEndpoint(
+                        info -> info.userService(oAuthService))
+                        .successHandler(oAuthSuccessHandler)
+                        .failureHandler(jwtLoginFailureHandler)
+                )
                 .formLogin(x -> x
                         .loginProcessingUrl("/api/auth/sign-in")
                         .successHandler(jwtLoginSuccessHandler)
@@ -104,15 +119,16 @@ public class SecurityConfig {
                         .addLogoutHandler(jwtLogoutHandler)
                         .logoutSuccessHandler(jwtLogoutSuccessHandler)
                         .permitAll())
-                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+                .exceptionHandling(ex -> ex
+                                .authenticationEntryPoint(customAuthenticationEntryPointHandler)
+                                .accessDeniedHandler(customAccessDeniedHandler)
+                );
 
         return http.build();
     }
 
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
-    }
+
 
     @Bean
     public RoleHierarchy roleHierarchy() {

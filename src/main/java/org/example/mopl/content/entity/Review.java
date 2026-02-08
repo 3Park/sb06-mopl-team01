@@ -36,7 +36,7 @@ public class Review extends BasicContentUuidEntity {
   private Content content;
 
   @Column(name = "rating", nullable = false)
-  private Double rating;
+  private Double rating = 0.0;
 
   @Column(name = "text", columnDefinition = "TEXT", nullable = false)
   private String text;

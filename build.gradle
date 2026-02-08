@@ -41,6 +41,7 @@ dependencies {
     implementation 'org.springframework.kafka:spring-kafka'
     implementation 'org.springframework.retry:spring-retry'
     implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.7.0'
+    implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
 
     implementation 'org.apache.kafka:kafka-streams'
 
@@ -57,6 +58,8 @@ dependencies {
     implementation 'com.nimbusds:nimbus-jose-jwt:10.6'
 
     implementation 'com.querydsl:querydsl-jpa:5.1.0:jakarta'
+
+    implementation 'io.awspring.cloud:spring-cloud-aws-starter-s3:3.0.0'
 
     compileOnly 'org.projectlombok:lombok'
 

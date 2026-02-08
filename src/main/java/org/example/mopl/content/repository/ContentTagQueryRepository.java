@@ -4,6 +4,7 @@ import com.querydsl.core.Tuple;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.example.mopl.content.entity.QContentTag;
@@ -26,6 +27,18 @@ public class ContentTagQueryRepository {
         .fetchFirst();
 
     return count != null;
+  }
+
+  public Set<String> findTagNamesByContentId(Long contentId) {
+    List<String> tagNames = queryFactory.select(
+            QTag.tag.name
+        )
+        .from(QContentTag.contentTag)
+        .innerJoin(QContentTag.contentTag.tag, QTag.tag)
+        .where(QContentTag.contentTag.content.id.eq(contentId))
+        .fetch();
+
+    return Set.copyOf(tagNames);
   }
 
   public Map<Long, List<String>> findTagsByContentIds(List<Long> contentIds) {

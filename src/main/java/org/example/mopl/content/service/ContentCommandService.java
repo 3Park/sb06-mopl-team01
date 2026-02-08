@@ -1,28 +1,28 @@
 package org.example.mopl.content.service;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.io.IOException;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.example.mopl.content.dto.ContentQueryDto.ContentWithTagsResult;
+import org.example.mopl.content.dto.S3FileDto;
 import org.example.mopl.content.dto.request.ContentCreateRequest;
 import org.example.mopl.content.dto.request.ContentUpdateRequest;
 import org.example.mopl.content.dto.response.ContentDto;
 import org.example.mopl.content.entity.Content;
-import org.example.mopl.content.entity.ContentTag;
-import org.example.mopl.content.entity.ContentsStat;
-import org.example.mopl.content.entity.Tag;
+import org.example.mopl.content.event.CreateContentEvent;
 import org.example.mopl.content.exception.NoSuchContentException;
-import org.example.mopl.content.exception.NoSuchTagException;
+import org.example.mopl.content.exception.S3UploadFailedException;
 import org.example.mopl.content.mapper.ContentMapper;
 import org.example.mopl.content.repository.ContentCommandRepository;
 import org.example.mopl.content.repository.ContentQueryRepository;
-import org.example.mopl.content.repository.ContentTagCommandRepository;
 import org.example.mopl.content.repository.ContentsStatCommandRepository;
-import org.example.mopl.content.repository.TagCommandReposiotry;
-import org.example.mopl.content.repository.TagQueryRepository;
+import org.example.mopl.content.repository.ContentsWatchingCountCommandRepository;
+import org.example.mopl.content.s3.ContentS3Client;
+import org.example.mopl.watchtogether.service.WatchTogetherService;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 @Service
 @RequiredArgsConstructor
@@ -30,66 +30,56 @@ public class ContentCommandService {
 
   private final ContentCommandRepository contentCommandRepository;
   private final ContentQueryRepository contentQueryRepository;
-  private final TagCommandReposiotry tagCommandReposiotry;
-  private final TagQueryRepository tagQueryRepository;
-  private final ContentTagCommandRepository contentTagCommandRepository;
   private final ContentsStatCommandRepository contentsStatCommandRepository;
+  private final ContentsWatchingCountCommandRepository contentsWatchingCountCommandRepository;
+  private final WatchTogetherService watchTogetherService;
   private final ContentMapper contentMapper;
+  public final ApplicationEventPublisher eventPublisher;
+  private final ContentS3Client contentS3Client;
+
+  //Content의 자식 엔티티 서비스 클래스
+  private final TagCommandService tagCommandService;
+  private final ContentTagCommandService contentTagCommandService;
 
   @Transactional
-  public ContentDto createContent(ContentCreateRequest request) {
+  public ContentDto createContent(ContentCreateRequest request, MultipartFile thumbnail) {
 
-    // request에 식별자 없으므로 중복 체크 불가
+    // 썸네일 S3 업로드
+    String thumbnailUrl;
+    try {
+      UUID fileUuid = UUID.randomUUID();
+      thumbnailUrl = contentS3Client.putObject(
+          String.valueOf(fileUuid),
+          S3FileDto.of(
+              thumbnail.getOriginalFilename(),
+              thumbnail.getContentType(),
+              thumbnail.getBytes()
+          )
+      );
+    } catch (IOException e) {
+      throw new S3UploadFailedException(request.title());
+    }
 
     // DTO를 엔티티로 변환
     Content content = contentMapper.createRequestToEntity(request);
+    content.updateThumbnailUrl(thumbnailUrl);
 
-    //현재 존재하는 태그만 map으로 가져와 비교
-    Map<String, Tag> tagMap = tagQueryRepository.findAllMapByNameIn(request.tags());
-
-    // 없는 태그는 새로 생성
-    List<Tag> newTagList = new ArrayList<>();
-
-    request.tags().stream()
-        .filter(tagName -> tagMap.get(tagName) == null)
-        .forEach(tagName -> newTagList.add(
-            Tag.of(tagName)
-        ));
-
-    // 없는 태그 일괄 저장
-    List<Tag> savedTagList = tagCommandReposiotry.saveAll(newTagList);
+    // 태그 생성
+    tagCommandService.createTags(request.tags());
 
     // 콘텐츠 저장
     Content savedContent = contentCommandRepository.save(content);
 
-    // 통계 테이블 저장
-    contentsStatCommandRepository.save(
-        ContentsStat.of(savedContent)
+    //ContentTag 매핑 저장
+    contentTagCommandService.createContentTags(
+        savedContent,
+        request.tags()
     );
 
-    //ContentTag 매핑 저장
-    List<ContentTag> contentTagList = new ArrayList<>();
-
-    //태그 매핑
-    request.tags().forEach(tagName -> {
-      Tag tag;
-      //기존 태그인 경우
-      if(tagMap.get(tagName) != null) {
-        tag = tagMap.get(tagName);
-      } else { //새로 생성된 태그인 경우
-        tag = savedTagList.stream()
-            .filter(t -> t.getName().equals(tagName))
-            .findFirst()
-            .orElseThrow(() ->
-                new NoSuchTagException(tagName));
-      }
-      contentTagList.add(
-          ContentTag.of(savedContent, tag)
-      );
-    });
-
-    // 태그 매핑 저장
-    contentTagCommandRepository.saveAll(contentTagList);
+    // 통계성 엔티티 생성 이벤트 발행
+    eventPublisher.publishEvent(
+        CreateContentEvent.of(savedContent)
+    );
 
     return ContentDto.of(
         savedContent.getUuid(),
@@ -97,10 +87,8 @@ public class ContentCommandService {
         savedContent.getTitle(),
         savedContent.getDescription(),
         savedContent.getThumbnailUrl(),
-        contentTagList.stream()
-            .map(contentTag -> contentTag.getTag().getName())
-            .toList(),
-        0.1,
+        request.tags(),
+        0.0,
         0L,
         0L
     );
@@ -116,51 +104,31 @@ public class ContentCommandService {
     content.update(request.title(), request.description());
 
     //태그 매핑 일괄 삭제
-    contentTagCommandRepository.deleteByContent_Id(content.getId());
+    contentTagCommandService.deleteByContentId(content.getId());
 
-    //현재 존재하는 태그만 map으로 가져와 비교
-    Map<String, Tag> tagMap = tagQueryRepository.findAllMapByNameIn(request.tags());
+    // 태그 생성
+    tagCommandService.createTags(request.tags());
 
-    // 없는 태그는 새로 생성
-    List<Tag> newTagList = new ArrayList<>();
-
-    request.tags().stream()
-        .filter(tagName -> tagMap.get(tagName) == null)
-        .forEach(tagName -> newTagList.add(
-            Tag.of(tagName)
-        ));
-
-    // 없는 태그 일괄 저장
-    List<Tag> savedTagList = tagCommandReposiotry.saveAll(newTagList);
-
-    //태그 매핑
-    List<ContentTag> contentTagList = new ArrayList<>();
-
-    request.tags().forEach(tagName -> {
-      Tag tag;
-      //기존 태그인 경우
-      if(tagMap.get(tagName) != null) {
-        tag = tagMap.get(tagName);
-      } else { //새로 생성된 태그인 경우
-        tag = savedTagList.stream()
-            .filter(t -> t.getName().equals(tagName))
-            .findFirst()
-            .orElseThrow(() ->
-                new NoSuchTagException(tagName));
-      }
-      contentTagList.add(
-          ContentTag.of(content, tag)
-      );
-    });
-
-    // 태그 매핑 저장
-    contentTagCommandRepository.saveAll(contentTagList);
+    // 태그 매핑 생성
+    contentTagCommandService.createContentTags(content, request.tags());
 
     // 콘텐츠 저장
     contentCommandRepository.save(content);
 
-    return contentQueryRepository.findByUuidWithContentTag(contentId)
+    ContentWithTagsResult contentWithTagsResult = contentQueryRepository.findByUuidWithContentTag(contentId)
         .orElseThrow(() -> new NoSuchContentException(contentId.toString()));
+
+    return ContentDto.of(
+        contentWithTagsResult.uuid(),
+        contentWithTagsResult.contentType(),
+        contentWithTagsResult.title(),
+        contentWithTagsResult.description(),
+        contentWithTagsResult.thumbnailUrl(),
+        contentWithTagsResult.tags(),
+        contentWithTagsResult.averageRating() != null ? contentWithTagsResult.averageRating() : 0.0,
+        contentWithTagsResult.reviewCount() != null ? contentWithTagsResult.reviewCount() : 0,
+        watchTogetherService.getWatcherCount(String.valueOf(contentWithTagsResult.id())
+    ));
 
   }
 
@@ -170,12 +138,16 @@ public class ContentCommandService {
     Content content = contentQueryRepository.findByUuid(contentUuid)
         .orElseThrow(() -> new NoSuchContentException(contentUuid.toString()));
 
+    // S3 객체 삭제
+    contentS3Client.deleteObject(content.getThumbnailUrl());
+
     // 연관관계 삭제
-    contentTagCommandRepository.deleteByContent_Id(content.getId());
+    contentTagCommandService.deleteByContentId(content.getId());
     contentsStatCommandRepository.deleteByContent_id(content.getId());
+    contentsWatchingCountCommandRepository.deleteByContent_id(content.getId());
 
     // 콘텐츠 삭제
-    contentCommandRepository.delete(content);
+    contentCommandRepository.deleteById(content.getId());
 
   }
 

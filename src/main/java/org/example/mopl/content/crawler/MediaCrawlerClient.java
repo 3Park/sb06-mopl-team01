@@ -2,6 +2,7 @@ package org.example.mopl.content.crawler;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import org.example.mopl.content.dto.ContentFetchResultDto;
 
 public interface MediaCrawlerClient {
@@ -14,6 +15,6 @@ public interface MediaCrawlerClient {
 
   List<String> fetchRecentContentIdByPage(int pageNumber);
 
-  Optional<ContentFetchResultDto> fetchContentDetailsByExternalId(String externalId);
+  CompletableFuture<Optional<ContentFetchResultDto>> fetchContentDetailsByExternalId(String externalId);
 
 }

@@ -2,6 +2,7 @@ package org.example.mopl.content.batch.scheduler;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.example.mopl.content.batch.config.ContentsWatchingCountBatchConfig;
 import org.example.mopl.content.batch.config.TheSportsDbBatchConfig;
 import org.example.mopl.content.batch.config.TmDbBatchConfig;
 import org.springframework.batch.core.JobParameters;
@@ -28,11 +29,12 @@ public class ContentBatchScheduler {
   private final JobLauncher jobLauncher;
   private final TmDbBatchConfig tmDbBatchConfig;
   private final TheSportsDbBatchConfig theSportsDbBatchConfig;
+  private final ContentsWatchingCountBatchConfig contentsWatchingCountBatchConfig;
 
   // 데드락 예외 발생 시 재시도 설정
   @Retryable(
       retryFor = {PessimisticLockingFailureException.class},
-      maxAttempts = 3,
+      maxAttempts = 5, // 실행 간격이 길기 때문에 5회
       backoff = @Backoff(delay = 5000, multiplier = 2.0)
   )
   @Async("batchTaskExecutor")
@@ -62,5 +64,36 @@ public class ContentBatchScheduler {
       log.error("Error occurred while running Content Batch Job", e);
     }
   }
+
+  // 데드락 예외 발생 시 재시도 설정
+  @Retryable(
+      retryFor = {PessimisticLockingFailureException.class},
+      maxAttempts = 3,
+      backoff = @Backoff(delay = 5000, multiplier = 2.0)
+  )
+  @Async("batchTaskExecutor")
+  @Scheduled(cron = "0 */30 * * * ?") // 매 30분마다 실행
+  public void runContentsWatchingCountJob() {
+    try {
+
+      log.info("Starting Contents Watching Count Batch Job");
+      JobParameters jobParameters = new JobParametersBuilder()
+          .addLong("time", System.currentTimeMillis()) // 고유한 JobParameters를 위해 현재 시간을 추가
+          .addString("jobName", this.getClass().getSimpleName()) // Job 이름 추가
+          .addLong("run.id", System.currentTimeMillis()) // 재실행 가능하도록 유니크 파라미터
+          .toJobParameters();
+
+      jobLauncher.run(contentsWatchingCountBatchConfig.contentsWatchingCountJob(), jobParameters);
+
+      log.info("Finished Contents Watching Count Batch Job");
+    } catch (PessimisticLockingFailureException e) {
+      throw e;
+      // 데드락 예외는 재시도 대상이므로 다시 던진다.
+    } catch (Exception e) {
+      log.error("Error occurred while running Content Batch Job", e);
+    }
+
+  }
+
 
 }

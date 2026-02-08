@@ -9,6 +9,7 @@ import org.example.mopl.common.exception.ErrorResponse;
 import org.example.mopl.auth.exception.AuthErrorCode;
 import org.example.mopl.auth.exception.AuthException;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.authentication.LockedException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.authentication.AuthenticationFailureHandler;
 import org.springframework.stereotype.Component;
@@ -28,8 +29,13 @@ public class JwtLoginFailureHandler implements AuthenticationFailureHandler {
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
         response.setCharacterEncoding("UTF-8");
 
+        AuthErrorCode errorCode = AuthErrorCode.INVALID_USER_CREDENTIALS;
+        if(exception.getClass().equals(LockedException.class)) {
+            errorCode = AuthErrorCode.INVALID_USER;
+        }
+
         ErrorResponse errorResponse = new ErrorResponse(
-                new AuthException(AuthErrorCode.INVALID_USER_CREDENTIALS)
+                new AuthException(errorCode)
                 , HttpStatus.UNAUTHORIZED.value());
 
         response.getWriter().write(objectMapper.writeValueAsString(errorResponse));
