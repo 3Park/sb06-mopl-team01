@@ -46,7 +46,7 @@ public class BasicWatchTogetherService implements WatchTogetherService{
         if(room == null){
             Content content = contentCommandRepository.findByUuid(UUID.fromString(contentId))
                     .orElseThrow(()-> new NoSuchContentException(contentId));
-            watchingRooms.put(content.getId().toString(), new WatchingRoom(content));
+            watchingRooms.put(content.getUuid().toString(), new WatchingRoom(content));
             room  = watchingRooms.get(contentId);
         }
 
@@ -57,7 +57,13 @@ public class BasicWatchTogetherService implements WatchTogetherService{
         watcherToSession.put(watcher.getUserId().toString(), sessionId);
 
         room.addWatcher(new WatchingSession(sessionId,watcher));
-        sendWatchingSessionChangeToRoom(room,sessionId,ChangeType.JOIN);
+
+        sendWatchingSessionChangeToRoom(
+                room.getWatcher(sessionId),
+                room.getContent(),
+                room.getWatcherCount(),
+                ChangeType.JOIN
+        );
     }
 
     @Override
@@ -74,7 +80,13 @@ public class BasicWatchTogetherService implements WatchTogetherService{
                     watcherToSession.remove(removedWatcher.getWatcher().getUserId().toString());
                     sessionToRoom.remove(removedWatcher.getId().toString());
 
-                    sendWatchingSessionChangeToRoom(room,sessionId,ChangeType.LEAVE);
+                    sendWatchingSessionChangeToRoom(
+                            removedWatcher,
+                            room.getContent(),
+                            room.getWatcherCount()
+                            ,ChangeType.LEAVE
+                    );
+
                     log.info("방 에서 사용자 나감 roomId:{} WatcherId: {}",roomId, removedWatcher.getWatcher().getUserId());
 
                     if(room.getWatchers().isEmpty()){
@@ -100,7 +112,12 @@ public class BasicWatchTogetherService implements WatchTogetherService{
 
     @Override
     public long getWatcherCount(String contentId) {
-        return watchingRooms.get(contentId).getWatcherCount();
+
+        if(contentId == null || contentId.isEmpty()) return 0L;
+
+        return Optional.ofNullable(watchingRooms.get(contentId))
+                .map(WatchingRoom::getWatcherCount)
+                .orElse(0L);
     }
 
     @Override
@@ -142,71 +159,71 @@ public class BasicWatchTogetherService implements WatchTogetherService{
             String sortDirection,
             String sortBy
     ) {
-        WatchingRoom room = watchingRooms.getOrDefault(contentId,null);
+        WatchingRoom room = watchingRooms.get(contentId);
         if(room == null){
             throw new NoSuchContentException(contentId);
         }
 
         List<WatchingSession> sortedData = sortedData(room.getWatchers(),sortDirection);
 
-        List<WatchingSessionDto> data = sortedData.stream()
-                .dropWhile(watchingSession ->
-                        Objects.equals(watchingSession.getWatcher().getName(), cursor) &&
-                        Objects.equals(watchingSession.getWatcher().getUserId().toString(), cursor))
-                .limit(limit+1)
-                .map(watchingSession -> new WatchingSessionDto(watchingSession,room.getContent()))
-                .toList();
+        List<WatchingSessionDto> data = filterData(sortedData, cursor, idAfter, limit, room.getContent());
 
-        boolean hasNext = data.size() == limit+1;
-
-        String newCursor = null;
-        String newIdAfter = null;
-
-        if(hasNext){
-            WatchingSessionDto lastData = data.get(data.size()-1);
-            newCursor = lastData.watcher().getName();
-            newIdAfter = lastData.watcher().getUserId().toString();
-            data = data.subList(0,data.size()-1);
-        }
-
-        return CursorResponseWatchingSessionDto.builder()
-                .data(data)
-                .nextCursor(newCursor)
-                .nextIdAfter(newIdAfter)
-                .hasNext(hasNext)
-                .totalCount((int) room.getWatcherCount())
-                .sortBy(sortBy)
-                .sortDirection(sortDirection)
-                .build();
+        return CursorResponseWatchingSessionDto.toDto(data,limit,room.getWatcherCount(),sortBy,sortDirection);
     }
 
-    private void sendWatchingSessionChangeToRoom(WatchingRoom room,String sessionId ,ChangeType type){
+    private void sendWatchingSessionChangeToRoom(
+            WatchingSession watcher,
+            Content content ,
+            long WatcherCount,
+            ChangeType type){
         WatchingSessionDto watchingSessionDto = new WatchingSessionDto(
-                room.getWatcher(sessionId),
-                room.getContent()
+                watcher,
+                content
         );
 
         WatchingSessionChange message = WatchingSessionChange.builder()
                 .type(type)
                 .watchingSession(watchingSessionDto)
-                .watcherCount(room.getWatcherCount())
+                .watcherCount(WatcherCount)
                 .build();
-
-        String destination = "/sub/contents/"+room.getContent().getUuid()+"/watch";
+        String destination = "/sub/contents/"+content.getUuid()+"/watch";
         messagingTemplate.convertAndSend(destination,message);
     }
 
     private List<WatchingSession> sortedData (List<WatchingSession> watchingSessions , String sortDirection){
-        List<WatchingSession> data = null;
+
         if(Objects.equals(sortDirection, ASCENDING)){
-            data = watchingSessions.stream()
+            return watchingSessions.stream()
                     .sorted(Comparator.comparing(WatchingSession::getCreatedAt))
                     .toList();
         }else {
-            data = watchingSessions.stream()
+            return watchingSessions.stream()
                     .sorted(Comparator.comparing(WatchingSession::getCreatedAt).reversed())
                     .toList();
         }
-        return data;
+    }
+
+    private List<WatchingSessionDto> filterData(
+            List<WatchingSession> sortedData,
+            String cursor,
+            String idAfter,
+            Integer limit,
+            Content content
+    ){
+        if(!cursor.isEmpty() || !idAfter.isEmpty()){
+
+            return sortedData.stream()
+                    .dropWhile(watchingSession ->
+                            Objects.equals(watchingSession.getWatcher().getName(), cursor) &&
+                                    Objects.equals(watchingSession.getWatcher().getUserId().toString(), idAfter))
+                    .limit(limit+1)
+                    .map(watchingSession -> new WatchingSessionDto(watchingSession,content))
+                    .toList();
+        }else{
+            return sortedData.stream()
+                    .limit(limit+1)
+                    .map(watchingSession -> new WatchingSessionDto(watchingSession,content))
+                    .toList();
+        }
     }
 }
