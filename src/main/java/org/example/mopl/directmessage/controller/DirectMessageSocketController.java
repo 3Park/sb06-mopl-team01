@@ -27,9 +27,12 @@ public class DirectMessageSocketController {
     public void sendDirectMessages(
             @DestinationVariable("conversationId") UUID conversationUuid,
             @Payload @Valid DirectMessageCreateRequest request,
-            @AuthenticationPrincipal CustomUserDetails userDetails) {
+            Principal principal) {
         log.info("directmessage 전송, conversationId={}", conversationUuid);
-        if (userDetails == null) { log.error("인증 정보가 유실되었습니다."); return;}
+        if (principal == null) { log.error("인증 정보가 유실되었습니다."); return;}
+
+        Authentication authentication = (Authentication) principal;
+        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
 
         UUID senderUuid = userDetails.getUserDto().getId();
         directMessageService.saveAndSendMessage(conversationUuid, senderUuid, request.content());
