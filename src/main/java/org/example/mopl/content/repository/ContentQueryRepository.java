@@ -223,9 +223,9 @@ public class ContentQueryRepository {
           if (request.cursor() != null && request.idAfter() != null) {
             builder.and(
                 QContentsWatchingCount.contentsWatchingCount.watcherCount.lt(
-                        Long.parseLong(request.cursor()))
+                        (long) Double.parseDouble(request.cursor()))
                     .or(QContentsWatchingCount.contentsWatchingCount.watcherCount.eq(
-                            Long.parseLong(request.cursor()))
+                            (long) Double.parseDouble(request.cursor()))
                         .and(QContent.content.uuid.lt(request.idAfter())))
             );
           } else if (request.cursor() != null) {
@@ -270,9 +270,9 @@ public class ContentQueryRepository {
           if (request.cursor() != null && request.idAfter() != null) {
             builder.and(
                 QContentsWatchingCount.contentsWatchingCount.watcherCount.gt(
-                        Long.parseLong(request.cursor()))
+                        (long) Double.parseDouble(request.cursor()))
                     .or(QContentsWatchingCount.contentsWatchingCount.watcherCount.eq(
-                            Long.parseLong(request.cursor()))
+                            (long) Double.parseDouble(request.cursor()))
                         .and(QContent.content.uuid.gt(request.idAfter())))
             );
           } else if (request.cursor() != null) {

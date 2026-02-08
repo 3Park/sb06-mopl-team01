@@ -162,8 +162,13 @@ public class PlaylistQueryService {
     return CursorResponsePlaylistDto.builder()
         .data(playlistDtoList)
         .nextCursor(playlistPage.hasNext() ?
-            playlistPage.getContent()
-                .get(playlistPage.getContent().size() - 1).uuid().toString() : null)
+            switch (request.sortBy()) {
+              case "subscribeCount" ->
+                  playlistPage.getContent().get(playlistPage.getNumberOfElements() - 1).subscriberCount().toString();
+              default ->
+                  String.valueOf(playlistPage.getContent().get(playlistPage.getNumberOfElements() - 1).updatedAt().toString());
+            }
+             : null)
         .hasNext(playlistPage.hasNext())
         .totalCount(playlistPage.getTotalElements())
         .sortBy(request.sortBy())
