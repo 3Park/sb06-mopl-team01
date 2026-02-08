@@ -88,7 +88,7 @@ public class ContentCommandService {
         savedContent.getDescription(),
         savedContent.getThumbnailUrl(),
         request.tags(),
-        0.1,
+        0.0,
         0L,
         0L
     );

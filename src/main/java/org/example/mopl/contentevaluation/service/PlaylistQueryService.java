@@ -85,9 +85,9 @@ public class PlaylistQueryService {
                     content.getContent().getTitle(),
                     content.getContent().getDescription(),
                     contentS3Client.getPresignedUrl(content.getContent().getThumbnailUrl()),
-                    contentTagsMap.get(content.getId()),
-                    contentsStatMap.get(content.getId()).getRatingAverage(),
-                    contentsStatMap.get(content.getId()).getRatingCount(),
+                    contentTagsMap.getOrDefault(content.getId(), List.of()),
+                    contentsStatMap.containsKey(content.getId()) ? contentsStatMap.get(content.getId()).getRatingAverage() : 0.0,
+                    contentsStatMap.containsKey(content.getId()) ? contentsStatMap.get(content.getId()).getRatingCount() : 0,
                     watchTogetherService.getWatcherCount(String.valueOf(content.getId()))
                 )
             )
@@ -149,9 +149,9 @@ public class PlaylistQueryService {
                         content.getContent().getTitle(),
                         content.getContent().getDescription(),
                         contentS3Client.getPresignedUrl(content.getContent().getThumbnailUrl()),
-                        contentTagsMap.get(content.getId()),
-                        contentsStatMap.get(content.getId()).getRatingAverage(),
-                        contentsStatMap.get(content.getId()).getRatingCount(),
+                        contentTagsMap.getOrDefault(content.getId(), List.of()),
+                        contentsStatMap.containsKey(content.getId()) ? contentsStatMap.get(content.getId()).getRatingAverage() : 0.0,
+                        contentsStatMap.containsKey(content.getId()) ? contentsStatMap.get(content.getId()).getRatingCount() : 0,
                         watchTogetherService.getWatcherCount(String.valueOf(content.getId()))
                     )
                 )
@@ -162,8 +162,13 @@ public class PlaylistQueryService {
     return CursorResponsePlaylistDto.builder()
         .data(playlistDtoList)
         .nextCursor(playlistPage.hasNext() ?
-            playlistPage.getContent()
-                .get(playlistPage.getContent().size() - 1).uuid().toString() : null)
+            switch (request.sortBy()) {
+              case "subscribeCount" ->
+                  playlistPage.getContent().get(playlistPage.getNumberOfElements() - 1).subscriberCount().toString();
+              default ->
+                  String.valueOf(playlistPage.getContent().get(playlistPage.getNumberOfElements() - 1).updatedAt().toString());
+            }
+             : null)
         .hasNext(playlistPage.hasNext())
         .totalCount(playlistPage.getTotalElements())
         .sortBy(request.sortBy())

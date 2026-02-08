@@ -81,7 +81,7 @@ public class ContentQueryRepository {
     ReviewStat reviewStat = queryFactory.select(
             Projections.constructor(
                 ReviewStat.class,
-                QReview.review.rating.sum(),
+                QReview.review.rating.sum().coalesce(0.0), // 리뷰가 없으면 0.0 반환
                 QReview.review.rating.count()
             )
         )
@@ -106,9 +106,9 @@ public class ContentQueryRepository {
             .map(contentTag -> contentTag.getTag().getName())
             .toList())
         .averageRating(reviewStat.count() != 0 ?
-            reviewStat.sum().doubleValue() / reviewStat.count() : 0.0)
-        .reviewCount(reviewStat.count().longValue())
-        .watcherCount(reviewStat.count().longValue())
+            reviewStat.sum() / reviewStat.count() : 0.0)
+        .reviewCount(reviewStat.count())
+        .watcherCount(reviewStat.count())
         .build());
 
   }
@@ -152,9 +152,9 @@ public class ContentQueryRepository {
                 QContent.content.thumbnailUrl,
                 QContent.content.createdAt,
                 QContent.content.updatedAt,
-                QContentsStat.contentsStat.ratingAverage,
+                QContentsStat.contentsStat.ratingAverage.coalesce(0.0),
                 QContentsStat.contentsStat.ratingCount,
-                QContentsWatchingCount.contentsWatchingCount.watcherCount
+                QContentsWatchingCount.contentsWatchingCount.watcherCount.coalesce(0L)
             )
         )
         .from(QContent.content)
@@ -187,7 +187,7 @@ public class ContentQueryRepository {
 
     // 콘텐츠 타입
     if (request.typeEqual() != null) {
-      builder.and(QContent.content.contentType.eq(ContentType.valueOf(request.typeEqual())));
+      builder.and(QContent.content.contentType.eq(ContentType.fromValue(request.typeEqual())));
     }
 
     // 검색 키워드
@@ -223,9 +223,9 @@ public class ContentQueryRepository {
           if (request.cursor() != null && request.idAfter() != null) {
             builder.and(
                 QContentsWatchingCount.contentsWatchingCount.watcherCount.lt(
-                        Long.parseLong(request.cursor()))
+                        (long) Double.parseDouble(request.cursor()))
                     .or(QContentsWatchingCount.contentsWatchingCount.watcherCount.eq(
-                            Long.parseLong(request.cursor()))
+                            (long) Double.parseDouble(request.cursor()))
                         .and(QContent.content.uuid.lt(request.idAfter())))
             );
           } else if (request.cursor() != null) {
@@ -270,9 +270,9 @@ public class ContentQueryRepository {
           if (request.cursor() != null && request.idAfter() != null) {
             builder.and(
                 QContentsWatchingCount.contentsWatchingCount.watcherCount.gt(
-                        Long.parseLong(request.cursor()))
+                        (long) Double.parseDouble(request.cursor()))
                     .or(QContentsWatchingCount.contentsWatchingCount.watcherCount.eq(
-                            Long.parseLong(request.cursor()))
+                            (long) Double.parseDouble(request.cursor()))
                         .and(QContent.content.uuid.gt(request.idAfter())))
             );
           } else if (request.cursor() != null) {
@@ -363,7 +363,7 @@ public class ContentQueryRepository {
 
   }
 
-  private record ReviewStat(
+  public record ReviewStat(
       Double sum,
       Long count
   ) {

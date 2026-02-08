@@ -39,7 +39,14 @@ public class ReviewQueryService {
 
     return CursorResponseReviewDto.builder()
         .data(reviewDtoList)
-        .nextCursor(reviewPage.hasNext() ? reviewPage.getContent().get(reviewPage.getSize() - 1).createdAt().toString() : null)
+        .nextCursor(reviewPage.hasNext() ?
+            switch (request.sortBy()) {
+              case "rating" ->
+                  reviewPage.getContent().get(reviewPage.getSize() - 1).rating().toString();
+              default ->
+                  reviewPage.getContent().get(reviewPage.getSize() - 1).createdAt().toString();
+            }
+            : null)
         .nextIdAfter(reviewPage.hasNext() ? reviewPage.getContent().get(reviewPage.getSize() - 1).uuid() : null)
         .hasNext(reviewPage.hasNext())
         .totalCount(reviewPage.getTotalElements())

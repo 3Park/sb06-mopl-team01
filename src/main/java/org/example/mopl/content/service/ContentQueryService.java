@@ -78,8 +78,14 @@ public class ContentQueryService {
     return CursorResponseContentDto.builder()
         .data(contentDtoList)
         .nextCursor(contentPage.hasNext() ?
-            contentPage.getContent()
-                .get(contentPage.getContent().size() - 1).uuid().toString() : null)
+            switch (request.sortBy()) {
+              case "watcherCount" -> contentPage.getContent()
+                  .get(contentPage.getContent().size() - 1).watcherCount().toString();
+              case "rate" -> contentPage.getContent()
+                  .get(contentPage.getContent().size() - 1).averageRating().toString();
+              default -> contentPage.getContent()
+                  .get(contentPage.getContent().size() - 1).createdAt().toString();
+            } : null)
         .nextIdAfter(contentPage.hasNext() ?
             contentPage.getContent()
                 .get(contentPage.getContent().size() - 1).uuid() : null)
