@@ -154,7 +154,7 @@ public class ContentQueryRepository {
                 QContent.content.updatedAt,
                 QContentsStat.contentsStat.ratingAverage.coalesce(0.0),
                 QContentsStat.contentsStat.ratingCount,
-                QContentsWatchingCount.contentsWatchingCount.watcherCount
+                QContentsWatchingCount.contentsWatchingCount.watcherCount.coalesce(0L)
             )
         )
         .from(QContent.content)
