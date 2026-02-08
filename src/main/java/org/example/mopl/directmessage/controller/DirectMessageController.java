@@ -1,10 +1,15 @@
 package org.example.mopl.directmessage.controller;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.example.mopl.auth.CustomUserDetails;
-import org.example.mopl.directmessage.dto.ConversationCreateRequest;
-import org.example.mopl.directmessage.dto.ConversationDto;
+import org.example.mopl.directmessage.dto.request.ConversationCreateRequest;
+import org.example.mopl.directmessage.dto.data.ConversationDto;
+import org.example.mopl.directmessage.dto.request.ConversationListRequest;
+import org.example.mopl.directmessage.dto.request.DirectMessageListRequest;
+import org.example.mopl.directmessage.dto.response.CursorResponseConversationDto;
+import org.example.mopl.directmessage.dto.response.CursorResponseDirectMessageDto;
 import org.example.mopl.directmessage.service.DirectMessageService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -68,5 +73,32 @@ public class DirectMessageController {
                 userDetails.getUserDto().getId(), userId
         );
         return ResponseEntity.status(HttpStatus.OK).body(conversationDto);
+    }
+
+    // 대화 목록 조회
+    @GetMapping
+    public ResponseEntity<CursorResponseConversationDto> getConversations(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @ModelAttribute @Valid ConversationListRequest request
+            ) {
+        log.info("대화 목록 조회 요청, requesterId={}", userDetails.getUserDto().getId());
+        CursorResponseConversationDto result = directMessageService.getConversations(
+                userDetails.getUserDto().getId(), request
+        );
+        return ResponseEntity.status(HttpStatus.OK).body(result);
+    }
+
+    // DB 목록 조회
+    @GetMapping(path = "{conversationId}/direct-messages")
+    public ResponseEntity<CursorResponseDirectMessageDto> getDirectMessages(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @PathVariable UUID conversationId,
+            @ModelAttribute @Valid DirectMessageListRequest request
+    ) {
+        log.info("DM 목록 조회 요청, requesterId={}", userDetails.getUserDto().getId());
+        CursorResponseDirectMessageDto result = directMessageService.getDirectMessages(
+                userDetails.getUserDto().getId(), conversationId, request
+        );
+        return ResponseEntity.status(HttpStatus.OK).body(result);
     }
 }

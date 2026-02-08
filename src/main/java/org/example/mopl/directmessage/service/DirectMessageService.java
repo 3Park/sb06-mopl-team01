@@ -2,8 +2,14 @@ package org.example.mopl.directmessage.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.example.mopl.directmessage.dto.ConversationDto;
-import org.example.mopl.directmessage.dto.DirectMessageDto;
+import org.example.mopl.directmessage.dto.condition.ConversationSearchCondition;
+import org.example.mopl.directmessage.dto.condition.DirectMessageSearchCondition;
+import org.example.mopl.directmessage.dto.data.ConversationDto;
+import org.example.mopl.directmessage.dto.request.ConversationListRequest;
+import org.example.mopl.directmessage.dto.request.DirectMessageListRequest;
+import org.example.mopl.directmessage.dto.response.CursorResponseConversationDto;
+import org.example.mopl.directmessage.dto.data.DirectMessageDto;
+import org.example.mopl.directmessage.dto.response.CursorResponseDirectMessageDto;
 import org.example.mopl.directmessage.entity.Conversation;
 import org.example.mopl.directmessage.entity.DirectMessage;
 import org.example.mopl.directmessage.exception.ConversationForbiddenException;
@@ -19,8 +25,8 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -64,11 +70,10 @@ public class DirectMessageService {
         Conversation conversation = getExistingConversation(creator, joiner)
                 .orElseGet(() -> saveConversation(creator, joiner));
 
-        ConversationDto conversationDto = ConversationDto.from(
-                conversation, creator, joiner, getLastMessageOrNull(conversation));
-
         log.info("conversation 생성 완료, conversationId={}", conversation.getUuid());
-        return conversationDto;
+        return ConversationDto.from(
+                conversation, creator, joiner, getLastMessageOrNull(conversation)
+        );
     }
 
     // DM 읽음 처리
@@ -91,12 +96,10 @@ public class DirectMessageService {
         User requester = getUserOrThrow(requesterUuid);
         User other = getCounterpartOrThrow(conversation, requester.getId());
 
-        ConversationDto conversationDto = ConversationDto.from(
+        log.info("대화 조회 완료, conversationId={}", conversationUuid);
+        return ConversationDto.from(
                 conversation, requester, other, getLastMessageOrNull(conversation)
         );
-
-        log.info("대화 조회 완료, conversationId={}", conversationUuid);
-        return conversationDto;
     }
 
     // 특정 사용자와의 대화 조회
@@ -109,12 +112,72 @@ public class DirectMessageService {
         Conversation conversation = getExistingConversation(requester, withUser)
                 .orElseThrow(ConversationNotFoundException::new);
 
-        ConversationDto conversationDto = ConversationDto.from(
-                conversation, requester, withUser, getLastMessageOrNull(conversation)
-        );
 
         log.info("with={} 사용자와의 대화 조회 완료, conversationId={}", withUserUuid, conversation.getUuid());
-        return conversationDto;
+        return ConversationDto.from(
+                conversation, requester, withUser, getLastMessageOrNull(conversation)
+        );
+    }
+
+    // 대화 목록 조회
+    @Transactional(readOnly = true)
+    public CursorResponseConversationDto getConversations(UUID requesterUuid, ConversationListRequest request) {
+
+        User requester = getUserOrThrow(requesterUuid);
+
+        ConversationSearchCondition condition = ConversationSearchCondition.of(
+                request.keywordLike(), request.idAfter(), request.limit() + 1,
+                request.sortDirection(), request.sortBy(), requester.getId()
+        );
+
+        List<Conversation> conversations = conversationRepository.searchByCursor(condition);
+        Long totalCount = conversationRepository.countByUserId(requester.getId());
+
+        // TODO: 추후 conversation 테이블에 last_message_id 컬럼 추가? 후 관련 로직 수정?
+        // TODO: findAllWithProfileByIdIn(List<Long> ids) 메소드 임의로 만들어 임시 사용
+        // conversation 상대방 찾기 ( key = conversationId )
+        Map<Long, User> counterpartMap = findCounterpartUserByConversations(requester, conversations);
+        // conversation lastMessage 찾기 ( key = conversationId )
+        Map<Long, DirectMessage> lastMessageMap = findLastMessagesByConversations(conversations);
+
+        return CursorResponseConversationDto.of(
+                conversations, totalCount, condition, counterpartMap, lastMessageMap, requester
+        );
+    }
+
+    private Map<Long, User> findCounterpartUserByConversations(User requester, List<Conversation> conversations) {
+        List<Long> counterpartIds = conversations.stream()
+                .map(c -> c.getCounterpartId(requester.getId())).toList();
+        return userRepository.findAllWithProfileByIdIn(counterpartIds).stream()
+                .collect(Collectors.toMap(user -> user.getId(), user -> user));
+    }
+    private Map<Long, DirectMessage> findLastMessagesByConversations(List<Conversation> conversations) {
+        List<Long> conversationIds = conversations.stream().map(Conversation::getId).toList();
+        return directMessageRepository.findAllLastMessagesByConversationIdIn(conversationIds);
+    }
+
+    // DM 목록 조회
+    @Transactional(readOnly = true)
+    public CursorResponseDirectMessageDto getDirectMessages(
+            UUID requesterUuid, UUID conversationUuid, DirectMessageListRequest request) {
+
+        User requester = getUserOrThrow(requesterUuid);
+        Conversation conversation = getConversationOrThrow(conversationUuid);
+        User other =  getCounterpartOrThrow(conversation, requester.getId());
+
+        DirectMessageSearchCondition condition = DirectMessageSearchCondition.of(
+                request.idAfter(), request.limit() + 1,
+                request.sortDirection(), request.sortBy(),
+                requester.getId(), conversation.getId()
+        );
+
+        List<DirectMessage> directMessages = directMessageRepository.searchByCursor(condition);
+        Long totalCont = directMessageRepository.countByConversationId(conversation.getId());
+
+        log.info("대화 목록 조회 완료, requesterId={}, conversationId={}", requesterUuid, conversationUuid);
+        return CursorResponseDirectMessageDto.of(
+                directMessages, totalCont, condition, requester, other
+        );
     }
 
 

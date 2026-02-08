@@ -3,7 +3,7 @@ package org.example.mopl.directmessage.controller;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.example.mopl.directmessage.dto.DirectMessageCreateRequest;
+import org.example.mopl.directmessage.dto.request.DirectMessageCreateRequest;
 import org.example.mopl.directmessage.service.DirectMessageService;
 import org.springframework.messaging.handler.annotation.DestinationVariable;
 import org.springframework.messaging.handler.annotation.MessageMapping;
