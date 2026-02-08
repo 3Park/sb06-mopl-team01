@@ -1,4 +1,4 @@
-package org.example.mopl.directmessage.dto;
+package org.example.mopl.directmessage.dto.data;
 
 import org.example.mopl.directmessage.entity.DirectMessage;
 import org.example.mopl.user.entity.User;

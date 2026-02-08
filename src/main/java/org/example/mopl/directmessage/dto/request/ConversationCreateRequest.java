@@ -1,4 +1,4 @@
-package org.example.mopl.directmessage.dto;
+package org.example.mopl.directmessage.dto.request;
 
 import jakarta.validation.constraints.NotNull;
 
