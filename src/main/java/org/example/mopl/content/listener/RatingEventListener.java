@@ -23,6 +23,8 @@ public class RatingEventListener {
   @TransactionalEventListener
   public void handleIncreaseRatingEvent(RatingEvent.IncreaseRatingEvent event) {
 
+    log.info("리뷰 수 증가 이벤트 처리 시작 for contentId: {}", event.contentId());
+
     ContentsStat contentsStat = contentsStatQueryRepository.findByContentId(event.contentId())
         .orElseThrow(() -> new NoSuchContentException(event.contentUuid()));
 
@@ -35,6 +37,8 @@ public class RatingEventListener {
   @Async("eventTaskExecutor")
   @TransactionalEventListener
   public void handleDecreaseRatingEvent(RatingEvent.DecreaseRatingEvent event) {
+
+    log.info("리뷰 수 감소 이벤트 처리 시작 for contentId: {}", event.contentId());
 
     ContentsStat contentsStat = contentsStatQueryRepository.findByContentId(event.contentId())
         .orElseThrow(() -> new NoSuchContentException(event.contentUuid()));
