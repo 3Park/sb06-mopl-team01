@@ -30,6 +30,8 @@ public class RatingEventListener {
 
     contentsStat.addRating((long) event.rating());
 
+    contentsStatCommandRepository.save(contentsStat);
+
     log.info("리뷰 수 증가 이벤트 처리 완료 for contentId: {}", event.contentId());
 
   }
@@ -44,6 +46,8 @@ public class RatingEventListener {
         .orElseThrow(() -> new NoSuchContentException(event.contentUuid()));
 
     contentsStat.removeRating((long) event.rating());
+
+    contentsStatCommandRepository.save(contentsStat);
 
     log.info("리뷰 수 감소 이벤트 처리 완료 for contentId: {}", event.contentId());
 

@@ -31,6 +31,8 @@ public class SubscribeCountEventListener {
 
     playlistsStat.incrementSubscribeCount();
 
+    playlistsStatCommandRepository.save(playlistsStat);
+
     log.info("구독 수 증가 이벤트 처리 완료 for playlistId: {}", event.playlistId());
 
   }
@@ -45,6 +47,8 @@ public class SubscribeCountEventListener {
         .orElseThrow(() -> new NoSuchPlaylistException(event.playlistUuid()));
 
     playlistsStat.decrementSubscribeCount();
+
+    playlistsStatCommandRepository.save(playlistsStat);
 
     log.info("구독 수 감소 이벤트 처리 완료 for playlistId: {}", event.playlistId());
 
