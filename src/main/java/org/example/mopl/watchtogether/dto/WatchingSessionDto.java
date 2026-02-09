@@ -10,7 +10,7 @@ import java.util.UUID;
 
 @Builder
 public record WatchingSessionDto(
-        UUID id,
+        String id,
         Instant createdAt,
         Watcher watcher,
         Content content
