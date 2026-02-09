@@ -90,7 +90,7 @@ content:
     tmdb:
       key: ${CONTENT_API_TMDB_KEY}
       url: https://api.themoviedb.org/3
-      all-pages: 300
+      all-pages: 5
     thesportsdb:
       key: ${CONTENT_API_THESPORTSDB_KEY}
       url: https://www.thesportsdb.com/api/v1/json

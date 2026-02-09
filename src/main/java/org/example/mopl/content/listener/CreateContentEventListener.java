@@ -23,6 +23,8 @@ public class CreateContentEventListener {
   @TransactionalEventListener
   public void handleCreateContentEvent(CreateContentEvent event) {
 
+    log.info("콘텐츠 생성 이벤트 처리 시작 for contentId: {}", event.content().getId());
+
     // 콘텐츠 통계 초기화
     contentsStatCommandRepository.save(
         ContentsStat.of(event.content())

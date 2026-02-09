@@ -23,10 +23,14 @@ public class RatingEventListener {
   @TransactionalEventListener
   public void handleIncreaseRatingEvent(RatingEvent.IncreaseRatingEvent event) {
 
+    log.info("리뷰 수 증가 이벤트 처리 시작 for contentId: {}", event.contentId());
+
     ContentsStat contentsStat = contentsStatQueryRepository.findByContentId(event.contentId())
         .orElseThrow(() -> new NoSuchContentException(event.contentUuid()));
 
     contentsStat.addRating((long) event.rating());
+
+    contentsStatCommandRepository.save(contentsStat);
 
     log.info("리뷰 수 증가 이벤트 처리 완료 for contentId: {}", event.contentId());
 
@@ -36,10 +40,14 @@ public class RatingEventListener {
   @TransactionalEventListener
   public void handleDecreaseRatingEvent(RatingEvent.DecreaseRatingEvent event) {
 
+    log.info("리뷰 수 감소 이벤트 처리 시작 for contentId: {}", event.contentId());
+
     ContentsStat contentsStat = contentsStatQueryRepository.findByContentId(event.contentId())
         .orElseThrow(() -> new NoSuchContentException(event.contentUuid()));
 
     contentsStat.removeRating((long) event.rating());
+
+    contentsStatCommandRepository.save(contentsStat);
 
     log.info("리뷰 수 감소 이벤트 처리 완료 for contentId: {}", event.contentId());
 

@@ -37,6 +37,15 @@ public class ReviewQueryRepository {
         .fetchFirst() != null;
   }
 
+  public boolean existsByContentIdAndUserId(Long contentId, Long userId) {
+    return queryFactory.selectFrom(QReview.review)
+        .where(
+            QReview.review.content.id.eq(contentId),
+            QReview.review.user.id.eq(userId)
+        )
+        .fetchFirst() != null;
+  }
+
   public Optional<Review> findByUuid(UUID reviewId) {
     return Optional.ofNullable(
         queryFactory.selectFrom(QReview.review)
