@@ -3,6 +3,7 @@ package org.example.mopl.common.interceptor;
 import jakarta.annotation.Nullable;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.example.mopl.auth.CustomUserDetails;
 import org.example.mopl.auth.jwt.JwtTokenProvider;
 import org.example.mopl.directmessage.repository.ConversationRepository;
 import org.springframework.messaging.Message;
@@ -96,9 +97,12 @@ public class WebSocketChannelInterceptor implements ChannelInterceptor {
 
             // 해당 채팅방의 참여자가 아닐 시 구독 불가
             UUID conversationUuid = UUID.fromString(conversationId);
-            UUID userUuid = UUID.fromString(user.getName());
+
+            Authentication authentication = (Authentication) user;
+            CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+
             boolean isParticipant = conversationRepository
-                    .existsByConversationUuidAndUserUuid(conversationUuid, userUuid);
+                    .existsByConversationUuidAndUserUuid(conversationUuid, userDetails.getUserDto().getId());
             if (!isParticipant) {
                 throw new SecurityException("채팅방 구독 권한이 없습니다.");
             }

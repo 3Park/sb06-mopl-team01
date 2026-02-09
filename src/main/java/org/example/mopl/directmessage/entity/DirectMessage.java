@@ -44,13 +44,13 @@ public class DirectMessage {
     private String content;
 
     @Column(name = "read_status", nullable = false)
-    private boolean readStatus;
+    private boolean isRead;
 
 
     @Builder
-    public DirectMessage(Conversation conversation, Long senderId, Long receiverId, String content) {
+    private DirectMessage(Conversation conversation, Long senderId, Long receiverId, String content) {
         this.uuid = UUID.randomUUID();
-        this.readStatus = false;
+        this.isRead = false;
 
         this.conversation = conversation;
         this.senderId = senderId;
@@ -58,4 +58,28 @@ public class DirectMessage {
         this.content = content;
     }
 
+    public static DirectMessage of(Conversation conversation, Long senderId, Long receiverId, String content) {
+        return DirectMessage.builder().conversation(conversation).senderId(senderId)
+                .receiverId(receiverId).content(content).build();
+    }
+
+    public boolean isSenderId(Long userId) {
+        return this.senderId.equals(userId);
+    }
+    public boolean isReceiverId(Long userId) {
+        return this.receiverId.equals(userId);
+    }
+    public boolean isValidParticipant(Long userId) {
+        return isSenderId(userId) || isReceiverId(userId);
+    }
+    public boolean isValidParticipants(Long userId, Long otherUserId) {
+        return isValidParticipant(userId) || isValidParticipant(otherUserId);
+    }
+
+    public boolean isUnreadBy(Long userId) {
+        return !this.isRead && this.receiverId.equals(userId);
+    }
+    public void read() {
+        this.isRead = true;
+    }
 }

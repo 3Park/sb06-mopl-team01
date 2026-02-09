@@ -10,6 +10,7 @@ import org.example.mopl.user.dto.UserDto;
 import org.example.mopl.watchtogether.service.WatchTogetherService;
 import org.springframework.context.event.EventListener;
 import org.springframework.messaging.simp.stomp.StompHeaderAccessor;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.messaging.SessionDisconnectEvent;
 import org.springframework.web.socket.messaging.SessionSubscribeEvent;
@@ -49,7 +50,8 @@ public class WebSocketEventListener {
         sessionToDestination.put(sessionId,destination);
 
         //JWT에서 유저정보 추출
-        CustomUserDetails details = (CustomUserDetails) headerAccessor.getUser();
+        Authentication authentication = (Authentication) headerAccessor.getUser();
+        CustomUserDetails details = (CustomUserDetails) authentication.getPrincipal();
         UserDto userDto = null;
         if(details ==null){
             throw new AuthException(AuthErrorCode.INVALID_USER_DATA);
