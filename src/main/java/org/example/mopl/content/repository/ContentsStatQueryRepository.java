@@ -6,10 +6,13 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.example.mopl.content.entity.ContentsStat;
+import org.example.mopl.content.entity.QContent;
 import org.example.mopl.content.entity.QContentsStat;
 import org.springframework.stereotype.Repository;
 
+@Slf4j
 @Repository
 @RequiredArgsConstructor
 public class ContentsStatQueryRepository {
@@ -19,7 +22,10 @@ public class ContentsStatQueryRepository {
   public Optional<ContentsStat> findByContentId(Long id) {
 
     ContentsStat contentsStat = queryFactory
-        .selectFrom(QContentsStat.contentsStat)
+        .select(QContentsStat.contentsStat)
+        .from(QContentsStat.contentsStat)
+        .leftJoin(QContentsStat.contentsStat.content, QContent.content)
+        .fetchJoin()
         .where(QContentsStat.contentsStat.content.id.eq(id))
         .fetchOne();
 
@@ -31,6 +37,8 @@ public class ContentsStatQueryRepository {
 
     List<ContentsStat> contentsStatList = queryFactory
         .selectFrom(QContentsStat.contentsStat)
+        .leftJoin(QContentsStat.contentsStat.content, QContent.content)
+        .fetchJoin()
         .where(QContentsStat.contentsStat.content.id.in(ids))
         .fetch();
 
