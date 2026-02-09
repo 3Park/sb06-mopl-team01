@@ -55,16 +55,17 @@ public class PlaylistQueryRepository {
                 QPlaylist.playlist.title,
                 QPlaylist.playlist.description,
                 QPlaylist.playlist.updatedAt,
-                QPlaylistsStat.playlistsStat.subscribeCount
+                QPlaylistsStat.playlistsStat.subscribeCount,
+                QSubscribe.subscribe.uuid.isNotNull().as("subscribeByMe")
             )
         )
             .from(QPlaylist.playlist)
             .leftJoin(QPlaylist.playlist.user, QUser.user)
-            .fetchJoin()
             .join(QUser.user.profile, QProfile.profile)
-            .fetchJoin()
             .leftJoin(QPlaylistsStat.playlistsStat)
             .on(QPlaylistsStat.playlistsStat.playlist.eq(QPlaylist.playlist))
+            .leftJoin(QSubscribe.subscribe)
+            .on(QSubscribe.subscribe.playlist.eq(QPlaylist.playlist))
             .where(QPlaylist.playlist.uuid.eq(playlistUuid))
             .fetchOne());
   }
