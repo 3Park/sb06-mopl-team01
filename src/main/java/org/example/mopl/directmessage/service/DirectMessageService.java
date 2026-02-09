@@ -133,8 +133,6 @@ public class DirectMessageService {
         List<Conversation> conversations = conversationRepository.searchByCursor(condition);
         Long totalCount = conversationRepository.countByUserId(requester.getId());
 
-        // TODO: 추후 conversation 테이블에 last_message_id 컬럼 추가? 후 관련 로직 수정?
-        // TODO: findAllWithProfileByIdIn(List<Long> ids) 메소드 임의로 만들어 임시 사용
         // conversation 상대방 찾기 ( key = conversationId )
         Map<Long, User> counterpartMap = findCounterpartUserByConversations(requester, conversations);
         // conversation lastMessage 찾기 ( key = conversationId )
