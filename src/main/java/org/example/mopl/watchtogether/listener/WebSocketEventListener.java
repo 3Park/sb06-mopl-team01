@@ -3,9 +3,6 @@ package org.example.mopl.watchtogether.listener;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.example.mopl.auth.CustomUserDetails;
-import org.example.mopl.auth.exception.AuthErrorCode;
-import org.example.mopl.auth.exception.AuthException;
-import org.example.mopl.content.entity.Content;
 import org.example.mopl.user.dto.UserDto;
 import org.example.mopl.watchtogether.service.WatchTogetherService;
 import org.springframework.context.event.EventListener;
@@ -15,9 +12,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.socket.messaging.SessionDisconnectEvent;
 import org.springframework.web.socket.messaging.SessionSubscribeEvent;
 
-import java.util.Objects;
-import java.util.Optional;
-import java.util.UUID;
+import java.security.Principal;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Slf4j
@@ -26,52 +21,76 @@ import java.util.concurrent.ConcurrentHashMap;
 public class WebSocketEventListener {
 
     private final ConcurrentHashMap<String,String> sessionToDestination = new ConcurrentHashMap<>();
-
     private final WatchTogetherService watchTogetherService;
 
     private final String CONTENTS = "/sub/contents";
 
-    //공통적인 값 의논하고 리팩토링 진행 예정
     @EventListener
-    public void handleSubscribe(SessionSubscribeEvent event){
-        StompHeaderAccessor headerAccessor = StompHeaderAccessor.wrap(event.getMessage());
-        //sessionId,구독한 채널 주소, roomId(DM방,컨텐츠방), 유저정보 세션에서 추출
-        String sessionId = headerAccessor.getSessionId();
+    public void handleSubscribe(SessionSubscribeEvent event) {
+        StompHeaderAccessor accessor = StompHeaderAccessor.wrap(event.getMessage());
 
-        //sub/conversations/{conversationId},/pub/contents/{contentId} 해당 아이디 추출
-        String roomId = Objects.requireNonNull(headerAccessor.getDestination()).split("/")[3];
+        String sessionId = accessor.getSessionId();
+        String destination = accessor.getDestination();
 
-        //채널별로 이벤트 처리 달리하기 위해 추출
-        String destination = headerAccessor.getDestination();
+        //1. 유효성 검사 (세션, 목적지, 유저 정보)
+        if (sessionId == null || destination == null) {return;}
 
-        //세션 연결 종료 때 채널 주소 이용
-        //세션이 null인 경우가 있나 아니면 그냥 ConcurrentHashMap 입력 값이 @NotNull 이라서
-        //headerAccessor.getSessionId() 여기에서 불변으로 반환을 안해서 경고가 뜨는 것 같다.
-        sessionToDestination.put(sessionId,destination);
+        UserDto userDto = extractUserDto(accessor.getUser());
 
-        //JWT에서 유저정보 추출
-        Authentication authentication = (Authentication) headerAccessor.getUser();
-        CustomUserDetails details = (CustomUserDetails) authentication.getPrincipal();
-        UserDto userDto = null;
-        if(details ==null){
-            throw new AuthException(AuthErrorCode.INVALID_USER_DATA);
-        }
-        userDto = details.getUserDto();
-
-        if(destination.startsWith(CONTENTS)){
-            watchTogetherService.addUserToRoom(userDto,roomId,sessionId);
+        if (userDto == null) {
+            log.warn("인증되지 않은 사용자의 구독 시도입니다. SessionID: {}", sessionId);
+            // 필요시 여기서 예외를 던지거나 연결을 끊을 수 있음
+            return;
         }
 
+        //2. 연결 해제 시를 대비해 매핑 정보 저장
+        sessionToDestination.put(sessionId, destination);
+
+        //3. 콘텐츠 방 구독 로직 처리
+        if (destination.startsWith(CONTENTS)) {
+            String contentId = extractContentId(destination);
+            if (contentId != null) {
+                watchTogetherService.addUserToRoom(userDto, contentId, sessionId);
+                log.info("User {} entered room {}", userDto.getId(), contentId);
+            } else {
+                log.warn("잘못된 구독 경로입니다: {}", destination);
+            }
+        }
     }
 
     @EventListener
-    public void handleDisconnect(SessionDisconnectEvent event){
-        StompHeaderAccessor headerAccessor = StompHeaderAccessor.wrap(event.getMessage());
-        String sessionId = headerAccessor.getSessionId();
+    public void handleDisconnect(SessionDisconnectEvent event) {
+        StompHeaderAccessor accessor = StompHeaderAccessor.wrap(event.getMessage());
+        String sessionId = accessor.getSessionId();
 
-        if (sessionToDestination.get(sessionId).startsWith(CONTENTS)){
+        if (sessionId == null) return;
+
+        String destination = sessionToDestination.remove(sessionId);
+
+        if (destination != null && destination.startsWith(CONTENTS)) {
             watchTogetherService.removeUserFromRoom(sessionId);
+            log.info("Session disconnected: {}", sessionId);
         }
+    }
 
+    private UserDto extractUserDto(Principal principal) {
+        if (principal instanceof Authentication authentication) {
+            Object detail = authentication.getPrincipal();
+            if (detail instanceof CustomUserDetails userDetails) {
+                return userDetails.getUserDto();
+            }
+        }
+        return null;
+    }
+
+    private String extractContentId(String destination) {
+        if (destination == null) {return null;}
+
+        String[] pathParts = destination.split("/");
+
+        //구조 검증: ["", "sub", "contents", "{contentId}"] -> 길이 4 이상이어야 함
+        if (pathParts.length > 3) {return pathParts[3];}
+
+        return null;
     }
 }
