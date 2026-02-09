@@ -9,6 +9,7 @@ import org.example.mopl.content.dto.response.ReviewDto;
 import org.example.mopl.content.entity.Content;
 import org.example.mopl.content.entity.Review;
 import org.example.mopl.content.event.RatingEvent;
+import org.example.mopl.content.exception.DuplicateReviewException;
 import org.example.mopl.content.exception.NoSuchAuthorException;
 import org.example.mopl.content.exception.NoSuchContentException;
 import org.example.mopl.content.exception.NoSuchReviewException;
@@ -40,6 +41,10 @@ public class ReviewCommandService {
 
     Content content = contentQueryRepository.findByUuid(request.contentId())
         .orElseThrow(() -> new NoSuchContentException(request.contentId().toString()));
+
+    if (reviewQueryRepository.existsByContentIdAndUserId(content.getId(), user.getId())) {
+      throw new DuplicateReviewException(content.getUuid());
+    }
 
     Review review = reviewCommandRepository.save(
         Review.of(

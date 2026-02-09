@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -42,7 +43,7 @@ public class ReviewController {
   @PostMapping
   public ResponseEntity<ReviewDto> createReview(
       @AuthenticationPrincipal CustomUserDetails userDetails,
-      @Valid @ModelAttribute ReviewCreateRequest request
+      @Valid @RequestBody ReviewCreateRequest request
   ) {
     return ResponseEntity.ok(reviewCommandService.createReview(userDetails.getUserDto().getEmail(), request));
   }
@@ -52,7 +53,7 @@ public class ReviewController {
   public ResponseEntity<ReviewDto> updateReviewById(
       @AuthenticationPrincipal CustomUserDetails userDetails,
       @PathVariable UUID reviewId,
-      @Valid @ModelAttribute ReviewUpdateRequest request
+      @Valid @RequestBody ReviewUpdateRequest request
   ) {
     return ResponseEntity.ok(reviewCommandService.updateReview(
         userDetails.getUserDto().getEmail(),
