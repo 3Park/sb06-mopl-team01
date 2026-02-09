@@ -143,6 +143,7 @@ public class PlaylistQueryService {
                 playlist.userId(),
                 playlist.id()
             ),
+            playlistContentsMap.containsKey(playlist.id()) ?
             playlistContentsMap.get(playlist.id()).stream()
                 .map(content ->
                     ContentDto.of(
@@ -159,7 +160,7 @@ public class PlaylistQueryService {
                         watchTogetherService.getWatcherCount(String.valueOf(content.getId()))
                     )
                 )
-                .toList()
+                .toList() : List.of()
         ))
         .toList();
 
