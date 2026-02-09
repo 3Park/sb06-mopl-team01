@@ -63,7 +63,7 @@ public class SseService {
     }
 
     public void sendNotification(UUID receiverId, NotificationDto data) {
-        send(receiverId, "notification", data, data.id().toString());
+        send(receiverId, "notifications", data, data.id().toString());
     }
 
     private void send(UUID receiverId, String eventName, Object data, String eventId) {
