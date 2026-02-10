@@ -40,7 +40,7 @@ public class PlaylistQueryService {
 
   // 플레이리스트 단건 조회
   @Transactional(readOnly = true)
-  public PlaylistDto getPlaylistDtoByUuid(UUID uuid) {
+  public PlaylistDto getPlaylistByUuid(UUID uuid) {
 
     PlaylistResult playlist = playlistQueryRepository.findByUuidWithStats(uuid)
         .orElseThrow(() -> new NoSuchPlaylistException(uuid));
