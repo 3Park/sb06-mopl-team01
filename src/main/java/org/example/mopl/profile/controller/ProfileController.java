@@ -2,6 +2,7 @@ package org.example.mopl.profile.controller;
 
 import org.example.mopl.profile.dto.ProfileDto;
 import org.example.mopl.profile.dto.ProfileUpdateRequest;
+import org.example.mopl.profile.dto.WatchingContentDto;
 import org.example.mopl.profile.service.ProfileService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -17,6 +18,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import jakarta.validation.Valid;
 import java.io.IOException;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/profiles")
@@ -54,5 +56,11 @@ public class ProfileController {
     ) throws IOException {
         ProfileDto dto = profileService.uploadProfileImage(userId, file, currentUserId);
         return ResponseEntity.ok(dto);
+    }
+
+    @GetMapping("/users/{userId}/watching")
+    public ResponseEntity<List<WatchingContentDto>> getWatchingContents(@PathVariable Long userId) {
+        List<WatchingContentDto> list = profileService.getWatchingContents(userId);
+        return ResponseEntity.ok(list);
     }
 }
