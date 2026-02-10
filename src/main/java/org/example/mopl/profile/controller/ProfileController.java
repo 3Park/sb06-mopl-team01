@@ -5,11 +5,13 @@ import org.example.mopl.contentevaluation.dto.response.CursorResponsePlaylistDto
 import org.example.mopl.profile.dto.SubscribedPlaylistCursorResponse;
 import org.example.mopl.profile.dto.ProfileDto;
 import org.example.mopl.profile.dto.ProfileUpdateRequest;
+import org.example.mopl.profile.dto.UserSummary;
 import org.example.mopl.profile.dto.WatchingContentDto;
 import org.example.mopl.profile.service.ProfileService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -84,6 +86,20 @@ public class ProfileController {
     ) {
         SubscribedPlaylistCursorResponse result = profileService.getSubscribedPlaylists(userId, request);
         return ResponseEntity.ok(result);
+    }
+
+    /** 단일 사용자 프로필 요약 (알림/DM 연계용) */
+    @GetMapping("/users/{userId}/summary")
+    public ResponseEntity<UserSummary> getUserSummary(@PathVariable Long userId) {
+        UserSummary summary = profileService.getUserSummary(userId);
+        return ResponseEntity.ok(summary);
+    }
+
+    /** 여러 사용자 프로필 요약 일괄 조회 (알림/DM 연계용). userIds=1&userIds=2&userIds=3 */
+    @GetMapping("/summaries")
+    public ResponseEntity<List<UserSummary>> getUserSummaries(@RequestParam List<Long> userIds) {
+        List<UserSummary> list = profileService.getUserSummaries(userIds);
+        return ResponseEntity.ok(list);
     }
 }
 

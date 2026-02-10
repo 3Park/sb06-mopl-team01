@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -18,6 +19,8 @@ public interface ProfileRepository extends JpaRepository<Profile, Long> {
     @Query("SELECT p FROM Profile p JOIN FETCH p.user WHERE p.user.id = :userId")
     Optional<Profile> findWithUserByUserId(@Param("userId") Long userId);
 
+    @Query("SELECT DISTINCT p FROM Profile p JOIN FETCH p.user WHERE p.user.id IN :userIds")
+    List<Profile> findAllWithUserByUserIdIn(@Param("userIds") List<Long> userIds);
 
     Optional<Profile> findByUuid(UUID uuid);
 
