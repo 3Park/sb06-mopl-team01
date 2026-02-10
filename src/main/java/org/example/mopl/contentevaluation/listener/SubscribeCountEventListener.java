@@ -24,10 +24,14 @@ public class SubscribeCountEventListener {
   @TransactionalEventListener
   public void handleIncreaseSubscribeCountEvent(SubscribeCountEvent.IncreaseSubscribeCountEvent event) {
 
+    log.info("구독 수 증가 이벤트 수신 for playlistId: {}", event.playlistId());
+
     PlaylistsStat playlistsStat = playlistsStatQueryRepository.findByPlaylistId(event.playlistId())
         .orElseThrow(() -> new NoSuchPlaylistException(event.playlistUuid()));
 
     playlistsStat.incrementSubscribeCount();
+
+    playlistsStatCommandRepository.save(playlistsStat);
 
     log.info("구독 수 증가 이벤트 처리 완료 for playlistId: {}", event.playlistId());
 
@@ -37,10 +41,14 @@ public class SubscribeCountEventListener {
   @TransactionalEventListener
   public void handleDecreaseSubscribeCountEvent(SubscribeCountEvent.DecreaseSubscribeCountEvent event) {
 
+    log.info("구독 수 감소 이벤트 수신 for playlistId: {}", event.playlistId());
+
     PlaylistsStat playlistsStat = playlistsStatQueryRepository.findByPlaylistId(event.playlistId())
         .orElseThrow(() -> new NoSuchPlaylistException(event.playlistUuid()));
 
     playlistsStat.decrementSubscribeCount();
+
+    playlistsStatCommandRepository.save(playlistsStat);
 
     log.info("구독 수 감소 이벤트 처리 완료 for playlistId: {}", event.playlistId());
 

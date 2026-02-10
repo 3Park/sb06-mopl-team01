@@ -85,9 +85,11 @@ public class PlaylistQueryService {
                     content.getContent().getTitle(),
                     content.getContent().getDescription(),
                     contentS3Client.getPresignedUrl(content.getContent().getThumbnailUrl()),
-                    contentTagsMap.getOrDefault(content.getId(), List.of()),
-                    contentsStatMap.containsKey(content.getId()) ? contentsStatMap.get(content.getId()).getRatingAverage() : 0.0,
-                    contentsStatMap.containsKey(content.getId()) ? contentsStatMap.get(content.getId()).getRatingCount() : 0,
+                    contentTagsMap.getOrDefault(content.getContent().getId(), List.of()),
+                    contentsStatMap.containsKey(content.getContent().getId()) ?
+                        contentsStatMap.get(content.getContent().getId()).getRatingAverage() : 0.0,
+                    contentsStatMap.containsKey(content.getContent().getId()) ?
+                        contentsStatMap.get(content.getContent().getId()).getRatingCount() : 0,
                     watchTogetherService.getWatcherCount(String.valueOf(content.getId()))
                 )
             )
@@ -141,6 +143,7 @@ public class PlaylistQueryService {
                 playlist.userId(),
                 playlist.id()
             ),
+            playlistContentsMap.containsKey(playlist.id()) ?
             playlistContentsMap.get(playlist.id()).stream()
                 .map(content ->
                     ContentDto.of(
@@ -149,13 +152,15 @@ public class PlaylistQueryService {
                         content.getContent().getTitle(),
                         content.getContent().getDescription(),
                         contentS3Client.getPresignedUrl(content.getContent().getThumbnailUrl()),
-                        contentTagsMap.getOrDefault(content.getId(), List.of()),
-                        contentsStatMap.containsKey(content.getId()) ? contentsStatMap.get(content.getId()).getRatingAverage() : 0.0,
-                        contentsStatMap.containsKey(content.getId()) ? contentsStatMap.get(content.getId()).getRatingCount() : 0,
+                        contentTagsMap.getOrDefault(content.getContent().getId(), List.of()),
+                        contentsStatMap.containsKey(content.getContent().getId()) ?
+                            contentsStatMap.get(content.getContent().getId()).getRatingAverage() : 0.0,
+                        contentsStatMap.containsKey(content.getContent().getId()) ?
+                            contentsStatMap.get(content.getContent().getId()).getRatingCount() : 0,
                         watchTogetherService.getWatcherCount(String.valueOf(content.getId()))
                     )
                 )
-                .toList()
+                .toList() : List.of()
         ))
         .toList();
 

@@ -18,9 +18,11 @@ public record CursorResponseNotificationDto(
         SortDirection sortDirection
 ) {
     public static CursorResponseNotificationDto of(
-            List<Notification> notifications, int limit, Long totalCount, SortBy sortBy, SortDirection sortDirection
+            List<Notification> notifications, int conditionLimit, Long totalCount, SortBy sortBy, SortDirection sortDirection
     ) {
         boolean hasNext = false;
+        int limit = conditionLimit - 1;
+
         UUID nextIdAfter = null;
         String nextCursor = null;
 

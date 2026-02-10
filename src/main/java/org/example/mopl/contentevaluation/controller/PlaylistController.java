@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -52,7 +53,7 @@ public class PlaylistController {
   @PostMapping
   public ResponseEntity<PlaylistDto> createPlaylist(
       @AuthenticationPrincipal CustomUserDetails userDetails,
-      @Valid @ModelAttribute PlaylistCreateRequest request
+      @Valid @RequestBody PlaylistCreateRequest request
   ) {
     return ResponseEntity.ok(playlistCommandService.createPlaylist(userDetails.getUserDto().getEmail(), request));
   }
@@ -88,7 +89,7 @@ public class PlaylistController {
   public ResponseEntity<PlaylistDto> updatePlaylistById(
       @AuthenticationPrincipal CustomUserDetails userDetails,
       @PathVariable UUID playlistId,
-      @Valid @ModelAttribute PlaylistUpdateRequest request
+      @Valid @RequestBody PlaylistUpdateRequest request
   ) {
     return ResponseEntity.ok(playlistCommandService.updatePlaylist(
         userDetails.getUserDto().getEmail(),

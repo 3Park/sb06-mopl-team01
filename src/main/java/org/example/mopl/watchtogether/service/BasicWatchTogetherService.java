@@ -142,7 +142,7 @@ public class BasicWatchTogetherService implements WatchTogetherService{
         WatchingRoom watchingRoom = watchingRooms.get(roomId);
 
         return WatchingSessionDto.builder()
-                .id(watchingRoom.getId())
+                .id(watchingRoom.getId().toString())
                 .createdAt(watchingRoom.getCreatedAt())
                 .watcher(watchingRoom.getWatcher(sessionId).getWatcher())
                 .content(watchingRoom.getContent())
@@ -210,7 +210,7 @@ public class BasicWatchTogetherService implements WatchTogetherService{
             Integer limit,
             Content content
     ){
-        if(!cursor.isEmpty() || !idAfter.isEmpty()){
+        if(cursor != null  || idAfter != null){
 
             return sortedData.stream()
                     .dropWhile(watchingSession ->

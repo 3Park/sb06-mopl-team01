@@ -10,12 +10,12 @@ import java.util.UUID;
 @Getter
 @NoArgsConstructor
 public class WatchingSession {
-    private UUID id;
+    private String id;
     private Instant createdAt;
     private Watcher watcher;
 
     public WatchingSession(String id,Watcher watcher){
-        this.id = UUID.fromString(id);
+        this.id = id;
         this.createdAt = Instant.now();
         this.watcher = watcher;
     }
