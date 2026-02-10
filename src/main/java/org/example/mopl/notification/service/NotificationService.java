@@ -17,7 +17,6 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -98,7 +97,7 @@ public class NotificationService {
         boolean hasNext = false;
         String nextCursor = null;
         UUID nextIdAfter = null;
-        List<Notification> notificationsAfter = new ArrayList<>();
+        List<Notification> notificationsAfter = notifications;
 
         if (notifications.size() > limit) {
             hasNext = true;
