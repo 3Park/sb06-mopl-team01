@@ -1,7 +1,8 @@
-package org.example.mopl.notification.dto;
+package org.example.mopl.notification.dto.request;
 
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
+import org.example.mopl.notification.dto.NotificationSearchCondition;
 import org.example.mopl.notification.enums.SortBy;
 import org.hibernate.query.SortDirection;
 
@@ -14,4 +15,9 @@ public record NotificationListRequest(
         @NotNull SortDirection sortDirection,
         @NotNull SortBy sortBy
         ) {
+    public NotificationSearchCondition toSearchCondition(UUID receiverId, int limit, Long idAfter) {
+        return new NotificationSearchCondition(
+                receiverId, this.cursor, idAfter, limit, this.sortDirection, this.sortBy
+        );
+    }
 }

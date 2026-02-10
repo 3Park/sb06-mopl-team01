@@ -23,5 +23,5 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
     @Query("SELECT n.id FROM Notification n WHERE n.uuid = :uuid")
     Optional<Long> findIdByUuid(@Param("uuid") UUID uuid);
 
-    long countByReceiverId(UUID receiverId);
+    long countByReceiverId(UUID userId);
 }

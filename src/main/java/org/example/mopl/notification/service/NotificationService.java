@@ -3,21 +3,17 @@ package org.example.mopl.notification.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.example.mopl.event.message.NotificationCreatedEvent;
-import org.example.mopl.notification.dto.CursorResponseNotificationDto;
-import org.example.mopl.notification.dto.NotificationDto;
-import org.example.mopl.notification.dto.NotificationListRequest;
+import org.example.mopl.notification.dto.CursorResult;
+import org.example.mopl.notification.dto.response.CursorResponseNotificationDto;
+import org.example.mopl.notification.dto.data.NotificationDto;
+import org.example.mopl.notification.dto.request.NotificationListRequest;
 import org.example.mopl.notification.dto.NotificationSearchCondition;
 import org.example.mopl.notification.enums.Level;
 import org.example.mopl.notification.entity.Notification;
-import org.example.mopl.notification.enums.SortBy;
 import org.example.mopl.notification.exception.NotificationForbiddenException;
 import org.example.mopl.notification.exception.NotificationNotFoundException;
 import org.example.mopl.notification.repository.NotificationRepository;
 import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Slice;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -47,12 +43,10 @@ public class NotificationService {
     @Transactional
     public void delete(UUID notificationId, UUID receiverId) {
 
-        Notification notification = notificationRepository.findByUuid(notificationId)
-                .orElseThrow(() -> new NotificationNotFoundException(notificationId));
+        Notification notification = getNotification(notificationId);
 
-        if (!notification.isSameReceiverId(receiverId)) {
-            throw new NotificationForbiddenException(receiverId);
-        }
+        validateOwnership(notification, receiverId);
+
         notificationRepository.delete(notification);
         log.info("알림 삭제 완료: notificationId={}", notificationId);
     }
@@ -60,20 +54,56 @@ public class NotificationService {
     @Transactional(readOnly = true)
     public CursorResponseNotificationDto findAll(UUID receiverId, NotificationListRequest request) {
 
-        Long idAfter = notificationRepository.findIdByUuid(request.idAfter()).orElse(null);
+        Long idAfter = (request.idAfter() != null) ?
+                notificationRepository.findIdByUuid(request.idAfter()).orElse(null)
+                : null;
 
-        List<Notification> notifications = notificationRepository.searchByCursor(
-                NotificationSearchCondition.builder().receiverId(receiverId).cursor(request.cursor())
-                        .idAfter(idAfter).limit(request.limit()+1).sortDirection(request.sortDirection())
-                        .sortBy(request.sortBy()).build());
+        NotificationSearchCondition condition = request.toSearchCondition(
+                receiverId, request.limit()+1, idAfter
+        );
+
+        List<Notification> notifications = notificationRepository.searchByCursor(condition);
 
         Long totalCount = notificationRepository.countByReceiverId(receiverId);
 
-        CursorResponseNotificationDto result = CursorResponseNotificationDto.of(
-                notifications, request.limit(), totalCount, request.sortBy(), request.sortDirection()
-        );
+        CursorResult cursorResult = applyCursorAndTrim(notifications, request.limit());
+
+        List<NotificationDto> data = notifications.stream().map(NotificationDto::from).toList();
+
 
         log.info("알림 목록 조회 완료: receiverId={}", receiverId);
-        return result;
+        return CursorResponseNotificationDto.builder()
+                .data(data)
+                .nextCursor(cursorResult.nextCursor()).nextIdAfter(cursorResult.nextIdAfter())
+                .hasNext(cursorResult.hasNext()).totalCount(totalCount)
+                .sortBy(request.sortBy()).sortDirection(request.sortDirection())
+                .build();
+    }
+
+    private Notification getNotification(UUID notificationId) {
+        return notificationRepository.findByUuid(notificationId)
+                .orElseThrow(() -> new NotificationNotFoundException(notificationId));
+    }
+
+    private void validateOwnership(Notification notification, UUID receiverId) {
+        if (!notification.isSameReceiverId(receiverId)) {
+            throw new NotificationForbiddenException(receiverId);
+        }
+    }
+
+    private CursorResult applyCursorAndTrim (List<Notification> notifications, int limit) {
+        boolean hasNext = false;
+        String nextCursor = null;
+        UUID nextIdAfter = null;
+
+        if (notifications.size() > limit) {
+            hasNext = true;
+            notifications.remove(notifications.size() - 1);
+        }
+        if (!notifications.isEmpty()) {
+            nextIdAfter = notifications.get(notifications.size() - 1).getUuid();
+            nextCursor = nextIdAfter.toString();
+        }
+        return new CursorResult(hasNext, nextCursor, nextIdAfter);
     }
 }
