@@ -1,5 +1,6 @@
 package org.example.mopl.profile.entity;
 
+import io.hypersistence.utils.hibernate.id.Tsid;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -23,7 +24,7 @@ import java.util.UUID;
 public class Profile {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Tsid
     @Column(name = "id")
     private Long id;
 

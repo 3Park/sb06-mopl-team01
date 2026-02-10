@@ -1,5 +1,6 @@
 package org.example.mopl.user.entity.basic;
 
+import io.hypersistence.utils.hibernate.id.Tsid;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
@@ -15,7 +16,7 @@ import java.time.Instant;
 @EntityListeners(AuditingEntityListener.class)
 public class BasicUserEntity {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Tsid
     @Column(name = "id", nullable = false)
     protected Long id;
 
