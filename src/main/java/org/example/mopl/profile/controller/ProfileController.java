@@ -7,12 +7,16 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import jakarta.validation.Valid;
+import java.io.IOException;
 
 @RestController
 @RequestMapping("/api/profiles")
@@ -39,6 +43,16 @@ public class ProfileController {
             @RequestHeader(value = "X-User-Id", required = false) Long currentUserId
     ) {
         ProfileDto dto = profileService.update(userId, request, currentUserId);
+        return ResponseEntity.ok(dto);
+    }
+
+    @PostMapping(value = "/users/{userId}/image", consumes = "multipart/form-data")
+    public ResponseEntity<ProfileDto> uploadProfileImage(
+            @PathVariable Long userId,
+            @RequestPart("file") MultipartFile file,
+            @RequestHeader(value = "X-User-Id", required = false) Long currentUserId
+    ) throws IOException {
+        ProfileDto dto = profileService.uploadProfileImage(userId, file, currentUserId);
         return ResponseEntity.ok(dto);
     }
 }

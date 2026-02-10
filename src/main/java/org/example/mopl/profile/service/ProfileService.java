@@ -9,14 +9,19 @@ import org.example.mopl.profile.exception.ProfileUnauthorizedException;
 import org.example.mopl.profile.repository.ProfileRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.IOException;
 
 @Service
 public class ProfileService {
 
     private final ProfileRepository profileRepository;
+    private final ProfileImageUploadService profileImageUploadService;
 
-    public ProfileService(ProfileRepository profileRepository) {
+    public ProfileService(ProfileRepository profileRepository, ProfileImageUploadService profileImageUploadService) {
         this.profileRepository = profileRepository;
+        this.profileImageUploadService = profileImageUploadService;
     }
 
     @Transactional(readOnly = true)
@@ -37,6 +42,21 @@ public class ProfileService {
         Profile profile = profileRepository.findByUserId(userId)
                 .orElseThrow(() -> new ProfileNotFoundException(userId));
         profile.update(request.getName(), request.getProfileImageUrl());
+        return toDto(profile, userId);
+    }
+
+    @Transactional
+    public ProfileDto uploadProfileImage(Long userId, MultipartFile file, Long currentUserId) throws IOException {
+        if (currentUserId == null) {
+            throw new ProfileUnauthorizedException();
+        }
+        if (!currentUserId.equals(userId)) {
+            throw new ProfileForbiddenException();
+        }
+        Profile profile = profileRepository.findByUserId(userId)
+                .orElseThrow(() -> new ProfileNotFoundException(userId));
+        String imageUrl = profileImageUploadService.upload(profile, file);
+        profile.updateProfileImageUrl(imageUrl);
         return toDto(profile, userId);
     }
 
