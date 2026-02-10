@@ -6,7 +6,7 @@ import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.JPQLQuery;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
-import org.example.mopl.directmessage.dto.condition.DirectMessageSearchCondition;
+import org.example.mopl.directmessage.dto.DirectMessageSearchCondition;
 import org.example.mopl.directmessage.entity.DirectMessage;
 import org.example.mopl.directmessage.entity.QDirectMessage;
 import org.example.mopl.directmessage.enums.SortBy;
@@ -25,7 +25,7 @@ public class DirectMessageRepositoryImpl implements DirectMessageRepositoryCusto
     private final QDirectMessage directMessage = QDirectMessage.directMessage;
 
     @Override
-    public Long readUnreadMessages(Long conversationId, Long requesterId) {
+    public Long markAsRead(Long conversationId, Long requesterId) {
         return jpaQueryFactory
                 .update(directMessage)
                 .set(directMessage.isRead, true)

@@ -2,8 +2,8 @@ package org.example.mopl.directmessage.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.example.mopl.directmessage.dto.condition.ConversationSearchCondition;
-import org.example.mopl.directmessage.dto.condition.DirectMessageSearchCondition;
+import org.example.mopl.directmessage.dto.ConversationSearchCondition;
+import org.example.mopl.directmessage.dto.DirectMessageSearchCondition;
 import org.example.mopl.directmessage.dto.data.ConversationDto;
 import org.example.mopl.directmessage.dto.request.ConversationListRequest;
 import org.example.mopl.directmessage.dto.request.DirectMessageListRequest;
@@ -83,7 +83,7 @@ public class DirectMessageService {
         Conversation conversation = getConversationOrThrow(conversationId);
         User requester = getUserOrThrow(requesterId);
 
-        readUnreadMessagesInAndSave(conversation, requester);
+        markAsReadMessagesInAndSave(conversation, requester);
 
         log.info("DM 읽음 처리 완료, directMessageId={}", lastDirectMessageId);
     }
@@ -198,8 +198,8 @@ public class DirectMessageService {
                 .orElseThrow(() -> new ConversationNotFoundException(conversationUuid));
     }
 
-    private void readUnreadMessagesInAndSave(Conversation conversation, User requester) {
-        directMessageRepository.readUnreadMessages(conversation.getId(), requester.getId());
+    private void markAsReadMessagesInAndSave(Conversation conversation, User requester) {
+        directMessageRepository.markAsRead(conversation.getId(), requester.getId());
     }
 
     private User getUserOrThrow(UUID senderUuid) {
@@ -211,7 +211,7 @@ public class DirectMessageService {
         if(!conversation.isValidParticipant(requesterId)) throw new ConversationForbiddenException(conversation.getUuid());
         Long counterpartId = conversation.getCounterpartId(requesterId);
         return userRepository.findUserAndProfileOnlyById(counterpartId)
-                .orElseThrow(ParticipantNotFoundException::new);
+                .orElseThrow(() -> new ParticipantNotFoundException());
     }
 
     private DirectMessage saveMessage(Conversation conversation, User sender, User receiver, String content) {
