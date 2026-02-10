@@ -1,5 +1,6 @@
 package org.example.mopl.user.scheduler;
 
+import io.micrometer.core.annotation.Timed;
 import jakarta.persistence.EntityManagerFactory;
 import lombok.RequiredArgsConstructor;
 import org.example.mopl.user.entity.TemporaryPassword;
@@ -45,6 +46,8 @@ public class TemporaryPasswordBatchDelete {
     }
 
     @Bean
+    @Timed(value = "delete_temporary_password_batch_step_duration"
+            ,extraTags = {"temporary_password_cleanup_duration"})
     public Step temporaryPasswordBatchDeleteStep() {
 
         return new StepBuilder("temporaryPasswordDeleteStep", jobRepository)
