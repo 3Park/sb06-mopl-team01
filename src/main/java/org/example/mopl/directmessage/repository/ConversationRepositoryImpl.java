@@ -10,7 +10,7 @@ import lombok.RequiredArgsConstructor;
 import org.example.mopl.directmessage.entity.QConversation;
 import org.example.mopl.directmessage.entity.QDirectMessage;
 import org.example.mopl.directmessage.enums.SortBy;
-import org.example.mopl.directmessage.dto.condition.ConversationSearchCondition;
+import org.example.mopl.directmessage.dto.ConversationSearchCondition;
 import org.example.mopl.directmessage.entity.Conversation;
 
 import org.example.mopl.profile.entity.QProfile;

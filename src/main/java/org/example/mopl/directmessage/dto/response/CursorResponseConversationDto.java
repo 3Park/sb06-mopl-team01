@@ -1,6 +1,6 @@
 package org.example.mopl.directmessage.dto.response;
 
-import org.example.mopl.directmessage.dto.condition.ConversationSearchCondition;
+import org.example.mopl.directmessage.dto.ConversationSearchCondition;
 import org.example.mopl.directmessage.dto.data.ConversationDto;
 import org.example.mopl.directmessage.entity.Conversation;
 import org.example.mopl.directmessage.entity.DirectMessage;

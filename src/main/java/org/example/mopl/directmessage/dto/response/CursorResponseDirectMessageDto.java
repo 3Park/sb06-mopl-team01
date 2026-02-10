@@ -1,7 +1,7 @@
 package org.example.mopl.directmessage.dto.response;
 
 import lombok.Builder;
-import org.example.mopl.directmessage.dto.condition.DirectMessageSearchCondition;
+import org.example.mopl.directmessage.dto.DirectMessageSearchCondition;
 import org.example.mopl.directmessage.dto.data.DirectMessageDto;
 import org.example.mopl.directmessage.entity.DirectMessage;
 import org.example.mopl.directmessage.enums.SortBy;

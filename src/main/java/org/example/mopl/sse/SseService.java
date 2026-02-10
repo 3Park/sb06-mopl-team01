@@ -2,7 +2,7 @@ package org.example.mopl.sse;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.example.mopl.notification.dto.NotificationDto;
+import org.example.mopl.notification.dto.data.NotificationDto;
 import org.example.mopl.notification.entity.Notification;
 import org.example.mopl.notification.repository.NotificationRepository;
 import org.springframework.beans.factory.annotation.Value;

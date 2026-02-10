@@ -1,7 +1,5 @@
-package org.example.mopl.directmessage.dto.condition;
+package org.example.mopl.directmessage.dto;
 
-import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotNull;
 import org.example.mopl.directmessage.enums.SortBy;
 import org.hibernate.query.SortDirection;
 

@@ -1,6 +1,6 @@
 package org.example.mopl.event.message;
 
-import org.example.mopl.notification.dto.NotificationDto;
+import org.example.mopl.notification.dto.data.NotificationDto;
 
 public record NotificationCreatedEvent(
         NotificationDto notificationDto

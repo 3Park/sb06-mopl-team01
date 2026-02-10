@@ -1,4 +1,4 @@
-package org.example.mopl.directmessage.dto.condition;
+package org.example.mopl.directmessage.dto;
 
 import org.example.mopl.directmessage.enums.SortBy;
 import org.hibernate.query.SortDirection;
