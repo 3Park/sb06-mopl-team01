@@ -1,11 +1,15 @@
 package org.example.mopl.profile.controller;
 
+import org.example.mopl.contentevaluation.dto.request.CursorRequestPlaylistDto;
+import org.example.mopl.contentevaluation.dto.response.CursorResponsePlaylistDto;
+import org.example.mopl.profile.dto.SubscribedPlaylistCursorResponse;
 import org.example.mopl.profile.dto.ProfileDto;
 import org.example.mopl.profile.dto.ProfileUpdateRequest;
 import org.example.mopl.profile.dto.WatchingContentDto;
 import org.example.mopl.profile.service.ProfileService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -62,6 +66,24 @@ public class ProfileController {
     public ResponseEntity<List<WatchingContentDto>> getWatchingContents(@PathVariable Long userId) {
         List<WatchingContentDto> list = profileService.getWatchingContents(userId);
         return ResponseEntity.ok(list);
+    }
+
+    @GetMapping("/users/{userId}/playlists")
+    public ResponseEntity<CursorResponsePlaylistDto> getOwnedPlaylists(
+            @PathVariable Long userId,
+            @ModelAttribute @Valid CursorRequestPlaylistDto request
+    ) {
+        CursorResponsePlaylistDto result = profileService.getOwnedPlaylists(userId, request);
+        return ResponseEntity.ok(result);
+    }
+
+    @GetMapping("/users/{userId}/subscribed-playlists")
+    public ResponseEntity<SubscribedPlaylistCursorResponse> getSubscribedPlaylists(
+            @PathVariable Long userId,
+            @ModelAttribute @Valid CursorRequestPlaylistDto request
+    ) {
+        SubscribedPlaylistCursorResponse result = profileService.getSubscribedPlaylists(userId, request);
+        return ResponseEntity.ok(result);
     }
 }
 
