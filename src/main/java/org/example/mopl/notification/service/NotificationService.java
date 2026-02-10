@@ -105,7 +105,7 @@ public class NotificationService {
             notificationsAfter = notifications.subList(0, limit);
         }
         if (!notificationsAfter.isEmpty()) {
-            nextIdAfter = notifications.get(notifications.size() - 1).getUuid();
+            nextIdAfter = notifications.get(notificationsAfter.size() - 1).getUuid();
             nextCursor = nextIdAfter.toString();
         }
         return new CursorResult(notificationsAfter, hasNext, nextCursor, nextIdAfter);
