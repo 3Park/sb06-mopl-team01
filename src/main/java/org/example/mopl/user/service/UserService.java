@@ -2,6 +2,7 @@ package org.example.mopl.user.service;
 
 import lombok.RequiredArgsConstructor;
 import org.example.mopl.auth.CustomUserDetails;
+import org.example.mopl.event.message.UserRoleUpdatedKafkaEvent;
 import org.example.mopl.profile.entity.Profile;
 import org.example.mopl.profile.repository.ProfileRepository;
 import org.example.mopl.user.dto.CursorResponseUserDto;
@@ -201,8 +202,11 @@ public class UserService {
     public void changeRole(UUID userId, ChangeRoleRequest request)
     {
         User user = userRepository.findByUuid(userId).orElseThrow(()-> new UserException(UserErrorCode.INVALID_USER));
-        if(user.getUserRoles() == null ||  user.getUserRoles().isEmpty())
+        if(user.getUserRoles() == null ||  user.getUserRoles().isEmpty()
+            || user.getUserRoles().get(0).getRole() == null)
             throw new UserException(UserErrorCode.INVALID_DATA);
+
+        String beforeRole = user.getUserRoles().get(0).getRole().getName().name();
 
         Role role = roleRepository.findByName(request.getRole()).orElseThrow(()-> new UserException(UserErrorCode.INVALID_ROLE));
         user.getUserRoles().get(0).setRole(role);
@@ -212,6 +216,9 @@ public class UserService {
         applicationEventPublisher.publishEvent(UserRoleLockStatusChangedEvent.builder()
                 .userEmail(user.getEmail())
                 .build());
+
+        //알림 호출
+        applicationEventPublisher.publishEvent(new UserRoleUpdatedKafkaEvent(user.getUuid(),beforeRole, role.getName().name()));
     }
 
     @Transactional
