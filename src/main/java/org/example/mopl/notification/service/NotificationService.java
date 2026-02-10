@@ -17,7 +17,9 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Slf4j
@@ -54,9 +56,9 @@ public class NotificationService {
     @Transactional(readOnly = true)
     public CursorResponseNotificationDto findAll(UUID receiverId, NotificationListRequest request) {
 
-        Long idAfter = (request.idAfter() != null) ?
-                notificationRepository.findIdByUuid(request.idAfter()).orElse(null)
-                : null;
+        Long idAfter = Optional.ofNullable(request.idAfter())
+                .flatMap(notificationRepository::findIdByUuid)
+                .orElse(null);
 
         NotificationSearchCondition condition = request.toSearchCondition(
                 receiverId, request.limit()+1, idAfter
@@ -66,9 +68,10 @@ public class NotificationService {
 
         Long totalCount = notificationRepository.countByReceiverId(receiverId);
 
-        CursorResult cursorResult = applyCursorAndTrim(notifications, request.limit());
+        CursorResult cursorResult = getCursorResult(notifications, request.limit());
 
-        List<NotificationDto> data = notifications.stream().map(NotificationDto::from).toList();
+        List<NotificationDto> data = cursorResult.notifications().stream()
+                .map(NotificationDto::from).toList();
 
 
         log.info("알림 목록 조회 완료: receiverId={}", receiverId);
@@ -91,19 +94,20 @@ public class NotificationService {
         }
     }
 
-    private CursorResult applyCursorAndTrim (List<Notification> notifications, int limit) {
+    private CursorResult getCursorResult (List<Notification> notifications, int limit) {
         boolean hasNext = false;
         String nextCursor = null;
         UUID nextIdAfter = null;
+        List<Notification> notificationsAfter = new ArrayList<>();
 
         if (notifications.size() > limit) {
             hasNext = true;
-            notifications.remove(notifications.size() - 1);
+            notificationsAfter = notifications.subList(0, limit);
         }
-        if (!notifications.isEmpty()) {
+        if (!notificationsAfter.isEmpty()) {
             nextIdAfter = notifications.get(notifications.size() - 1).getUuid();
             nextCursor = nextIdAfter.toString();
         }
-        return new CursorResult(hasNext, nextCursor, nextIdAfter);
+        return new CursorResult(notificationsAfter, hasNext, nextCursor, nextIdAfter);
     }
 }
