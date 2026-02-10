@@ -17,7 +17,7 @@ public record NotificationListRequest(
         ) {
     public NotificationSearchCondition toSearchCondition(UUID receiverId, int limit, Long idAfter) {
         return new NotificationSearchCondition(
-                receiverId, this.cursor, idAfter, limit, this.sortDirection, this.sortBy
+                receiverId, idAfter, limit, this.sortDirection, this.sortBy
         );
     }
 }
