@@ -21,7 +21,7 @@ public class ContentEvaluationQueryDto {
       String description,
       Instant updatedAt,
       Long subscriberCount,
-      Boolean subscribeByMe
+      Boolean subscribedByMe
   ) {
 
   }

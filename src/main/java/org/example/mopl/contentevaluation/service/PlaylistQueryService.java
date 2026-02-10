@@ -21,6 +21,7 @@ import org.example.mopl.contentevaluation.repository.PlaylistQueryRepository;
 import org.example.mopl.contentevaluation.repository.PlaylistsStatQueryRepository;
 import org.example.mopl.contentevaluation.repository.SubscribeQueryRepository;
 import org.example.mopl.watchtogether.service.WatchTogetherService;
+import org.jspecify.annotations.Nullable;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -40,9 +41,9 @@ public class PlaylistQueryService {
 
   // 플레이리스트 단건 조회
   @Transactional(readOnly = true)
-  public PlaylistDto getPlaylistByUuid(UUID uuid) {
+  public PlaylistDto getPlaylistByUuid(@Nullable String email, UUID uuid) {
 
-    PlaylistResult playlist = playlistQueryRepository.findByUuidWithStats(uuid)
+    PlaylistResult playlist = playlistQueryRepository.findByUuidWithStats(email, uuid)
         .orElseThrow(() -> new NoSuchPlaylistException(uuid));
 
     List<PlaylistContent> playlistContents = playlistContentQueryRepository
@@ -73,10 +74,7 @@ public class PlaylistQueryService {
         playlist.description(),
         playlist.updatedAt(),
         playlist.subscriberCount(),
-        subscribeQueryRepository.existsByUserIdAndPlaylistId(
-            playlist.userId(),
-            playlist.id()
-        ),
+        playlist.subscribedByMe(),
         playlistContents.stream()
             .map(content ->
                 ContentDto.of(
@@ -100,9 +98,9 @@ public class PlaylistQueryService {
 
   // 플레이리스트 커서 기반 페이징
   @Transactional(readOnly = true)
-  public CursorResponsePlaylistDto getPlaylistListByCursor(CursorRequestPlaylistDto request) {
+  public CursorResponsePlaylistDto getPlaylistListByCursor(@Nullable String email, CursorRequestPlaylistDto request) {
 
-    Page<PlaylistResult> playlistPage = playlistQueryRepository.findAllByCursor(request);
+    Page<PlaylistResult> playlistPage = playlistQueryRepository.findAllByCursor(email, request);
 
     Map<Long, List<PlaylistContent>> playlistContentsMap = playlistContentQueryRepository
         .findAllMapByPlaylistIds(
@@ -139,10 +137,7 @@ public class PlaylistQueryService {
             playlist.description(),
             playlist.updatedAt(),
             playlist.subscriberCount(),
-            subscribeQueryRepository.existsByUserIdAndPlaylistId(
-                playlist.userId(),
-                playlist.id()
-            ),
+            playlist.subscribedByMe(),
             playlistContentsMap.containsKey(playlist.id()) ?
             playlistContentsMap.get(playlist.id()).stream()
                 .map(content ->

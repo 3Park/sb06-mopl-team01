@@ -2,7 +2,6 @@ package org.example.mopl.contentevaluation.dto.response;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.time.Instant;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 import lombok.AccessLevel;
@@ -18,7 +17,7 @@ public record PlaylistDto(
     String description,
     Instant updatedAt,
     Long subscriberCount,
-    Boolean subscribeByMe,
+    Boolean subscribedByMe,
     List<ContentDto> contents
 ) {
 
@@ -29,7 +28,7 @@ public record PlaylistDto(
         String description,
         Instant updatedAt,
         Long subscriberCount,
-        Boolean subscribeByMe,
+        Boolean subscribedByMe,
         List<ContentDto> contents
     ) {
         return PlaylistDto.builder()
@@ -39,7 +38,7 @@ public record PlaylistDto(
             .description(description)
             .updatedAt(updatedAt)
             .subscriberCount(subscriberCount)
-            .subscribeByMe(subscribeByMe)
+            .subscribedByMe(subscribedByMe)
             .contents(contents)
             .build();
     }
