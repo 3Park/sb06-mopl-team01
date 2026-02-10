@@ -72,6 +72,13 @@ public class ContentQueryRepository {
         .fetch();
   }
 
+  public List<String> findAllExternalIdsByExternalIds(List<String> externalIds) {
+    return queryFactory.select(QContent.content.externalId)
+        .from(QContent.content)
+        .where(QContent.content.externalId.in(externalIds))
+        .fetch();
+  }
+
   @Transactional(readOnly = true)
   public Optional<ContentWithTagsResult> findByUuidWithContentTag(UUID uuid) {
 

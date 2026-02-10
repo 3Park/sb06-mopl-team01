@@ -84,6 +84,11 @@ public class TheSportsDbBatchService {
             .map(ContentFetchResultDto::externalId)
             .toList()
     ));
+    Set<String> existingExternalIds = new HashSet<>(contentQueryRepository.findAllExternalIdsByExternalIds(
+        sportEvents.stream()
+            .map(ContentFetchResultDto::externalId)
+            .toList()
+    ));
 
     List<Content> contentList = new ArrayList<>();
     List<Tag> tagList = new ArrayList<>();
@@ -116,7 +121,7 @@ public class TheSportsDbBatchService {
 
     for (ContentFetchResultDto sportEvent : sportEvents) {
 
-      if (contentQueryRepository.existsByExternalId(sportEvent.externalId())) {
+      if (existingExternalIds.contains(sportEvent.externalId())) {
         continue;
       }
 
