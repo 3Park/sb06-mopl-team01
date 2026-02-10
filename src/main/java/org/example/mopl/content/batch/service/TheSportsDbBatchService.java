@@ -1,6 +1,7 @@
 package org.example.mopl.content.batch.service;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -78,6 +79,17 @@ public class TheSportsDbBatchService {
     List<ContentFetchResultDto> sportEvents = theSportsDbSoccerCrawlerClient.fetchUpcomingEvents(
         leagueId);
 
+    Set<Long> existingContentIds = new HashSet<>(contentQueryRepository.findAllIdsByExternalIds(
+        sportEvents.stream()
+            .map(ContentFetchResultDto::externalId)
+            .toList()
+    ));
+    Set<String> existingExternalIds = new HashSet<>(contentQueryRepository.findAllExternalIdsByExternalIds(
+        sportEvents.stream()
+            .map(ContentFetchResultDto::externalId)
+            .toList()
+    ));
+
     List<Content> contentList = new ArrayList<>();
     List<Tag> tagList = new ArrayList<>();
     List<ContentsStat> contentsStatList = new ArrayList<>();
@@ -109,7 +121,7 @@ public class TheSportsDbBatchService {
 
     for (ContentFetchResultDto sportEvent : sportEvents) {
 
-      if (contentQueryRepository.existsByExternalId(sportEvent.externalId())) {
+      if (existingExternalIds.contains(sportEvent.externalId())) {
         continue;
       }
 
@@ -159,6 +171,11 @@ public class TheSportsDbBatchService {
     }
 
     contentList.forEach(content -> {
+
+      if (existingContentIds.contains(content.getExternalId())) {
+        return;
+      }
+
       contentsStatList.add(
           ContentsStat.of(content)
       );

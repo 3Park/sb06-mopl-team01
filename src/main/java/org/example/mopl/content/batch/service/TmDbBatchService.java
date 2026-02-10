@@ -1,6 +1,7 @@
 package org.example.mopl.content.batch.service;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -181,11 +182,21 @@ public class TmDbBatchService {
 
      List<ContentsStat> contentsStatList = new ArrayList<>();
      List<ContentsWatchingCount> contentsWatchingCountList = new ArrayList<>();
+     Set<Long> existingContentIds = new HashSet<>(contentQueryRepository.findAllIdsByExternalIds(
+         fetchResultDtoList.stream()
+             .map(ContentFetchResultDto::externalId)
+             .toList()
+     ));
+     Set<String> existingExternalIds = new HashSet<>(contentQueryRepository.findAllExternalIdsByExternalIds(
+          fetchResultDtoList.stream()
+              .map(ContentFetchResultDto::externalId)
+              .toList()
+     ));
 
      List<Content> contentList = fetchResultDtoList.stream()
          .map(content -> {
 
-           if (contentQueryRepository.existsByExternalId(content.externalId())) {
+           if (existingExternalIds.contains(content.externalId())) {
 
              Content existingContent = contentQueryRepository.findByExternalId(content.externalId())
                  .orElseThrow(() -> new NoSuchContentException(content.externalId()));
@@ -226,6 +237,11 @@ public class TmDbBatchService {
      contentList = contentCommandRepository.saveAll(contentList);
 
      contentList.forEach(content -> {
+
+       if (existingContentIds.contains(content.getId())) {
+         return;
+       }
+
        contentsStatList.add(
            ContentsStat.of(content)
        );
@@ -243,11 +259,22 @@ public class TmDbBatchService {
   public void writeImportedTvSeries(List<ContentFetchResultDto> fetchResultDtoList) {
 
     List<ContentsStat> contentsStatList = new ArrayList<>();
+    List<ContentsWatchingCount> contentsWatchingCountList = new ArrayList<>();
+    Set<Long> existingContentIds = new HashSet<>(contentQueryRepository.findAllIdsByExternalIds(
+        fetchResultDtoList.stream()
+            .map(ContentFetchResultDto::externalId)
+            .toList()
+    ));
+    Set<String> existingExternalIds = new HashSet<>(contentQueryRepository.findAllExternalIdsByExternalIds(
+        fetchResultDtoList.stream()
+            .map(ContentFetchResultDto::externalId)
+            .toList()
+    ));
 
     List<Content> contentList = fetchResultDtoList.stream()
        .map(content -> {
 
-         if (contentQueryRepository.existsByExternalId(content.externalId())) {
+         if (existingExternalIds.contains(content.externalId())) {
 
            Content existingContent = contentQueryRepository.findByExternalId(content.externalId())
                .orElseThrow(() -> new NoSuchContentException(content.externalId()));
@@ -288,11 +315,20 @@ public class TmDbBatchService {
     contentList = contentCommandRepository.saveAll(contentList);
 
     contentList.forEach(content -> {
-      ContentsStat contentsStat = ContentsStat.of(content);
-      contentsStatList.add(contentsStat);
+      if (existingContentIds.contains(content.getId())) {
+        return;
+      }
+
+      contentsStatList.add(
+          ContentsStat.of(content)
+      );
+      contentsWatchingCountList.add(
+           ContentsWatchingCount.of(content)
+      );
     });
 
     contentsStatCommandRepository.saveAll(contentsStatList);
+    contentsWatchingCountCommandRepository.saveAll(contentsWatchingCountList);
 
   }
 
