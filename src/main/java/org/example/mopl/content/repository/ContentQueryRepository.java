@@ -65,6 +65,20 @@ public class ContentQueryRepository {
     );
   }
 
+  public List<Long> findAllIdsByExternalIds(List<String> externalIds) {
+    return queryFactory.select(QContent.content.id)
+        .from(QContent.content)
+        .where(QContent.content.externalId.in(externalIds))
+        .fetch();
+  }
+
+  public List<String> findAllExternalIdsByExternalIds(List<String> externalIds) {
+    return queryFactory.select(QContent.content.externalId)
+        .from(QContent.content)
+        .where(QContent.content.externalId.in(externalIds))
+        .fetch();
+  }
+
   @Transactional(readOnly = true)
   public Optional<ContentWithTagsResult> findByUuidWithContentTag(UUID uuid) {
 

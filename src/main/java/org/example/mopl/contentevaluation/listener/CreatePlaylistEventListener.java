@@ -20,6 +20,8 @@ public class CreatePlaylistEventListener {
   @TransactionalEventListener
   public void handleCreatePlaylistEvent(CreatePlaylistEvent event) {
 
+    log.info("플레이리스트 생성 이벤트 수신 for playlistId: {}", event.playlist().getId());
+
     // 플레이리스트 통계 초기화
     playlistsStatCommandRepository.save(
         PlaylistsStat.of(event.playlist())

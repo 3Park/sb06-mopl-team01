@@ -2,6 +2,7 @@ package org.example.mopl.content.service;
 
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.example.mopl.content.dto.request.ReviewCreateRequest;
 import org.example.mopl.content.dto.request.ReviewUpdateRequest;
 import org.example.mopl.content.dto.response.AuthorDto;
@@ -9,6 +10,7 @@ import org.example.mopl.content.dto.response.ReviewDto;
 import org.example.mopl.content.entity.Content;
 import org.example.mopl.content.entity.Review;
 import org.example.mopl.content.event.RatingEvent;
+import org.example.mopl.content.exception.DuplicateReviewException;
 import org.example.mopl.content.exception.NoSuchAuthorException;
 import org.example.mopl.content.exception.NoSuchContentException;
 import org.example.mopl.content.exception.NoSuchReviewException;
@@ -22,6 +24,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ReviewCommandService {
@@ -41,6 +44,10 @@ public class ReviewCommandService {
     Content content = contentQueryRepository.findByUuid(request.contentId())
         .orElseThrow(() -> new NoSuchContentException(request.contentId().toString()));
 
+    if (reviewQueryRepository.existsByContentIdAndUserId(content.getId(), user.getId())) {
+      throw new DuplicateReviewException(content.getUuid());
+    }
+
     Review review = reviewCommandRepository.save(
         Review.of(
             user,
@@ -52,7 +59,7 @@ public class ReviewCommandService {
 
     // 평점 증가 이벤트 발행
     eventPublisher.publishEvent(
-        RatingEvent.IncreaseRatingEvent.of(content.getId(), review.getUuid(), request.rating())
+        RatingEvent.IncreaseRatingEvent.of(content.getId(), content.getUuid(), request.rating())
     );
 
     return ReviewDto.of(
@@ -129,7 +136,7 @@ public class ReviewCommandService {
 
     // 평점 감소 이벤트 발행
     eventPublisher.publishEvent(
-        RatingEvent.DecreaseRatingEvent.of(review.getContent().getId(), review.getUuid(), review.getRating())
+        RatingEvent.DecreaseRatingEvent.of(review.getContent().getId(), review.getContent().getUuid(), review.getRating())
     );
 
     reviewCommandRepository.deleteByUuid(reviewId);

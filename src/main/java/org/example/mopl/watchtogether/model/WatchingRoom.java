@@ -27,7 +27,7 @@ public class WatchingRoom {
     }
 
     public void addWatcher(WatchingSession watchingSession) {
-        watchers.put(watchingSession.getId().toString(), watchingSession);
+        watchers.put(watchingSession.getId(), watchingSession);
     }
 
     public WatchingSession removeWatcher(String sessionId) {

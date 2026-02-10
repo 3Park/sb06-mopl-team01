@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
@@ -49,7 +50,7 @@ public class ContentController {
   @PreAuthorize("hasRole('ADMIN')")
   @PostMapping
   public ResponseEntity<ContentDto> createContent(
-      @Valid @ModelAttribute ContentCreateRequest request,
+      @Valid @RequestPart("request") ContentCreateRequest request,
       @RequestPart("thumbnail") MultipartFile thumbnail
   ) {
     return ResponseEntity.ok(contentCommandService.createContent(request, thumbnail));
@@ -59,7 +60,7 @@ public class ContentController {
   @PreAuthorize("hasRole('ADMIN')")
   @PatchMapping("/{contentId}")
   public ResponseEntity<ContentDto> updateContentById(
-      @PathVariable UUID contentId, @Valid @ModelAttribute ContentUpdateRequest request
+      @PathVariable UUID contentId, @Valid @RequestBody ContentUpdateRequest request
   ) {
     return ResponseEntity.ok(contentCommandService.updateContent(contentId, request));
   }

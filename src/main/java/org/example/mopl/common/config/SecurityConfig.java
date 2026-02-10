@@ -16,6 +16,7 @@ import org.springframework.security.access.expression.method.MethodSecurityExpre
 import org.springframework.security.access.hierarchicalroles.RoleHierarchy;
 import org.springframework.security.access.hierarchicalroles.RoleHierarchyImpl;
 import org.springframework.security.authentication.AuthenticationProvider;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -29,6 +30,7 @@ import org.springframework.security.web.authentication.LoginUrlAuthenticationEnt
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
+import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter;
 import org.springframework.web.cors.CorsConfiguration;
 
 import java.util.List;
@@ -55,27 +57,29 @@ public class SecurityConfig {
         //PJG 추후 cors 관련 허용 사이트 설정 변경 필요 있음
         http.sessionManagement(management ->
                         management.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .cors(cors -> cors
-                        .configurationSource(request -> {
-                            CorsConfiguration config = new CorsConfiguration();
-                            config.setAllowCredentials(true);
-                            config.setAllowedOriginPatterns(
-                                    List.of("*")
-                            );
-                            config.setAllowedHeaders(
-                                    List.of("*")
-                            );
-                            config.setAllowedMethods(
-                                    List.of("GET", "POST", "PUT", "DELETE", "PATCH")
-                            );
-                            return config;
-                        }))
+                .headers(header -> header
+                        .contentSecurityPolicy(csp -> csp
+                                .policyDirectives(
+                                        "default-src 'self'; " +
+                                                "script-src 'self'; " +
+                                                "script-src-attr 'none'; " +
+                                                "script-src-elem 'self'; " +
+                                                "object-src 'none'; " +
+                                                "base-uri 'none'; " +
+                                                "img-src 'self' data:; " +
+                                                "form-action 'self'; "  +
+                                                "connect-src 'self' https: wss:; "+
+                                                "frame-ancestors 'none'"
+                                ))
+                        .frameOptions(frame -> frame.deny())
+                        .contentTypeOptions(Customizer.withDefaults())
+                        .referrerPolicy(ref -> ref
+                                .policy(ReferrerPolicyHeaderWriter.ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN)))
                 .csrf(csrf -> csrf
                         .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
                         .csrfTokenRequestHandler(spaCsrfTokenRequestHandler)
                         .ignoringRequestMatchers(
                             "/api/auth/sign-in"
-                                    , "/api/auth/sign-out"
                                     , "/api/auth/reset-password"
                         ).ignoringRequestMatchers(
                                 request ->
@@ -91,10 +95,10 @@ public class SecurityConfig {
                                         "/api/auth/refresh",
                                         "/actuator/health",
                                         "/actuator/info",
-                                        "/ws/**"
+                                        "/ws/**",
+                                        "/actuator/**"
                                 ).permitAll()
                                 .requestMatchers(HttpMethod.POST, "/api/users").permitAll()
-                                .requestMatchers("/actuator/**").hasRole(UserRoleType.ADMIN.name())
                                 .requestMatchers(
                                         "/index.html",
                                         "/assets/**",

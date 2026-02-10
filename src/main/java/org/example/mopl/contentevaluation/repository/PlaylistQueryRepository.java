@@ -18,6 +18,7 @@ import org.example.mopl.contentevaluation.entity.QPlaylistsStat;
 import org.example.mopl.contentevaluation.entity.QSubscribe;
 import org.example.mopl.profile.entity.QProfile;
 import org.example.mopl.user.entity.QUser;
+import org.jspecify.annotations.Nullable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -40,8 +41,16 @@ public class PlaylistQueryRepository {
   }
 
   public Optional<PlaylistResult> findByUuidWithStats(
+      @Nullable String email,
       UUID playlistUuid
   ) {
+
+    Long userId = queryFactory.select(
+        QUser.user.id
+    ).from(QUser.user
+    ).where(QUser.user.email.eq(email)
+    ).fetchOne();
+
     return Optional.ofNullable(
         queryFactory.select(
             Projections.constructor(
@@ -55,16 +64,18 @@ public class PlaylistQueryRepository {
                 QPlaylist.playlist.title,
                 QPlaylist.playlist.description,
                 QPlaylist.playlist.updatedAt,
-                QPlaylistsStat.playlistsStat.subscribeCount
+                QPlaylistsStat.playlistsStat.subscribeCount,
+                QSubscribe.subscribe.uuid.isNotNull().as("subscribedByMe")
             )
         )
             .from(QPlaylist.playlist)
             .leftJoin(QPlaylist.playlist.user, QUser.user)
-            .fetchJoin()
             .join(QUser.user.profile, QProfile.profile)
-            .fetchJoin()
             .leftJoin(QPlaylistsStat.playlistsStat)
             .on(QPlaylistsStat.playlistsStat.playlist.eq(QPlaylist.playlist))
+            .leftJoin(QSubscribe.subscribe)
+            .on(QSubscribe.subscribe.playlist.eq(QPlaylist.playlist)
+                .and(QSubscribe.subscribe.user.id.eq(userId)))
             .where(QPlaylist.playlist.uuid.eq(playlistUuid))
             .fetchOne());
   }
@@ -98,7 +109,13 @@ public class PlaylistQueryRepository {
 
   // V2: 구독 정보 및 통계 포함
   // 구독자 ID에 따른 구독 여부 포함
-  public Page<PlaylistResult> findAllByCursor(CursorRequestPlaylistDto request) {
+  public Page<PlaylistResult> findAllByCursor(@Nullable String email, CursorRequestPlaylistDto request) {
+
+    Long userId = queryFactory.select(
+        QUser.user.id
+    ).from(QUser.user
+    ).where(QUser.user.email.eq(email)
+    ).fetchOne();
 
     List<PlaylistResult> playlists = queryFactory.select(
             Projections.constructor(
@@ -113,7 +130,7 @@ public class PlaylistQueryRepository {
                 QPlaylist.playlist.description,
                 QPlaylist.playlist.updatedAt,
                 QPlaylistsStat.playlistsStat.subscribeCount,
-                QSubscribe.subscribe.uuid.isNotNull().as("subscribeByMe")
+                QSubscribe.subscribe.uuid.isNotNull().as("subscribedByMe")
             )
         )
         .from(QPlaylist.playlist)
@@ -123,9 +140,7 @@ public class PlaylistQueryRepository {
         .on(QPlaylistsStat.playlistsStat.playlist.eq(QPlaylist.playlist))
         .leftJoin(QSubscribe.subscribe)
         .on(QSubscribe.subscribe.playlist.eq(QPlaylist.playlist)
-            .and(request.subscriberIdEqual() != null
-                ? QSubscribe.subscribe.user.uuid.eq(request.subscriberIdEqual())
-                : QSubscribe.subscribe.user.uuid.isNull()))
+            .and(QSubscribe.subscribe.user.id.eq(userId)))
         .where(buildDynamicQueryByCursor(request))
         .orderBy(buildOrderBy(request).toArray(new OrderSpecifier<?>[0]))
         .limit(request.limit() + 1)

@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -36,23 +37,31 @@ public class PlaylistController {
 
   // 플레이리스트 단건 조회
   @GetMapping("/{playlistId}")
-  public ResponseEntity<PlaylistDto> getPlaylistById(@PathVariable UUID playlistId) {
-    return ResponseEntity.ok(playlistQueryService.getPlaylistDtoByUuid(playlistId));
+  public ResponseEntity<PlaylistDto> getPlaylistById(
+      @AuthenticationPrincipal CustomUserDetails userDetails,
+      @PathVariable UUID playlistId
+  ) {
+    return ResponseEntity.ok(playlistQueryService.getPlaylistByUuid(
+        userDetails.getUserDto().getEmail(), playlistId)
+    );
   }
 
   // 플레이리스트 목록 조회 (커서 페이지네이션)
   @GetMapping
   public ResponseEntity<CursorResponsePlaylistDto> getPlaylistsByCursor(
+      @AuthenticationPrincipal CustomUserDetails userDetails,
       @Valid @ModelAttribute CursorRequestPlaylistDto request
   ) {
-    return ResponseEntity.ok(playlistQueryService.getPlaylistListByCursor(request));
+    return ResponseEntity.ok(playlistQueryService.getPlaylistListByCursor(
+        userDetails.getUserDto().getEmail(), request)
+    );
   }
 
   // 플레이리스트 생성
   @PostMapping
   public ResponseEntity<PlaylistDto> createPlaylist(
       @AuthenticationPrincipal CustomUserDetails userDetails,
-      @Valid @ModelAttribute PlaylistCreateRequest request
+      @Valid @RequestBody PlaylistCreateRequest request
   ) {
     return ResponseEntity.ok(playlistCommandService.createPlaylist(userDetails.getUserDto().getEmail(), request));
   }
@@ -88,7 +97,7 @@ public class PlaylistController {
   public ResponseEntity<PlaylistDto> updatePlaylistById(
       @AuthenticationPrincipal CustomUserDetails userDetails,
       @PathVariable UUID playlistId,
-      @Valid @ModelAttribute PlaylistUpdateRequest request
+      @Valid @RequestBody PlaylistUpdateRequest request
   ) {
     return ResponseEntity.ok(playlistCommandService.updatePlaylist(
         userDetails.getUserDto().getEmail(),
