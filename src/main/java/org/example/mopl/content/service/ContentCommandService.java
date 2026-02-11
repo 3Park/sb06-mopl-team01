@@ -127,7 +127,7 @@ public class ContentCommandService {
         contentWithTagsResult.tags(),
         contentWithTagsResult.averageRating() != null ? contentWithTagsResult.averageRating() : 0.0,
         contentWithTagsResult.reviewCount() != null ? contentWithTagsResult.reviewCount() : 0,
-        watchTogetherService.getWatcherCount(String.valueOf(contentWithTagsResult.id())
+        watchTogetherService.getWatcherCount(String.valueOf(contentWithTagsResult.uuid())
     ));
 
   }
