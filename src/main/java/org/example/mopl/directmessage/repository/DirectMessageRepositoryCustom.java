@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.Map;
 
 public interface DirectMessageRepositoryCustom {
-    Long markAsRead(Long conversationId, Long userId);
+    Long markAsRead(Long conversationId, Long userId, Long lastMessageId);
 
     List<DirectMessage> searchByCursor(DirectMessageSearchCondition condition);
 
