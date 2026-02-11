@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.example.mopl.content.exception.NoSuchAuthorException;
 import org.example.mopl.contentevaluation.dto.ContentEvaluationQueryDto.PlaylistResult;
 import org.example.mopl.contentevaluation.dto.request.CursorRequestPlaylistDto;
 import org.example.mopl.contentevaluation.entity.Playlist;
@@ -18,11 +19,13 @@ import org.example.mopl.contentevaluation.entity.QPlaylistsStat;
 import org.example.mopl.contentevaluation.entity.QSubscribe;
 import org.example.mopl.profile.entity.QProfile;
 import org.example.mopl.user.entity.QUser;
+import org.example.mopl.user.exception.UserException;
 import org.jspecify.annotations.Nullable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 @Repository
 @RequiredArgsConstructor
@@ -109,13 +112,17 @@ public class PlaylistQueryRepository {
 
   // V2: 구독 정보 및 통계 포함
   // 구독자 ID에 따른 구독 여부 포함
+  @Transactional(readOnly = true)
   public Page<PlaylistResult> findAllByCursor(@Nullable String email, CursorRequestPlaylistDto request) {
 
-    Long userId = queryFactory.select(
-        QUser.user.id
-    ).from(QUser.user
-    ).where(QUser.user.email.eq(email)
-    ).fetchOne();
+    Long userId = queryFactory.select(QUser.user.id)
+        .from(QUser.user)
+        .where(QUser.user.email.eq(email))
+        .fetchFirst();
+
+    if (userId == null) {
+      throw new NoSuchAuthorException(email);
+    }
 
     List<PlaylistResult> playlists = queryFactory.select(
             Projections.constructor(
@@ -163,21 +170,6 @@ public class PlaylistQueryRepository {
   public BooleanBuilder buildDynamicQueryByCursor(CursorRequestPlaylistDto request) {
 
     BooleanBuilder builder = new BooleanBuilder();
-
-    // 검색 키워드
-    if (request.keywordLike() != null && !request.keywordLike().isBlank()) {
-      builder.and(QPlaylist.playlist.title.containsIgnoreCase(request.keywordLike()));
-    }
-
-    // 소유자 ID
-    if (request.ownerIdEqual() != null) {
-      builder.and(QPlaylist.playlist.user.uuid.eq(request.ownerIdEqual()));
-    }
-
-    // 구독자 ID
-    if (request.subscriberIdEqual() != null) {
-      builder.and(QPlaylist.playlist.user.uuid.eq(request.subscriberIdEqual()));
-    }
 
     // 커서 : updatedAt, subscribeCount
     // 보조 커서 : uuid
@@ -239,6 +231,21 @@ public class PlaylistQueryRepository {
         default :
           throw new IllegalArgumentException("잘못된 검색 조건입니다: " + request.sortBy());
       }
+    }
+
+    // 검색 키워드
+    if (request.keywordLike() != null && !request.keywordLike().isBlank()) {
+      builder.and(QPlaylist.playlist.title.containsIgnoreCase(request.keywordLike()));
+    }
+
+    // 소유자 ID
+    if (request.ownerIdEqual() != null) {
+      builder.and(QPlaylist.playlist.user.uuid.eq(request.ownerIdEqual()));
+    }
+
+    // 구독자 ID
+    if (request.subscriberIdEqual() != null) {
+      builder.and(QPlaylist.playlist.user.uuid.eq(request.subscriberIdEqual()));
     }
 
     return builder;

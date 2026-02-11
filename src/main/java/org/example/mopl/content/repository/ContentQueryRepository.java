@@ -13,7 +13,6 @@ import lombok.RequiredArgsConstructor;
 import org.example.mopl.content.dto.ContentQueryDto.ContentResult;
 import org.example.mopl.content.dto.ContentQueryDto.ContentWithTagsResult;
 import org.example.mopl.content.dto.request.CursorRequestContentDto;
-import org.example.mopl.content.dto.response.ContentDto;
 import org.example.mopl.content.entity.Content;
 import org.example.mopl.content.entity.ContentTag;
 import org.example.mopl.content.entity.ContentType;
@@ -23,7 +22,6 @@ import org.example.mopl.content.entity.QContentsStat;
 import org.example.mopl.content.entity.QContentsWatchingCount;
 import org.example.mopl.content.entity.QReview;
 import org.example.mopl.content.entity.QTag;
-import org.example.mopl.watchtogether.service.WatchTogetherService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -199,36 +197,6 @@ public class ContentQueryRepository {
 
     BooleanBuilder builder = new BooleanBuilder();
 
-    // 콘텐츠 타입
-    if (request.typeEqual() != null) {
-      builder.and(QContent.content.contentType.eq(ContentType.fromValue(request.typeEqual())));
-    }
-
-    // 검색 키워드
-    if (request.keywordLike() != null && !request.keywordLike().isBlank()) {
-      builder.and(QContent.content.title.containsIgnoreCase(request.keywordLike()));
-    }
-
-    if (request.tagsIn() != null && !request.tagsIn().isEmpty()) {
-
-      List<Long> contentIdsWithAllTags = queryFactory
-          .select(QContentTag.contentTag.content.id)
-          .from(QContentTag.contentTag)
-          .join(QContentTag.contentTag.tag, QTag.tag)
-          .where(QTag.tag.name.in(request.tagsIn()))
-          .groupBy(QContentTag.contentTag.content.id)
-          .having(QContentTag.contentTag.content.id.count().eq((long) request.tagsIn().size()))
-          .fetch();
-
-      if (!contentIdsWithAllTags.isEmpty()) {
-        builder.and(QContent.content.id.in(contentIdsWithAllTags));
-      } else {
-        // 조건에 맞는 콘텐츠가 없을 경우 빈 결과를 반환하기 위해 항상 거짓인 조건 추가
-        builder.and(QContent.content.id.eq(-1L));
-      }
-
-    }
-
     // 커서 : createdAt, watcherCount, rate
     // 보조 커서 : uuid
     if (request.sortDirection().equals("DESCENDING")) {
@@ -325,6 +293,36 @@ public class ContentQueryRepository {
         default:
           throw new IllegalArgumentException("잘못된 검색 조건입니다: " + request.sortBy());
       }
+    }
+
+    // 콘텐츠 타입
+    if (request.typeEqual() != null) {
+      builder.and(QContent.content.contentType.eq(ContentType.fromValue(request.typeEqual())));
+    }
+
+    // 검색 키워드
+    if (request.keywordLike() != null && !request.keywordLike().isBlank()) {
+      builder.and(QContent.content.title.containsIgnoreCase(request.keywordLike()));
+    }
+
+    if (request.tagsIn() != null && !request.tagsIn().isEmpty()) {
+
+      List<Long> contentIdsWithAllTags = queryFactory
+          .select(QContentTag.contentTag.content.id)
+          .from(QContentTag.contentTag)
+          .join(QContentTag.contentTag.tag, QTag.tag)
+          .where(QTag.tag.name.in(request.tagsIn()))
+          .groupBy(QContentTag.contentTag.content.id)
+          .having(QContentTag.contentTag.content.id.count().eq((long) request.tagsIn().size()))
+          .fetch();
+
+      if (!contentIdsWithAllTags.isEmpty()) {
+        builder.and(QContent.content.id.in(contentIdsWithAllTags));
+      } else {
+        // 조건에 맞는 콘텐츠가 없을 경우 빈 결과를 반환하기 위해 항상 거짓인 조건 추가
+        builder.and(QContent.content.id.eq(-1L));
+      }
+
     }
 
     return builder;
