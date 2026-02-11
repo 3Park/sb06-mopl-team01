@@ -113,7 +113,7 @@ public class NotificationRequiredEventListener {
             DmMessageReceivedKafkaEvent event = objectMapper.readValue(kafkaEvent, DmMessageReceivedKafkaEvent.class);
 
             UUID receiverId = event.receiverId();
-            String title = "[DM]" + event.senderName();
+            String title = "[DM] " + event.senderName();
             String content = event.message();
             Level level = Level.INFO;
 

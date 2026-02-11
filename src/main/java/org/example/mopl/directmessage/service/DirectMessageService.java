@@ -2,18 +2,21 @@ package org.example.mopl.directmessage.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.example.mopl.directmessage.dto.condition.ConversationSearchCondition;
-import org.example.mopl.directmessage.dto.condition.DirectMessageSearchCondition;
+import org.example.mopl.directmessage.dto.ConversationSearchCondition;
+import org.example.mopl.directmessage.dto.CursorResult;
+import org.example.mopl.directmessage.dto.DirectMessageSearchCondition;
 import org.example.mopl.directmessage.dto.data.ConversationDto;
 import org.example.mopl.directmessage.dto.request.ConversationListRequest;
 import org.example.mopl.directmessage.dto.request.DirectMessageListRequest;
 import org.example.mopl.directmessage.dto.response.CursorResponseConversationDto;
 import org.example.mopl.directmessage.dto.data.DirectMessageDto;
 import org.example.mopl.directmessage.dto.response.CursorResponseDirectMessageDto;
+import org.example.mopl.directmessage.entity.BaseEntity;
 import org.example.mopl.directmessage.entity.Conversation;
 import org.example.mopl.directmessage.entity.DirectMessage;
 import org.example.mopl.directmessage.exception.ConversationForbiddenException;
 import org.example.mopl.directmessage.exception.ConversationNotFoundException;
+import org.example.mopl.directmessage.exception.DirectMessageNotFoundException;
 import org.example.mopl.directmessage.exception.ParticipantNotFoundException;
 import org.example.mopl.directmessage.repository.ConversationRepository;
 import org.example.mopl.directmessage.repository.DirectMessageRepository;
@@ -43,8 +46,8 @@ public class DirectMessageService {
     @Transactional
     public void saveAndSendMessage(UUID conversationUuid, UUID senderUuid, String content) {
 
-        Conversation conversation = getConversationOrThrow(conversationUuid);
-        User sender = getUserOrThrow(senderUuid);
+        Conversation conversation = getConversation(conversationUuid);
+        User sender = getUser(senderUuid);
 
         User receiver = getCounterpartOrThrow(conversation, sender.getId());
 
@@ -64,26 +67,28 @@ public class DirectMessageService {
     @Transactional
     public ConversationDto create(UUID creatorId, UUID joinId) {
 
-        User creator = getUserOrThrow(creatorId);
-        User joiner = getUserOrThrow(joinId);
+        User creator = getUser(creatorId);
+        User joiner = getUser(joinId);
 
         Conversation conversation = getExistingConversation(creator, joiner)
                 .orElseGet(() -> saveConversation(creator, joiner));
 
         log.info("conversation 생성 완료, conversationId={}", conversation.getUuid());
         return ConversationDto.from(
-                conversation, creator, joiner, getLastMessageOrNull(conversation)
+                conversation, creator, joiner,
+                findLastMessage(conversation).orElse(null)
         );
     }
 
     // DM 읽음 처리
     @Transactional
-    public void read(UUID conversationId, UUID lastDirectMessageId, UUID requesterId) {
+    public void markAsRead(UUID conversationId, UUID lastDirectMessageId, UUID requesterId) {
 
-        Conversation conversation = getConversationOrThrow(conversationId);
-        User requester = getUserOrThrow(requesterId);
+        Conversation conversation = getConversation(conversationId);
+        User requester = getUser(requesterId);
+        DirectMessage lastDirectMessage = getDirectMessage(lastDirectMessageId);
 
-        readUnreadMessagesInAndSave(conversation, requester);
+        markAsReadMessages(conversation, requester, lastDirectMessage);
 
         log.info("DM 읽음 처리 완료, directMessageId={}", lastDirectMessageId);
     }
@@ -92,13 +97,14 @@ public class DirectMessageService {
     @Transactional(readOnly = true)
     public ConversationDto get(UUID requesterUuid, UUID conversationUuid) {
 
-        Conversation conversation = getConversationOrThrow(conversationUuid);
-        User requester = getUserOrThrow(requesterUuid);
+        Conversation conversation = getConversation(conversationUuid);
+        User requester = getUser(requesterUuid);
         User other = getCounterpartOrThrow(conversation, requester.getId());
 
         log.info("대화 조회 완료, conversationId={}", conversationUuid);
         return ConversationDto.from(
-                conversation, requester, other, getLastMessageOrNull(conversation)
+                conversation, requester, other,
+                findLastMessage(conversation).orElse(null)
         );
     }
 
@@ -106,16 +112,17 @@ public class DirectMessageService {
     @Transactional(readOnly = true)
     public ConversationDto getWith(UUID requesterUuid, UUID withUserUuid) {
 
-        User requester = getUserOrThrow(requesterUuid);
-        User withUser = getUserOrThrow(withUserUuid);
+        User requester = getUser(requesterUuid);
+        User withUser = getUser(withUserUuid);
 
         Conversation conversation = getExistingConversation(requester, withUser)
-                .orElseThrow(ConversationNotFoundException::new);
+                .orElseThrow(() -> new ConversationNotFoundException());
 
 
         log.info("with={} 사용자와의 대화 조회 완료, conversationId={}", withUserUuid, conversation.getUuid());
         return ConversationDto.from(
-                conversation, requester, withUser, getLastMessageOrNull(conversation)
+                conversation, requester, withUser,
+                findLastMessage(conversation).orElse(null)
         );
     }
 
@@ -123,26 +130,31 @@ public class DirectMessageService {
     @Transactional(readOnly = true)
     public CursorResponseConversationDto getConversations(UUID requesterUuid, ConversationListRequest request) {
 
-        User requester = getUserOrThrow(requesterUuid);
+        User requester = getUser(requesterUuid);
 
-        ConversationSearchCondition condition = ConversationSearchCondition.of(
-                request.keywordLike(), request.idAfter(), request.limit() + 1,
-                request.sortDirection(), request.sortBy(), requester.getId()
+        ConversationSearchCondition condition = request.toSearchCondition(
+                requester.getId(), request.limit() + 1
         );
 
         List<Conversation> conversations = conversationRepository.searchByCursor(condition);
         Long totalCount = conversationRepository.countByUserId(requester.getId());
 
-        // TODO: 추후 conversation 테이블에 last_message_id 컬럼 추가? 후 관련 로직 수정?
-        // TODO: findAllWithProfileByIdIn(List<Long> ids) 메소드 임의로 만들어 임시 사용
         // conversation 상대방 찾기 ( key = conversationId )
         Map<Long, User> counterpartMap = findCounterpartUserByConversations(requester, conversations);
         // conversation lastMessage 찾기 ( key = conversationId )
         Map<Long, DirectMessage> lastMessageMap = findLastMessagesByConversations(conversations);
 
-        return CursorResponseConversationDto.of(
-                conversations, totalCount, condition, counterpartMap, lastMessageMap, requester
+        CursorResult<Conversation> cursorResult = getCursorResult(conversations, request.limit());
+        List<ConversationDto> data = toConversationDtos(
+                cursorResult.items(), requester, counterpartMap, lastMessageMap
         );
+
+        return CursorResponseConversationDto.builder()
+                .data(data)
+                .nextCursor(cursorResult.nextCursor()).nextIdAfter(cursorResult.nextIdAfter())
+                .hasNext(cursorResult.hasNext()).totalCount(totalCount)
+                .sortBy(request.sortBy()).sortDirection(request.sortDirection())
+                .build();
     }
 
     // DM 목록 조회
@@ -150,83 +162,138 @@ public class DirectMessageService {
     public CursorResponseDirectMessageDto getDirectMessages(
             UUID requesterUuid, UUID conversationUuid, DirectMessageListRequest request) {
 
-        User requester = getUserOrThrow(requesterUuid);
-        Conversation conversation = getConversationOrThrow(conversationUuid);
+        User requester = getUser(requesterUuid);
+        Conversation conversation = getConversation(conversationUuid);
         User other =  getCounterpartOrThrow(conversation, requester.getId());
 
-        DirectMessageSearchCondition condition = DirectMessageSearchCondition.of(
-                request.idAfter(), request.limit() + 1,
-                request.sortDirection(), request.sortBy(),
-                requester.getId(), conversation.getId()
+        DirectMessageSearchCondition condition = request.toSearchCondition(
+                requester.getId(), conversation.getId(), request.limit() + 1
         );
 
         List<DirectMessage> directMessages = directMessageRepository.searchByCursor(condition);
-        Long totalCont = directMessageRepository.countByConversationId(conversation.getId());
+        Long totalCount = directMessageRepository.countByConversationId(conversation.getId());
+
+        CursorResult<DirectMessage> cursorResult = getCursorResult(directMessages, request.limit());
+        List<DirectMessageDto> data = toDirectMessageDtos(cursorResult.items(), requester, other);
 
         log.info("대화 목록 조회 완료, requesterId={}, conversationId={}", requesterUuid, conversationUuid);
-        return CursorResponseDirectMessageDto.of(
-                directMessages, totalCont, condition, requester, other
-        );
+        return CursorResponseDirectMessageDto.builder()
+                .data(data)
+                .nextCursor(cursorResult.nextCursor()).nextIdAfter(cursorResult.nextIdAfter())
+                .hasNext(cursorResult.hasNext()).totalCount(totalCount)
+                .sortBy(request.sortBy()).sortDirection(request.sortDirection())
+                .build();
     }
 
+
+    // ===== helper method =====
+
+    private User getUser(UUID senderUuid) {
+        return userRepository.findUserAndProfileOnlyByUuid(senderUuid)
+                .orElseThrow(() -> new ParticipantNotFoundException(senderUuid));
+    }
+    private Conversation getConversation(UUID conversationUuid) {
+        return conversationRepository.findByUuid(conversationUuid)
+                .orElseThrow(() -> new ConversationNotFoundException(conversationUuid));
+    }
+    private DirectMessage getDirectMessage(UUID directMessageUuid) {
+        return directMessageRepository.findByUuid(directMessageUuid)
+                .orElseThrow(() -> new DirectMessageNotFoundException(directMessageUuid));
+    }
+    private User getCounterpartOrThrow(Conversation conversation, Long requesterId) {
+        if(!conversation.isValidParticipant(requesterId)) {
+            throw new ConversationForbiddenException(conversation.getUuid());
+        }
+        Long counterpartId = conversation.getCounterpartId(requesterId);
+        return userRepository.findUserAndProfileOnlyById(counterpartId)
+                .orElseThrow(() -> new ParticipantNotFoundException());
+    }
+    private Optional<Conversation> getExistingConversation(User user1, User user2) {
+        return conversationRepository.findExisting(user1.getId(), user2.getId());
+    }
+    private Optional<DirectMessage> findLastMessage(Conversation conversation) {
+        return directMessageRepository
+                .findFirstByConversationIdOrderByIdDesc(conversation.getId());
+    }
+
+    // 객체 생성 후 save -> return
+    private DirectMessage saveMessage(Conversation conversation, User sender, User receiver, String content) {
+        DirectMessage directMessage = DirectMessage.of(conversation, sender.getId(), receiver.getId(), content);
+        return directMessageRepository.save(directMessage);
+    }
+    private Conversation saveConversation(User creator, User joiner) {
+        Conversation conversation = Conversation.of(creator.getId(), joiner.getId());
+        return conversationRepository.save(conversation);
+    }
+
+    // Bulk fetch method (N+1 방지)
+    // Conversation별 상대 유저 일괄 조회
     private Map<Long, User> findCounterpartUserByConversations(User requester, List<Conversation> conversations) {
         List<Long> counterpartIds = conversations.stream()
                 .map(c -> c.getCounterpartId(requester.getId())).toList();
         return userRepository.findAllWithProfileByIdIn(counterpartIds).stream()
                 .collect(Collectors.toMap(user -> user.getId(), user -> user));
     }
+    // Conversation별 마지막 메시지 일괄 조회
     private Map<Long, DirectMessage> findLastMessagesByConversations(List<Conversation> conversations) {
         List<Long> conversationIds = conversations.stream().map(Conversation::getId).toList();
         return directMessageRepository.findAllLastMessagesByConversationIdIn(conversationIds);
     }
 
-    private Conversation saveConversation(User creator, User joiner) {
-        Conversation conversation = Conversation.of(creator.getId(), joiner.getId());
-        return conversationRepository.save(conversation);
+    // List 단위 dto 변환
+    private List<ConversationDto> toConversationDtos(
+            List<Conversation> conversations, User requester,
+            Map<Long, User> counterpartMap, Map<Long, DirectMessage> lastMessageMap
+    ) {
+        return conversations.stream()
+                .map(conversation -> {
+                    Long otherId = conversation.getCounterpartId(requester.getId());
+                    User other = counterpartMap.get(otherId);
+                    DirectMessage lastMessage = lastMessageMap.get(conversation.getId());
+                    return ConversationDto.from(conversation, requester, other, lastMessage);
+                }).toList();
+    }
+    private List<DirectMessageDto> toDirectMessageDtos(
+            List<DirectMessage> directMessages, User requester, User other
+    ) {
+        return directMessages.stream()
+                .map(directMessage -> {
+                    boolean isMe = directMessage.isSenderId(requester.getId());
+                    User sender = isMe? requester : other;
+                    User receiver = isMe? other : requester;
+                    return DirectMessageDto.from(directMessage, sender, receiver);
+                })
+                .toList();
     }
 
-    private Optional<Conversation> getExistingConversation(User user1, User user2) {
-        return conversationRepository.findExisting(user1.getId(), user2.getId());
+    // 읽지 않은 메시지 중 lastMessage 이하인 것들을 일괄 읽음 처리
+    private void markAsReadMessages(Conversation conversation, User requester, DirectMessage directMessage) {
+        directMessageRepository.markAsRead(conversation.getId(), requester.getId(), directMessage.getId());
     }
-
-    private DirectMessage getLastMessageOrNull(Conversation conversation) {
-        return directMessageRepository
-                .findFirstByConversationIdOrderByIdDesc(conversation.getId())
-                .orElse(null);
-    }
-
-    private Conversation getConversationOrThrow(UUID conversationUuid) {
-        return conversationRepository.findByUuid(conversationUuid)
-                .orElseThrow(() -> new ConversationNotFoundException(conversationUuid));
-    }
-
-    private void readUnreadMessagesInAndSave(Conversation conversation, User requester) {
-        directMessageRepository.readUnreadMessages(conversation.getId(), requester.getId());
-    }
-
-    private User getUserOrThrow(UUID senderUuid) {
-        return userRepository.findUserAndProfileOnlyByUuid(senderUuid)
-                .orElseThrow(() -> new ParticipantNotFoundException(senderUuid));
-    }
-
-    private User getCounterpartOrThrow(Conversation conversation, Long requesterId) {
-        if(!conversation.isValidParticipant(requesterId)) throw new ConversationForbiddenException(conversation.getUuid());
-        Long counterpartId = conversation.getCounterpartId(requesterId);
-        return userRepository.findUserAndProfileOnlyById(counterpartId)
-                .orElseThrow(ParticipantNotFoundException::new);
-    }
-
-    private DirectMessage saveMessage(Conversation conversation, User sender, User receiver, String content) {
-        DirectMessage directMessage = DirectMessage.of(conversation, sender.getId(), receiver.getId(), content);
-        return directMessageRepository.save(directMessage);
-    }
-
     private void sendToSocket(UUID conversationUuid, DirectMessage directMessage, User sender, User receiver) {
         DirectMessageDto dto = DirectMessageDto.from(directMessage, sender, receiver);
         messagingTemplate.convertAndSend(resolveDestination(conversationUuid), dto);
     }
-
     private String resolveDestination(UUID conversationUuid) {
         return "/sub/conversations/" + conversationUuid + "/direct-messages";
+    }
+    private <T extends BaseEntity> CursorResult<T> getCursorResult(
+            List<T> items, int limit) {
+        boolean hasNext = false;
+        String nextCursor = null;
+        UUID nextIdAfter = null;
+        List<T> itemsAfter = items;
+
+        if (itemsAfter.size() > limit) {
+            hasNext = true;
+            itemsAfter = itemsAfter.subList(0, limit);
+        }
+        if (!itemsAfter.isEmpty()) {
+            nextIdAfter = itemsAfter.get(itemsAfter.size() - 1).getUuid();
+            nextCursor = nextIdAfter.toString();
+        }
+        return new CursorResult<>(
+                itemsAfter, hasNext, nextCursor, nextIdAfter
+        );
     }
 }

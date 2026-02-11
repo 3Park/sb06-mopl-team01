@@ -1,35 +1,17 @@
 package org.example.mopl.directmessage.entity;
 
-import io.hypersistence.utils.hibernate.id.Tsid;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
-import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+import lombok.experimental.SuperBuilder;
 
-import java.time.LocalDateTime;
-import java.util.UUID;
-
-@EntityListeners(AuditingEntityListener.class)
-@Getter
 @Entity
+@Getter
+@SuperBuilder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(name = "direct_messages")
-public class DirectMessage {
-
-    @Id
-    @Tsid
-    private Long id;
-
-    @Column(nullable = false, unique = true, updatable = false)
-    private UUID uuid;
-
-    @CreatedDate
-    @Column(name = "created_at", updatable = false, nullable = false) // 이거 따로 지정할 필요 없나?
-    private LocalDateTime createdAt;
-
+public class DirectMessage extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "conversation_id", nullable = false, updatable = false)
@@ -47,21 +29,14 @@ public class DirectMessage {
     @Column(name = "read_status", nullable = false)
     private boolean isRead;
 
-
-    @Builder
-    private DirectMessage(Conversation conversation, Long senderId, Long receiverId, String content) {
-        this.uuid = UUID.randomUUID();
-        this.isRead = false;
-
-        this.conversation = conversation;
-        this.senderId = senderId;
-        this.receiverId = receiverId;
-        this.content = content;
-    }
-
     public static DirectMessage of(Conversation conversation, Long senderId, Long receiverId, String content) {
-        return DirectMessage.builder().conversation(conversation).senderId(senderId)
-                .receiverId(receiverId).content(content).build();
+        return DirectMessage.builder()
+                .isRead(false)
+                .conversation(conversation)
+                .senderId(senderId)
+                .receiverId(receiverId)
+                .content(content)
+                .build();
     }
 
     public boolean isSenderId(Long userId) {

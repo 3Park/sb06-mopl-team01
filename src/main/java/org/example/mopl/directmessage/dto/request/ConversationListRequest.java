@@ -2,6 +2,7 @@ package org.example.mopl.directmessage.dto.request;
 
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
+import org.example.mopl.directmessage.dto.ConversationSearchCondition;
 import org.example.mopl.directmessage.enums.SortBy;
 import org.hibernate.query.SortDirection;
 
@@ -15,4 +16,14 @@ public record ConversationListRequest(
         @NotNull SortDirection sortDirection,
         @NotNull SortBy sortBy
         ) {
+    public ConversationSearchCondition toSearchCondition(Long requesterId, int limit) {
+        return ConversationSearchCondition.builder()
+                .keywordLike(keywordLike)
+                .idAfter(idAfter)
+                .limit(limit)
+                .sortDirection(sortDirection)
+                .sortBy(sortBy)
+                .requesterId(requesterId)
+                .build();
+    }
 }

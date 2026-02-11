@@ -1,6 +1,6 @@
 package org.example.mopl.directmessage.repository;
 
-import org.example.mopl.directmessage.dto.condition.ConversationSearchCondition;
+import org.example.mopl.directmessage.dto.ConversationSearchCondition;
 import org.example.mopl.directmessage.entity.Conversation;
 
 import java.util.List;

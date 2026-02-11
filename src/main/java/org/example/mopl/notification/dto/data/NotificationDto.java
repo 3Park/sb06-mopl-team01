@@ -1,4 +1,4 @@
-package org.example.mopl.notification.dto;
+package org.example.mopl.notification.dto.data;
 
 import lombok.Builder;
 import org.example.mopl.notification.enums.Level;

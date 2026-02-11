@@ -45,7 +45,7 @@ public class DirectMessageController {
             @PathVariable UUID directMessageId
             ) {
         log.info("DM 읽음 요청, conversationId={}, directMessageId={}", conversationId, directMessageId);
-        directMessageService.read(conversationId, directMessageId, userDetails.getUserDto().getId());
+        directMessageService.markAsRead(conversationId, directMessageId, userDetails.getUserDto().getId());
         return ResponseEntity.status(HttpStatus.OK).build();
     }
 
