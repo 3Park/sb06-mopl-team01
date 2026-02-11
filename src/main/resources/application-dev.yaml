@@ -26,6 +26,10 @@ spring:
     properties:
       hibernate:
         format_sql: true
+        order_inserts: true
+        order_updates: true
+        jdbc:
+          batch_size: 100
   kafka:
     bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVER:localhost:9092}
     consumer:
