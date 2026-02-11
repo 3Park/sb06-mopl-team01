@@ -11,141 +11,161 @@ import org.example.mopl.watchtogether.dto.*;
 import org.example.mopl.watchtogether.enumeration.ChangeType;
 import org.example.mopl.watchtogether.exception.WatchTogetherErrorCode;
 import org.example.mopl.watchtogether.model.Watcher;
-import org.example.mopl.watchtogether.model.WatchingRoom;
 import org.example.mopl.watchtogether.model.WatchingSession;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.messaging.simp.SimpMessageSendingOperations;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Duration;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class BasicWatchTogetherService implements WatchTogetherService{
+public class BasicWatchTogetherService implements WatchTogetherService {
 
-    private final ConcurrentHashMap<String, WatchingRoom> watchingRooms = new ConcurrentHashMap<>();
-    private final ConcurrentHashMap<String, String> sessionToRoom = new ConcurrentHashMap<>();
-    private final ConcurrentHashMap<String, String> watcherToSession = new ConcurrentHashMap<>();
-
+    private final RedisTemplate<String, Object> watchTogetherRedisTemplate;
+    private final StringRedisTemplate stringRedisTemplate;
     private final SimpMessageSendingOperations messagingTemplate;
     private final ContentCommandRepository contentCommandRepository;
 
-    private final String ASCENDING ="ASCENDING";
+    private static final String KEY_ROOM_WATCHERS = "room:%s:watchers";
+    private static final String KEY_SESSION_DATA = "session:%s";
+    private static final String KEY_SESSION_ROOM = "session:%s:room";
+    private static final String KEY_USER_SESSION = "user:%s";
+    private static final String KEY_ACTIVE_ROOMS = "active_rooms";
+
+    private static final String ASCENDING = "ASCENDING";
+    private static final Duration SESSION_TTL = Duration.ofHours(2);
 
     @Override
     @Transactional(readOnly = true)
     public void addUserToRoom(UserDto userDto, String contentId, String sessionId) {
-        WatchingRoom room = watchingRooms.get(contentId);
+        String userKey = String.format(KEY_USER_SESSION, userDto.getId().toString());
+        String oldSessionId = stringRedisTemplate.opsForValue().get(userKey);
 
-        Watcher watcher = new Watcher(userDto);
-
-        //실시간 같이 시청방 없으면 방생성
-        if(room == null){
-            Content content = contentCommandRepository.findByUuid(UUID.fromString(contentId))
-                    .orElseThrow(()-> new NoSuchContentException(contentId));
-            watchingRooms.put(content.getUuid().toString(), new WatchingRoom(content));
-            room  = watchingRooms.get(contentId);
+        // 기존 세션이 존재하고, 현재 들어온 세션과 다르다면? -> 기존 세션 강제 퇴장 처리
+        if (oldSessionId != null && !oldSessionId.equals(sessionId)) {
+            log.info("중복 로그인 감지! 기존 세션 정리: userId={}, oldSessionId={}", userDto.getId(), oldSessionId);
+            removeUserFromRoom(oldSessionId);
         }
 
-        //웹소켓 세션으로 실시간 같이 보기 방 찾을때
-        sessionToRoom.put(sessionId,contentId);
+        String roomKey = String.format(KEY_ROOM_WATCHERS, contentId);
 
-        //시청자 아이디로 현재 세션 정보 찾을때
-        watcherToSession.put(watcher.getUserId().toString(), sessionId);
+        // 방 활성 목록 관리는 문자열이므로 stringRedisTemplate 사용
+        if (!stringRedisTemplate.hasKey(roomKey)) {
+            contentCommandRepository.findByUuid(UUID.fromString(contentId))
+                    .orElseThrow(() -> new NoSuchContentException(contentId));
+            stringRedisTemplate.opsForSet().add(KEY_ACTIVE_ROOMS, contentId);
+        }
 
-        room.addWatcher(new WatchingSession(sessionId,watcher));
+        Watcher watcher = new Watcher(userDto);
+        WatchingSession session = new WatchingSession(sessionId, watcher);
 
-        sendWatchingSessionChangeToRoom(
-                room.getWatcher(sessionId),
-                room.getContent(),
-                room.getWatcherCount(),
-                ChangeType.JOIN
+        saveSessionToRedis(sessionId, session, contentId, userKey, roomKey);
+
+        Long count = stringRedisTemplate.opsForZSet().zCard(roomKey);
+        contentCommandRepository.findByUuid(UUID.fromString(contentId)).ifPresent(content ->
+                sendWatchingSessionChangeToRoom(session, content, count != null ? count : 0, ChangeType.JOIN)
         );
     }
 
     @Override
     public void removeUserFromRoom(String sessionId) {
-        String roomId = sessionToRoom.get(sessionId);
+        String sessionKey = String.format(KEY_SESSION_DATA, sessionId);
+        String sessionRoomKey = String.format(KEY_SESSION_ROOM, sessionId);
 
-        if(roomId != null){
-            WatchingRoom room = watchingRooms.get(roomId);
+        WatchingSession session = (WatchingSession) watchTogetherRedisTemplate.opsForValue().get(sessionKey);
+        // 문자열 조회는 stringRedisTemplate
+        String contentId = stringRedisTemplate.opsForValue().get(sessionRoomKey);
 
-            if(room !=null){
-                WatchingSession removedWatcher = room.removeWatcher(sessionId);
+        if (session != null && contentId != null) {
+            String roomKey = String.format(KEY_ROOM_WATCHERS, contentId);
+            String userKey = String.format(KEY_USER_SESSION, session.getWatcher().getUserId().toString());
 
-                if(removedWatcher != null){
-                    watcherToSession.remove(removedWatcher.getWatcher().getUserId().toString());
-                    sessionToRoom.remove(removedWatcher.getId().toString());
+            // ZSet 삭제도 stringRedisTemplate
+            stringRedisTemplate.opsForZSet().remove(roomKey, sessionId);
 
-                    sendWatchingSessionChangeToRoom(
-                            removedWatcher,
-                            room.getContent(),
-                            room.getWatcherCount()
-                            ,ChangeType.LEAVE
-                    );
+            watchTogetherRedisTemplate.delete(sessionKey);
+            stringRedisTemplate.delete(Arrays.asList(sessionRoomKey, userKey));
 
-                    log.info("방 에서 사용자 나감 roomId:{} WatcherId: {}",roomId, removedWatcher.getWatcher().getUserId());
+            Long watcherCount = stringRedisTemplate.opsForZSet().zCard(roomKey);
 
-                    if(room.getWatchers().isEmpty()){
-                        watchingRooms.remove(roomId);
-                        log.info("사용자 없는 방 삭제 roomId: {}", roomId);
-                    }
-                    return;
-                }
+            if (watcherCount == null || watcherCount == 0) {
+                stringRedisTemplate.opsForSet().remove(KEY_ACTIVE_ROOMS, contentId);
+                log.info("사용자 없는 방 삭제 roomId: {}", contentId);
             }
-            log.info("해당 방이 없습니다 roomId: {}",roomId);
+
+            contentCommandRepository.findByUuid(UUID.fromString(contentId)).ifPresent(content ->
+                    sendWatchingSessionChangeToRoom(session, content, watcherCount != null ? watcherCount : 0, ChangeType.LEAVE)
+            );
+            log.info("방에서 사용자 나감 roomId:{} WatcherId: {}", contentId, session.getWatcher().getUserId());
         }
-        log.info("해당 세션이 없습니다 sessionId: {}",sessionId);
     }
 
     @Override
     public void sendMessageToRoom(String contentId, ContentChatSendRequest message, Watcher watcher) {
-        if(watchingRooms.containsKey(contentId)){
-            String destination = "/sub/contents/"+contentId+"/chat";
-            ContentChatDto contentChatDto = new ContentChatDto(watcher,message.content());
-            messagingTemplate.convertAndSend(destination,contentChatDto);
+        String roomKey = String.format(KEY_ROOM_WATCHERS, contentId);
+        if (stringRedisTemplate.hasKey(roomKey)) {
+            String destination = "/sub/contents/" + contentId + "/chat";
+            ContentChatDto contentChatDto = new ContentChatDto(watcher, message.content());
+            messagingTemplate.convertAndSend(destination, contentChatDto);
         }
     }
 
     @Override
     public long getWatcherCount(String contentId) {
-
-        if(contentId == null || contentId.isEmpty()) return 0L;
-
-        return Optional.ofNullable(watchingRooms.get(contentId))
-                .map(WatchingRoom::getWatcherCount)
-                .orElse(0L);
+        if (contentId == null || contentId.isEmpty()) return 0L;
+        Long count = stringRedisTemplate.opsForZSet().zCard(String.format(KEY_ROOM_WATCHERS, contentId));
+        System.out.println("WatcherCount"+count);
+        return count != null ? count : 0L;
     }
 
     @Override
-    public HashMap<Long,Long> getWatchingRooms() {
+    public HashMap<Long, Long> getWatchingRooms() {
+        // 활성 방 목록도 String Set이므로 stringRedisTemplate 사용
+        Set<String> activeRooms = stringRedisTemplate.opsForSet().members(KEY_ACTIVE_ROOMS);
+        HashMap<Long, Long> result = new HashMap<>();
 
-        return watchingRooms.values().stream()
-                .collect(Collectors.toMap(
-                        watchingRoom -> watchingRoom.getContent().getId(),
-                        WatchingRoom::getWatcherCount,
-                        (oldVal, newVal) -> newVal, // Merge Function (키 중복 시 새 값 사용)
-                        HashMap::new
-                        )
-                );
+        if (activeRooms != null) {
+            for (String contentUuid : activeRooms) {
+                Content content = contentCommandRepository.findByUuid(UUID.fromString(contentUuid)).orElse(null);
+                if (content != null) {
+                    Long count = getWatcherCount(contentUuid);
+                    System.out.println("WatcherCount"+count);
+                    result.put(content.getId(), count);
+                }
+            }
+        }
+        return result;
     }
 
     @Override
     public WatchingSessionDto getWatcher(String watcherId) {
-        String sessionId = watcherToSession.get(watcherId);
-        if(sessionId == null){throw new MoplException(WatchTogetherErrorCode.NO_VIEWERS);}
+        String userKey = String.format(KEY_USER_SESSION, watcherId);
+        String sessionId = stringRedisTemplate.opsForValue().get(userKey); // String 바로 반환
 
-        String roomId = sessionToRoom.get(sessionId);
-        WatchingRoom watchingRoom = watchingRooms.get(roomId);
+        if (sessionId == null) throw new MoplException(WatchTogetherErrorCode.NO_VIEWERS);
+
+        String sessionKey = String.format(KEY_SESSION_DATA, sessionId);
+        String sessionRoomKey = String.format(KEY_SESSION_ROOM, sessionId);
+
+        WatchingSession session = (WatchingSession) watchTogetherRedisTemplate.opsForValue().get(sessionKey);
+        String contentId = stringRedisTemplate.opsForValue().get(sessionRoomKey);
+
+        if (session == null || contentId == null) throw new MoplException(WatchTogetherErrorCode.NO_VIEWERS);
+
+        Content content = contentCommandRepository.findByUuid(UUID.fromString(contentId))
+                .orElseThrow(() -> new NoSuchContentException(contentId));
 
         return WatchingSessionDto.builder()
-                .id(watchingRoom.getId().toString())
-                .createdAt(watchingRoom.getCreatedAt())
-                .watcher(watchingRoom.getWatcher(sessionId).getWatcher())
-                .content(watchingRoom.getContent())
+                .id(contentId)
+                .createdAt(session.getCreatedAt())
+                .watcher(session.getWatcher())
+                .content(content)
                 .build();
     }
 
@@ -159,48 +179,85 @@ public class BasicWatchTogetherService implements WatchTogetherService{
             String sortDirection,
             String sortBy
     ) {
-        WatchingRoom room = watchingRooms.get(contentId);
-        if(room == null){
-            throw new NoSuchContentException(contentId);
+        Content content = contentCommandRepository.findByUuid(UUID.fromString(contentId))
+                .orElseThrow(() -> new NoSuchContentException(contentId));
+
+        String roomKey = String.format(KEY_ROOM_WATCHERS, contentId);
+        long totalCount = getWatcherCount(contentId);
+
+        Set<String> sessionIds;
+        if (ASCENDING.equals(sortDirection)) {
+            sessionIds = stringRedisTemplate.opsForZSet().range(roomKey, 0, -1);
+        } else {
+            sessionIds = stringRedisTemplate.opsForZSet().reverseRange(roomKey, 0, -1);
         }
 
-        List<WatchingSession> sortedData = sortedData(room.getWatchers(),sortDirection);
+        if (sessionIds == null || sessionIds.isEmpty()) {
+            return CursorResponseWatchingSessionDto.toDto(Collections.emptyList(), limit, totalCount, sortBy, sortDirection);
+        }
 
-        List<WatchingSessionDto> data = filterData(sortedData, cursor, idAfter, limit, room.getContent());
+        List<WatchingSession> sessions = getWatchingSessionsByIds(sessionIds);
 
-        return CursorResponseWatchingSessionDto.toDto(data,limit,room.getWatcherCount(),sortBy,sortDirection);
+        List<WatchingSessionDto> data = filterData(sessions, cursor, idAfter, limit, content);
+
+        return CursorResponseWatchingSessionDto.toDto(data, limit, totalCount, sortBy, sortDirection);
+    }
+
+
+    private void saveSessionToRedis(
+            String sessionId,
+            WatchingSession session,
+            String contentId,
+            String userKey,
+            String roomKey
+    ) {
+        // 각종 Key 생성
+        String sessionKey = String.format(KEY_SESSION_DATA, sessionId);
+        String sessionRoomKey = String.format(KEY_SESSION_ROOM, sessionId);
+
+        // 세션 상세 정보 저장
+        watchTogetherRedisTemplate.opsForValue().set(sessionKey, session, SESSION_TTL);
+
+        // 매핑 정보 저장 Session->Room, User->Session
+        stringRedisTemplate.opsForValue().set(sessionRoomKey, contentId, SESSION_TTL);
+        stringRedisTemplate.opsForValue().set(userKey, sessionId, SESSION_TTL);
+
+        // 방 명단에 추가 - StringRedisTemplate 사용
+        stringRedisTemplate.opsForZSet().add(roomKey, sessionId, System.currentTimeMillis());
+    }
+
+    private List<WatchingSession> getWatchingSessionsByIds(Set<String> sessionIds) {
+        List<String> keys = sessionIds.stream()
+                .map(id -> String.format(KEY_SESSION_DATA, id))
+                .collect(Collectors.toList());
+
+        // MultiGet은 여전히 JSON 객체를 가져와야 하므로 redisTemplate 사용
+        List<Object> sessionObjects = watchTogetherRedisTemplate.opsForValue().multiGet(keys);
+
+        List<WatchingSession> sessions = new ArrayList<>();
+        if (sessionObjects != null) {
+            for (Object obj : sessionObjects) {
+                if (obj != null) {
+                    sessions.add((WatchingSession) obj);
+                }
+            }
+        }
+        return sessions;
     }
 
     private void sendWatchingSessionChangeToRoom(
             WatchingSession watcher,
-            Content content ,
+            Content content,
             long WatcherCount,
-            ChangeType type){
-        WatchingSessionDto watchingSessionDto = new WatchingSessionDto(
-                watcher,
-                content
-        );
-
+            ChangeType type) {
+        WatchingSessionDto watchingSessionDto = new WatchingSessionDto(watcher, content);
         WatchingSessionChange message = WatchingSessionChange.builder()
                 .type(type)
                 .watchingSession(watchingSessionDto)
                 .watcherCount(WatcherCount)
                 .build();
-        String destination = "/sub/contents/"+content.getUuid()+"/watch";
-        messagingTemplate.convertAndSend(destination,message);
-    }
-
-    private List<WatchingSession> sortedData (List<WatchingSession> watchingSessions , String sortDirection){
-
-        if(Objects.equals(sortDirection, ASCENDING)){
-            return watchingSessions.stream()
-                    .sorted(Comparator.comparing(WatchingSession::getCreatedAt))
-                    .toList();
-        }else {
-            return watchingSessions.stream()
-                    .sorted(Comparator.comparing(WatchingSession::getCreatedAt).reversed())
-                    .toList();
-        }
+        String destination = "/sub/contents/" + content.getUuid() + "/watch";
+        messagingTemplate.convertAndSend(destination, message);
     }
 
     private List<WatchingSessionDto> filterData(
@@ -209,20 +266,19 @@ public class BasicWatchTogetherService implements WatchTogetherService{
             String idAfter,
             Integer limit,
             Content content
-    ){
-        if(cursor != null  || idAfter != null){
-
+    ) {
+        if (cursor != null || idAfter != null) {
             return sortedData.stream()
                     .dropWhile(watchingSession ->
                             Objects.equals(watchingSession.getWatcher().getName(), cursor) &&
                                     Objects.equals(watchingSession.getWatcher().getUserId().toString(), idAfter))
-                    .limit(limit+1)
-                    .map(watchingSession -> new WatchingSessionDto(watchingSession,content))
+                    .limit(limit + 1)
+                    .map(watchingSession -> new WatchingSessionDto(watchingSession, content))
                     .toList();
-        }else{
+        } else {
             return sortedData.stream()
-                    .limit(limit+1)
-                    .map(watchingSession -> new WatchingSessionDto(watchingSession,content))
+                    .limit(limit + 1)
+                    .map(watchingSession -> new WatchingSessionDto(watchingSession, content))
                     .toList();
         }
     }
