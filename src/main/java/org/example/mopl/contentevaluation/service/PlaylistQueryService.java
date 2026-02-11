@@ -152,7 +152,7 @@ public class PlaylistQueryService {
                             contentsStatMap.get(content.getContent().getId()).getRatingAverage() : 0.0,
                         contentsStatMap.containsKey(content.getContent().getId()) ?
                             contentsStatMap.get(content.getContent().getId()).getRatingCount() : 0,
-                        watchTogetherService.getWatcherCount(String.valueOf(content.getId()))
+                        watchTogetherService.getWatcherCount(String.valueOf(content.getContent().getUuid()))
                     )
                 )
                 .toList() : List.of()
