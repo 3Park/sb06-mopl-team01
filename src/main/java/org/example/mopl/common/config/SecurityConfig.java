@@ -66,7 +66,7 @@ public class SecurityConfig {
                                                 "script-src-elem 'self'; " +
                                                 "object-src 'none'; " +
                                                 "base-uri 'none'; " +
-                                                "img-src 'self' data:; " +
+                                                "img-src 'self' data: https://sb06-mopl.s3.ap-northeast-2.amazonaws.com; " +
                                                 "form-action 'self'; "  +
                                                 "connect-src 'self' https: wss:; "+
                                                 "frame-ancestors 'none'"
