@@ -105,7 +105,7 @@ class PlaylistQueryRepositoryTest {
     );
 
     // when
-    Page<PlaylistResult> result = playlistQueryRepository.findAllByCursor(null, request);
+    Page<PlaylistResult> result = playlistQueryRepository.findAllByCursor("testuser", request);
 
     // then
     assertEquals(10, result.getContent().size());
