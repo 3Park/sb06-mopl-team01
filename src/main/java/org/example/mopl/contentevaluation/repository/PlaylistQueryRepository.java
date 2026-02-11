@@ -171,21 +171,6 @@ public class PlaylistQueryRepository {
 
     BooleanBuilder builder = new BooleanBuilder();
 
-    // 검색 키워드
-    if (request.keywordLike() != null && !request.keywordLike().isBlank()) {
-      builder.and(QPlaylist.playlist.title.containsIgnoreCase(request.keywordLike()));
-    }
-
-    // 소유자 ID
-    if (request.ownerIdEqual() != null) {
-      builder.and(QPlaylist.playlist.user.uuid.eq(request.ownerIdEqual()));
-    }
-
-    // 구독자 ID
-    if (request.subscriberIdEqual() != null) {
-      builder.and(QPlaylist.playlist.user.uuid.eq(request.subscriberIdEqual()));
-    }
-
     // 커서 : updatedAt, subscribeCount
     // 보조 커서 : uuid
     if (request.sortDirection().equals("DESCENDING")) {
@@ -246,6 +231,21 @@ public class PlaylistQueryRepository {
         default :
           throw new IllegalArgumentException("잘못된 검색 조건입니다: " + request.sortBy());
       }
+    }
+
+    // 검색 키워드
+    if (request.keywordLike() != null && !request.keywordLike().isBlank()) {
+      builder.and(QPlaylist.playlist.title.containsIgnoreCase(request.keywordLike()));
+    }
+
+    // 소유자 ID
+    if (request.ownerIdEqual() != null) {
+      builder.and(QPlaylist.playlist.user.uuid.eq(request.ownerIdEqual()));
+    }
+
+    // 구독자 ID
+    if (request.subscriberIdEqual() != null) {
+      builder.and(QPlaylist.playlist.user.uuid.eq(request.subscriberIdEqual()));
     }
 
     return builder;

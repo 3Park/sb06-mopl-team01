@@ -147,11 +147,6 @@ public class ReviewQueryRepository {
 
     BooleanBuilder builder = new BooleanBuilder();
 
-    // 콘텐츠 id
-    if (request.contentId() != null) {
-      builder.and(QReview.review.content.uuid.eq(request.contentId()));
-    }
-
     // 커서 : createdAt, rating
     // 보조 커서 : uuid
     if (request.sortDirection().equals("DESCENDING")) {
@@ -216,6 +211,11 @@ public class ReviewQueryRepository {
           throw new IllegalArgumentException("Invalid sortBy field: " + request.sortBy());
       }
 
+    }
+
+    // 콘텐츠 id
+    if (request.contentId() != null) {
+      builder.and(QReview.review.content.uuid.eq(request.contentId()));
     }
 
     return builder;
