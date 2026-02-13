@@ -2,12 +2,14 @@ package org.example.mopl.notification.dto.request;
 
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
+import lombok.Builder;
 import org.example.mopl.notification.dto.NotificationSearchCondition;
 import org.example.mopl.notification.enums.SortBy;
 import org.hibernate.query.SortDirection;
 
 import java.util.UUID;
 
+@Builder
 public record NotificationListRequest(
         String cursor,
         UUID idAfter,

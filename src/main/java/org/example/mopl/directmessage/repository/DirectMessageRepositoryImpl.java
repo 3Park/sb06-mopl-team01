@@ -49,12 +49,12 @@ public class DirectMessageRepositoryImpl implements DirectMessageRepositoryCusto
     }
 
     @Override
-    public Long countByConversationId(Long conversationId) {
+    public Long countByCursor(DirectMessageSearchCondition condition) {
         return jpaQueryFactory
                 .select(directMessage.count())
                 .from(directMessage)
                 .where(
-                        directMessage.conversation.id.eq(conversationId)
+                        directMessage.conversation.id.eq(condition.conversationId())
                 )
                 .fetchOne();
     }

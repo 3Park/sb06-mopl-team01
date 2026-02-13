@@ -2,12 +2,14 @@ package org.example.mopl.directmessage.dto.request;
 
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
+import lombok.Builder;
 import org.example.mopl.directmessage.dto.DirectMessageSearchCondition;
 import org.example.mopl.directmessage.enums.SortBy;
 import org.hibernate.query.SortDirection;
 
 import java.util.UUID;
 
+@Builder
 public record DirectMessageListRequest(
         String cursor,
         UUID idAfter,
