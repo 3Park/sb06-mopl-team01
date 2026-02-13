@@ -12,7 +12,7 @@ public interface DirectMessageRepositoryCustom {
 
     List<DirectMessage> searchByCursor(DirectMessageSearchCondition condition);
 
-    Long countByConversationId(Long conversationId);
+    Long countByCursor(DirectMessageSearchCondition condition);
 
     Map<Long, DirectMessage> findAllLastMessagesByConversationIdIn(List<Long> ids);
 }

@@ -22,14 +22,14 @@ public class NotificationController {
     private final NotificationService notificationService;
 
     @GetMapping
-    public ResponseEntity<CursorResponseNotificationDto> findAllByReceiverId(
+    public ResponseEntity<CursorResponseNotificationDto> getNotifications(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @Valid @ModelAttribute NotificationListRequest request
             ) {
         UUID receiverId = userDetails.getUserDto().getId();
         log.info("알림 목록 조회 요청: receiverId={}", receiverId);
 
-        CursorResponseNotificationDto result = notificationService.findAll(receiverId, request);
+        CursorResponseNotificationDto result = notificationService.getNotifications(receiverId, request);
         return ResponseEntity.ok(result);
     }
 

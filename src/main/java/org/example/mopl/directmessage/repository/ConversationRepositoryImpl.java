@@ -69,13 +69,14 @@ public class ConversationRepositoryImpl implements ConversationRepositoryCustom 
     }
 
     @Override
-    public Long countByUserId(Long userId) {
+    public Long countByCursor(ConversationSearchCondition condition) {
         return jpaQueryFactory
                 .select(conversation.count())
                 .from(conversation)
                 .where(
-                        conversation.creatorId.eq(userId)
-                        .or(conversation.joinId.eq(userId)))
+                        isParticipant(condition),
+                        containsKeyword(condition)
+                )
                 .fetchOne();
     }
 

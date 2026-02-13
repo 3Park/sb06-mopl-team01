@@ -53,7 +53,7 @@ public class NotificationService {
     }
 
     @Transactional(readOnly = true)
-    public CursorResponseNotificationDto findAll(UUID receiverId, NotificationListRequest request) {
+    public CursorResponseNotificationDto getNotifications(UUID receiverId, NotificationListRequest request) {
 
         Long idAfter = Optional.ofNullable(request.idAfter())
                 .flatMap(notificationRepository::findIdByUuid)

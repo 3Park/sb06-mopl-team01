@@ -14,5 +14,5 @@ public interface ConversationRepositoryCustom {
 
     List<Conversation> searchByCursor(ConversationSearchCondition condition);
 
-    Long countByUserId(Long userId);
+    Long countByCursor(ConversationSearchCondition condition);
 }

@@ -137,7 +137,7 @@ public class DirectMessageService {
         );
 
         List<Conversation> conversations = conversationRepository.searchByCursor(condition);
-        Long totalCount = conversationRepository.countByUserId(requester.getId());
+        Long totalCount = conversationRepository.countByCursor(condition);
 
         // conversation 상대방 찾기 ( key = conversationId )
         Map<Long, User> counterpartMap = findCounterpartUserByConversations(requester, conversations);
@@ -171,7 +171,7 @@ public class DirectMessageService {
         );
 
         List<DirectMessage> directMessages = directMessageRepository.searchByCursor(condition);
-        Long totalCount = directMessageRepository.countByConversationId(conversation.getId());
+        Long totalCount = directMessageRepository.countByCursor(condition);
 
         CursorResult<DirectMessage> cursorResult = getCursorResult(directMessages, request.limit());
         List<DirectMessageDto> data = toDirectMessageDtos(cursorResult.items(), requester, other);
