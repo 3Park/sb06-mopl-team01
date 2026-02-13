@@ -44,7 +44,7 @@ public class ContentQueryService {
         content.tags(),
         content.averageRating(),
         content.reviewCount(),
-        watchTogetherService.getWatcherCount(String.valueOf(content.id()))
+        watchTogetherService.getWatcherCount(String.valueOf(content.uuid()))
     );
 
   }

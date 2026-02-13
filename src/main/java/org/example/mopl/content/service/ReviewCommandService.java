@@ -93,14 +93,23 @@ public class ReviewCommandService {
       throw new UnauthorizedReviewException(email);
     }
 
-    review.update(request.text(), request.rating());
-
+    // 기존 평점 삭제 이벤트 발행
     eventPublisher.publishEvent(
-        RatingEvent.DecreaseRatingEvent.of(review.getContent().getId(), review.getUuid(), review.getRating())
+        RatingEvent.DecreaseRatingEvent.of(
+            review.getContent().getId(),
+            review.getUuid(),
+            review.getRating())
     );
 
+    // 리뷰 정보 업데이트
+    review.update(request.text(), request.rating());
+
+    // 변경된 리뷰의 평점 추가 이벤트 발행
     eventPublisher.publishEvent(
-        RatingEvent.IncreaseRatingEvent.of(review.getContent().getId(), review.getUuid(), request.rating())
+        RatingEvent.IncreaseRatingEvent.of(
+            review.getContent().getId(),
+            review.getUuid(),
+            request.rating())
     );
 
     return ReviewDto.of(
