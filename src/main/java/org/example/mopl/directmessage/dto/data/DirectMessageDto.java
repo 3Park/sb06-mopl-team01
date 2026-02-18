@@ -12,7 +12,8 @@ public record DirectMessageDto(
         LocalDateTime createdAt,
         SimpleUserDto sender,
         SimpleUserDto receiver,
-        String content
+        String content,
+        boolean isRead
 ) {
     public static DirectMessageDto from(DirectMessage directMessage, User sender, User receiver) {
         return new DirectMessageDto(directMessage.getUuid(),
@@ -20,7 +21,8 @@ public record DirectMessageDto(
                 directMessage.getCreatedAt(),
                 SimpleUserDto.from(sender),
                 SimpleUserDto.from(receiver),
-                directMessage.getContent()
+                directMessage.getContent(),
+                directMessage.isRead()
         );
     }
 }
