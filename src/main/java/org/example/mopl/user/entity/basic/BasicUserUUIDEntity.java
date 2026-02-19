@@ -2,6 +2,7 @@ package org.example.mopl.user.entity.basic;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.MappedSuperclass;
+import jakarta.persistence.PrePersist;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
@@ -16,11 +17,17 @@ import java.util.UUID;
 @MappedSuperclass
 public class BasicUserUUIDEntity extends BasicUserEntity{
 
-    @UuidGenerator
     @Column(name = "uuid", nullable = false, unique = true)
     protected UUID uuid;
 
     @LastModifiedDate
     @Column(name = "updated_at")
     protected Instant updatedAt;
+
+    @PrePersist
+    public void prePersist() {
+        if (this.uuid == null) {
+            this.uuid = UUID.randomUUID();
+        }
+    }
 }
