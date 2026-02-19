@@ -96,12 +96,31 @@ public class ContentCommandService {
   }
 
   @Transactional
-  public ContentDto updateContent(UUID contentId, ContentUpdateRequest request) {
+  public ContentDto updateContent(UUID contentId, ContentUpdateRequest request, MultipartFile thumbnail) {
 
     // content 업데이트
     Content content = contentQueryRepository.findByUuid(contentId)
         .orElseThrow(() -> new NoSuchContentException(contentId.toString()));
     content.update(request.title(), request.description());
+
+    // 썸네일 업로드한 경우에만 URL 업데이트
+
+    if (!thumbnail.isEmpty()) {
+      try {
+        UUID fileUuid = UUID.randomUUID();
+        String thumbnailUrl = contentS3Client.putObject(
+            String.valueOf(fileUuid),
+            S3FileDto.of(
+                thumbnail.getOriginalFilename(),
+                thumbnail.getContentType(),
+                thumbnail.getBytes()
+            )
+        );
+        content.updateThumbnailUrl(thumbnailUrl);
+      } catch (IOException e) {
+        throw new S3UploadFailedException(request.title());
+      }
+    }
 
     //태그 매핑 일괄 삭제
     contentTagCommandService.deleteByContentId(content.getId());
@@ -117,6 +136,9 @@ public class ContentCommandService {
 
     ContentWithTagsResult contentWithTagsResult = contentQueryRepository.findByUuidWithContentTag(contentId)
         .orElseThrow(() -> new NoSuchContentException(contentId.toString()));
+
+    // Todo: 이전 썸네일 S3에서 삭제하기
+
 
     return ContentDto.of(
         contentWithTagsResult.uuid(),

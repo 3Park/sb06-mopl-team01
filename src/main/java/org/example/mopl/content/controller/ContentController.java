@@ -60,9 +60,11 @@ public class ContentController {
   @PreAuthorize("hasRole('ADMIN')")
   @PatchMapping("/{contentId}")
   public ResponseEntity<ContentDto> updateContentById(
-      @PathVariable UUID contentId, @Valid @RequestBody ContentUpdateRequest request
+      @PathVariable UUID contentId,
+      @Valid @RequestPart("request") ContentUpdateRequest request,
+      @RequestPart("thumbnail") MultipartFile thumbnail
   ) {
-    return ResponseEntity.ok(contentCommandService.updateContent(contentId, request));
+    return ResponseEntity.ok(contentCommandService.updateContent(contentId, request, thumbnail));
   }
 
   // 콘텐츠 삭제
