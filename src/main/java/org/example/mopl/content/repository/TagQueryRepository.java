@@ -7,6 +7,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.example.mopl.content.entity.QTag;
 import org.example.mopl.content.entity.Tag;
@@ -38,12 +39,11 @@ public class TagQueryRepository {
 
   public Map<String, Tag> findAllMapByNameIn(List<String> tagName) {
 
-    return queryFactory.from(QTag.tag)
+    return queryFactory.selectFrom(QTag.tag)
         .where(QTag.tag.name.in(tagName))
-        .transform(
-            groupBy(QTag.tag.name)
-                .as(QTag.tag)
-        );
+        .fetch()
+        .stream()
+        .collect(Collectors.toMap(Tag::getName, tag -> tag));
 
   }
 
