@@ -69,11 +69,6 @@ public class DirectMessageService {
         log.info("메시지 전송 완료, messageId={}", directMessage.getUuid());
 
     }
-    private boolean isParticipantOffline(Conversation conversation, User user) {
-        String redisKey = "conversation:" + conversation.getUuid() + ":participants";
-        return Boolean.FALSE.equals(
-                redisTemplate.opsForSet().isMember(redisKey, user.getUuid().toString()));
-    }
 
     // 대화 생성
     @Transactional
@@ -293,6 +288,12 @@ public class DirectMessageService {
     }
     private String resolveDestination(UUID conversationUuid) {
         return "/sub/conversations/" + conversationUuid + "/direct-messages";
+    }
+    // DM - 상대방의 현재 대화방 접속 여부 확인
+    private boolean isParticipantOffline(Conversation conversation, User user) {
+        String redisKey = "conversation:" + conversation.getUuid() + ":participants";
+        return Boolean.FALSE.equals(
+                redisTemplate.opsForSet().isMember(redisKey, user.getUuid().toString()));
     }
     private <T extends BaseEntity> CursorResult<T> getCursorResult(
             List<T> items, int limit) {
