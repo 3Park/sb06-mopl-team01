@@ -10,6 +10,7 @@ import org.example.mopl.content.dto.request.ContentUpdateRequest;
 import org.example.mopl.content.dto.response.ContentDto;
 import org.example.mopl.content.entity.Content;
 import org.example.mopl.content.event.CreateContentEvent;
+import org.example.mopl.content.event.DeleteS3ObjectEvent;
 import org.example.mopl.content.exception.NoSuchContentException;
 import org.example.mopl.content.exception.S3UploadFailedException;
 import org.example.mopl.content.mapper.ContentMapper;
@@ -104,7 +105,7 @@ public class ContentCommandService {
     content.update(request.title(), request.description());
 
     // 썸네일 업로드한 경우에만 URL 업데이트
-
+    String currentThumbnailUrl = content.getThumbnailUrl();
     if (!thumbnail.isEmpty()) {
       try {
         UUID fileUuid = UUID.randomUUID();
@@ -137,8 +138,10 @@ public class ContentCommandService {
     ContentWithTagsResult contentWithTagsResult = contentQueryRepository.findByUuidWithContentTag(contentId)
         .orElseThrow(() -> new NoSuchContentException(contentId.toString()));
 
-    // Todo: 이전 썸네일 S3에서 삭제하기
-
+    // 이전 썸네일 S3에서 삭제하기
+    eventPublisher.publishEvent(
+        DeleteS3ObjectEvent.of(currentThumbnailUrl)
+    );
 
     return ContentDto.of(
         contentWithTagsResult.uuid(),
