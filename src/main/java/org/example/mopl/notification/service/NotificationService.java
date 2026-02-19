@@ -14,12 +14,14 @@ import org.example.mopl.notification.exception.NotificationForbiddenException;
 import org.example.mopl.notification.exception.NotificationNotFoundException;
 import org.example.mopl.notification.repository.NotificationRepository;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -28,12 +30,14 @@ public class NotificationService {
 
     private final NotificationRepository notificationRepository;
     private final ApplicationEventPublisher applicationEventPublisher;
+    private final StringRedisTemplate redisTemplate;
 
     @Transactional
     public void create(UUID receiverId, String title, String content, Level level) {
 
         Notification notification = Notification.of(receiverId, title, content, level);
         notification = notificationRepository.save(notification);
+        increaseCount(receiverId);
 
         NotificationDto notificationDto = NotificationDto.from(notification);
         applicationEventPublisher.publishEvent(NotificationCreatedEvent.of(notificationDto));
@@ -49,6 +53,8 @@ public class NotificationService {
         validateOwnership(notification, receiverId);
 
         notificationRepository.delete(notification);
+        decreaseCount(receiverId);
+
         log.info("알림 삭제 완료: notificationId={}", notificationId);
     }
 
@@ -65,7 +71,7 @@ public class NotificationService {
 
         List<Notification> notifications = notificationRepository.searchByCursor(condition);
 
-        Long totalCount = notificationRepository.countByReceiverId(receiverId);
+        Long totalCount = getUnreadCount(receiverId);
 
         CursorResult cursorResult = getCursorResult(notifications, request.limit());
 
@@ -80,6 +86,30 @@ public class NotificationService {
                 .hasNext(cursorResult.hasNext()).totalCount(totalCount)
                 .sortBy(request.sortBy()).sortDirection(request.sortDirection())
                 .build();
+    }
+
+    private Long getUnreadCount(UUID userId) {
+        String key = "notification:count:" + userId;
+
+        String cacheCount = redisTemplate.opsForValue().get(key);
+
+        if (cacheCount != null) {
+            return Long.parseLong(cacheCount);
+        }
+
+        Long dbCount = notificationRepository.countByReceiverId(userId);
+        redisTemplate.opsForValue().set(key, dbCount.toString(), 1, TimeUnit.HOURS);
+        return dbCount;
+    }
+
+    private void increaseCount(UUID receiverId) {
+        String key = "notification:count:" + receiverId;
+        redisTemplate.opsForValue().increment(key);
+    }
+
+    private void decreaseCount(UUID receiverId) {
+        String key = "notification:count:" + receiverId;
+        redisTemplate.opsForValue().decrement(key);
     }
 
     private Notification getNotification(UUID notificationId) {

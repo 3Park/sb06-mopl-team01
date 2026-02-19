@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.example.mopl.directmessage.dto.ConversationSearchCondition;
 import org.example.mopl.directmessage.dto.CursorResult;
 import org.example.mopl.directmessage.dto.DirectMessageSearchCondition;
+import org.example.mopl.directmessage.dto.ReadReceiptDto;
 import org.example.mopl.directmessage.dto.data.ConversationDto;
 import org.example.mopl.directmessage.dto.request.ConversationListRequest;
 import org.example.mopl.directmessage.dto.request.DirectMessageListRequest;
@@ -14,6 +15,7 @@ import org.example.mopl.directmessage.dto.response.CursorResponseDirectMessageDt
 import org.example.mopl.directmessage.entity.BaseEntity;
 import org.example.mopl.directmessage.entity.Conversation;
 import org.example.mopl.directmessage.entity.DirectMessage;
+import org.example.mopl.directmessage.enums.Type;
 import org.example.mopl.directmessage.exception.ConversationForbiddenException;
 import org.example.mopl.directmessage.exception.ConversationNotFoundException;
 import org.example.mopl.directmessage.exception.DirectMessageNotFoundException;
@@ -89,6 +91,11 @@ public class DirectMessageService {
         DirectMessage lastDirectMessage = getDirectMessage(lastDirectMessageId);
 
         markAsReadMessages(conversation, requester, lastDirectMessage);
+
+        // 대화방 상대에게 읽은 사실 실시간 전송
+        ReadReceiptDto readReceiptDto = ReadReceiptDto.of(
+                Type.READ, conversationId, lastDirectMessageId, requesterId);
+        messagingTemplate.convertAndSend(resolveDestination(conversationId), readReceiptDto);
 
         log.info("DM 읽음 처리 완료, directMessageId={}", lastDirectMessageId);
     }
