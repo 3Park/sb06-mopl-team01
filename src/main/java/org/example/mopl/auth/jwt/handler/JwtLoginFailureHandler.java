@@ -1,6 +1,7 @@
 package org.example.mopl.auth.jwt.handler;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.nimbusds.oauth2.sdk.OAuth2Error;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -11,6 +12,7 @@ import org.example.mopl.auth.exception.AuthException;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.LockedException;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.security.web.authentication.AuthenticationFailureHandler;
 import org.springframework.stereotype.Component;
 
@@ -30,7 +32,7 @@ public class JwtLoginFailureHandler implements AuthenticationFailureHandler {
         response.setCharacterEncoding("UTF-8");
 
         AuthErrorCode errorCode = AuthErrorCode.INVALID_USER_CREDENTIALS;
-        if(exception.getClass().equals(LockedException.class)) {
+        if(exception.getClass().equals(LockedException.class) || exception.getClass().equals(OAuth2AuthenticationException.class)) {
             errorCode = AuthErrorCode.INVALID_USER;
         }
 
