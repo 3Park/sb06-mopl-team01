@@ -149,9 +149,9 @@ public class ContentCommandService {
         .orElseThrow(() -> new NoSuchContentException(contentId.toString()));
 
     // 이전 썸네일 S3에서 삭제하기
-    eventPublisher.publishEvent(
-        DeleteS3ObjectEvent.of(currentThumbnailUrl)
-    );
+    if (thumbnail != null && !thumbnail.isEmpty()) {
+      contentS3Client.deleteObject(currentThumbnailUrl);
+    }
 
     return ContentDto.of(
         contentWithTagsResult.uuid(),
