@@ -26,6 +26,7 @@ import org.example.mopl.event.message.DmMessageReceivedKafkaEvent;
 import org.example.mopl.user.entity.User;
 import org.example.mopl.user.repository.UserRepository;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -43,6 +44,7 @@ public class DirectMessageService {
     private final UserRepository userRepository;
     private final SimpMessagingTemplate messagingTemplate;
     private final ApplicationEventPublisher eventPublisher;
+    private final StringRedisTemplate redisTemplate;
 
     // DM 생성 및 전송
     @Transactional
@@ -58,11 +60,19 @@ public class DirectMessageService {
 
         sendToSocket(conversationUuid, directMessage, sender, receiver);
 
-        eventPublisher.publishEvent(DmMessageReceivedKafkaEvent.of(
-                receiver.getUuid(), sender.getProfile().getName(), content));
+        // 상대방이 대화방 접속 중이 아니면 DM 알림 발송
+        if (isParticipantOffline(conversation, receiver)) {
+            eventPublisher.publishEvent(DmMessageReceivedKafkaEvent.of(
+                    receiver.getUuid(), sender.getProfile().getName(), content));
+        }
 
         log.info("메시지 전송 완료, messageId={}", directMessage.getUuid());
 
+    }
+    private boolean isParticipantOffline(Conversation conversation, User user) {
+        String redisKey = "conversation:" + conversation.getUuid() + ":participants";
+        return Boolean.FALSE.equals(
+                redisTemplate.opsForSet().isMember(redisKey, user.getUuid().toString()));
     }
 
     // 대화 생성
