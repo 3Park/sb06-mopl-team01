@@ -110,6 +110,16 @@ public class UserService {
         return userRepository.existsUserByEmail(email);
     }
 
+    @Transactional(readOnly = true)
+    public boolean blockedUSer(String email)
+    {
+        User user = userRepository.findUserByEmail(email).orElse(null);
+        if(user != null && user.getLocked())
+            return true;
+
+        return false;
+    }
+
     @Transactional
     public void changePassword(Authentication authentication, UUID userId, String newPassword)
     {

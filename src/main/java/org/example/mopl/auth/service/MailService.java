@@ -14,7 +14,7 @@ public class MailService {
     private final MailSenderService mailService;
 
     public void sendResetPasswordMail(String email) {
-        if(authPort.invalidEmail(email)) {
+        if(authPort.exsistUser(email)) {
             throw new AuthException((AuthErrorCode.INVALID_EMAIL));
         }
 

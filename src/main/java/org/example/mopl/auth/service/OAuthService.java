@@ -10,6 +10,7 @@ import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserServ
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserService;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
+import org.springframework.security.oauth2.core.OAuth2Error;
 import org.springframework.security.oauth2.core.user.DefaultOAuth2User;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
@@ -39,11 +40,22 @@ public class OAuthService implements OAuth2UserService<OAuth2UserRequest, OAuth2
         OAuth2User oAuth2User = oAuth2UserService.loadUser(userRequest);
         Map<String,Object> attributes = oAuth2User.getAttributes();
 
+        OAuth2User user = null;
+
         if(type == OAuthType.GOOGLE) {
-            return  googleLogin(attributes);
+            user =  googleLogin(attributes);
         }
 
-        return kakaoLogin(attributes);
+        user = kakaoLogin(attributes);
+
+        String email = getValue(user.getAttributes(), "email");
+        if(authAdapter.blockedUser(email))
+        {
+            OAuth2Error error = new OAuth2Error("invalid_user","허용되지 않은 사용자 입니다.",null);
+            throw new OAuth2AuthenticationException(error);
+        }
+
+        return user;
     }
 
     private DefaultOAuth2User googleLogin(Map<String,Object> attributes) {
@@ -58,7 +70,7 @@ public class OAuthService implements OAuth2UserService<OAuth2UserRequest, OAuth2
             name = getUniqueId(attributes, OAuthType.GOOGLE) + "_gmail_user";
         }
 
-        if(authAdapter.invalidEmail(email))
+        if(authAdapter.exsistUser(email))
         {
             publisher.publishEvent(OAuthUserCreateEvent.builder()
                     .email(email)
@@ -80,7 +92,7 @@ public class OAuthService implements OAuth2UserService<OAuth2UserRequest, OAuth2
 
         String email = getUniqueId(attributes, OAuthType.KAKAO) + "@OAuthKakao.com";
 
-        if(authAdapter.invalidEmail(email))
+        if(authAdapter.exsistUser(email))
         {
             publisher.publishEvent(OAuthUserCreateEvent.builder()
                     .email(email)

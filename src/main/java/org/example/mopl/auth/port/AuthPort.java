@@ -1,5 +1,7 @@
 package org.example.mopl.auth.port;
 
 public interface AuthPort {
-    boolean invalidEmail(String email);
+    boolean exsistUser(String email);
+
+    boolean blockedUser(String email);
 }
