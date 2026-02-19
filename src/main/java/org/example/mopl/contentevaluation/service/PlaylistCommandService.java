@@ -3,6 +3,7 @@ package org.example.mopl.contentevaluation.service;
 import java.util.ArrayList;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.example.mopl.content.exception.NoSuchAuthorException;
 import org.example.mopl.contentevaluation.dto.request.PlaylistCreateRequest;
 import org.example.mopl.contentevaluation.dto.request.PlaylistUpdateRequest;
@@ -25,6 +26,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class PlaylistCommandService {
@@ -61,7 +63,6 @@ public class PlaylistCommandService {
           savedPlaylist.getDescription()
       )
     );
-
 
     return PlaylistDto.of(
         savedPlaylist.getUuid(),

@@ -53,16 +53,19 @@ public class ContentController {
       @Valid @RequestPart("request") ContentCreateRequest request,
       @RequestPart("thumbnail") MultipartFile thumbnail
   ) {
-    return ResponseEntity.ok(contentCommandService.createContent(request, thumbnail));
+    return ResponseEntity.status(201)
+        .body(contentCommandService.createContent(request, thumbnail));
   }
 
   // 콘텐츠 수정
   @PreAuthorize("hasRole('ADMIN')")
   @PatchMapping("/{contentId}")
   public ResponseEntity<ContentDto> updateContentById(
-      @PathVariable UUID contentId, @Valid @RequestBody ContentUpdateRequest request
+      @PathVariable UUID contentId,
+      @Valid @RequestPart("request") ContentUpdateRequest request,
+      @RequestPart(value = "thumbnail", required = false) MultipartFile thumbnail
   ) {
-    return ResponseEntity.ok(contentCommandService.updateContent(contentId, request));
+    return ResponseEntity.ok(contentCommandService.updateContent(contentId, request, thumbnail));
   }
 
   // 콘텐츠 삭제

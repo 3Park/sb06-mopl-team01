@@ -63,7 +63,8 @@ public class PlaylistController {
       @AuthenticationPrincipal CustomUserDetails userDetails,
       @Valid @RequestBody PlaylistCreateRequest request
   ) {
-    return ResponseEntity.ok(playlistCommandService.createPlaylist(userDetails.getUserDto().getEmail(), request));
+    return ResponseEntity.status(201)
+        .body(playlistCommandService.createPlaylist(userDetails.getUserDto().getEmail(), request));
   }
 
   // 플레이리스트 구독

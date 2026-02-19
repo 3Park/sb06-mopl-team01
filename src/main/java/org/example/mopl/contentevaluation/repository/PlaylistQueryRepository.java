@@ -245,7 +245,7 @@ public class PlaylistQueryRepository {
 
     // 구독자 ID
     if (request.subscriberIdEqual() != null) {
-      builder.and(QPlaylist.playlist.user.uuid.eq(request.subscriberIdEqual()));
+      builder.and(QPlaylist.playlist.id.eq(QSubscribe.subscribe.playlist.id));
     }
 
     return builder;
