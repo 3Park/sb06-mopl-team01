@@ -6,7 +6,6 @@ import java.time.Instant;
 import java.util.UUID;
 import lombok.Getter;
 import lombok.Setter;
-import org.hibernate.annotations.UuidGenerator;
 import org.springframework.data.annotation.LastModifiedDate;
 
 @Getter
@@ -14,9 +13,8 @@ import org.springframework.data.annotation.LastModifiedDate;
 @MappedSuperclass
 public class BasicContentEvaluationUuidEntity extends BasicContentEvaluationEntity{
 
-  @UuidGenerator
   @Column(name = "uuid", nullable = false, unique = true)
-  protected UUID uuid;
+  protected UUID uuid = UUID.randomUUID();
 
   @LastModifiedDate
   @Column(name = "updated_at")
