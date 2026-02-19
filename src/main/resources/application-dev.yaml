@@ -100,6 +100,9 @@ content:
       url: https://www.thesportsdb.com/api/v1/json
 
 management:
+  metrics:
+    tags:
+      application: ${spring.application.name}
   endpoints:
     web:
       exposure:
