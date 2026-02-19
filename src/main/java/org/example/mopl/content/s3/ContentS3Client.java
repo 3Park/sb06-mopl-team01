@@ -3,6 +3,7 @@ package org.example.mopl.content.s3;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.example.mopl.content.dto.S3FileDto;
@@ -69,9 +70,13 @@ public class ContentS3Client {
 
   }
 
-  public String getPresignedUrl(String id) {
+  public Optional<String> getPresignedUrl(String id) {
 
-    checkIfObjectExists(id);
+    try {
+      checkIfObjectExists(id);
+    } catch (NoSuchS3ObjectException e) {
+      return Optional.of("");
+    }
 
     GetObjectPresignRequest getObjectPresignRequest = GetObjectPresignRequest.builder()
         .signatureDuration(Duration.parse(presignedUrlExpiration))
@@ -80,8 +85,8 @@ public class ContentS3Client {
         )
         .build();
 
-    return s3Presigner.presignGetObject(getObjectPresignRequest)
-        .url().toString();
+    return Optional.ofNullable(s3Presigner.presignGetObject(getObjectPresignRequest)
+        .url().toString());
   }
 
   private Map<String, Object> detailMap(String key, Object value) {

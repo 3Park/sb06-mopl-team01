@@ -10,6 +10,7 @@ import org.example.mopl.content.dto.request.ContentUpdateRequest;
 import org.example.mopl.content.dto.response.ContentDto;
 import org.example.mopl.content.entity.Content;
 import org.example.mopl.content.event.CreateContentEvent;
+import org.example.mopl.content.event.DeleteS3ObjectEvent;
 import org.example.mopl.content.exception.NoSuchContentException;
 import org.example.mopl.content.exception.S3UploadFailedException;
 import org.example.mopl.content.mapper.ContentMapper;
@@ -96,27 +97,54 @@ public class ContentCommandService {
   }
 
   @Transactional
-  public ContentDto updateContent(UUID contentId, ContentUpdateRequest request) {
+  public ContentDto updateContent(UUID contentId, ContentUpdateRequest request, MultipartFile thumbnail) {
 
     // content 업데이트
     Content content = contentQueryRepository.findByUuid(contentId)
         .orElseThrow(() -> new NoSuchContentException(contentId.toString()));
     content.update(request.title(), request.description());
 
-    //태그 매핑 일괄 삭제
+    // 썸네일 업로드한 경우에만 URL 업데이트
+    String currentThumbnailUrl = content.getThumbnailUrl();
+    if (thumbnail != null && !thumbnail.isEmpty()) {
+      try {
+        UUID fileUuid = UUID.randomUUID();
+        String thumbnailUrl = contentS3Client.putObject(
+            String.valueOf(fileUuid),
+            S3FileDto.of(
+                thumbnail.getOriginalFilename(),
+                thumbnail.getContentType(),
+                thumbnail.getBytes()
+            )
+        );
+        content.updateThumbnailUrl(thumbnailUrl);
+      } catch (IOException e) {
+        throw new S3UploadFailedException(request.title());
+      }
+    }
+
+    // 기존 태그 매핑 삭제
     contentTagCommandService.deleteByContentId(content.getId());
 
     // 태그 생성
     tagCommandService.createTags(request.tags());
 
-    // 태그 매핑 생성
-    contentTagCommandService.createContentTags(content, request.tags());
+    // 새로운 ContentTag 매핑 저장
+    contentTagCommandService.createContentTags(
+        content,
+        request.tags()
+    );
 
     // 콘텐츠 저장
     contentCommandRepository.save(content);
 
     ContentWithTagsResult contentWithTagsResult = contentQueryRepository.findByUuidWithContentTag(contentId)
         .orElseThrow(() -> new NoSuchContentException(contentId.toString()));
+
+    // 이전 썸네일 S3에서 삭제하기
+    if (thumbnail != null && !thumbnail.isEmpty()) {
+      contentS3Client.deleteObject(currentThumbnailUrl);
+    }
 
     return ContentDto.of(
         contentWithTagsResult.uuid(),
