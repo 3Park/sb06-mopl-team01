@@ -82,7 +82,7 @@ public class PlaylistQueryService {
                     content.getContent().getContentType().getValue(),
                     content.getContent().getTitle(),
                     content.getContent().getDescription(),
-                    contentS3Client.getPresignedUrl(content.getContent().getThumbnailUrl()),
+                    contentS3Client.getPresignedUrl(content.getContent().getThumbnailUrl()).get(),
                     contentTagsMap.getOrDefault(content.getContent().getId(), List.of()),
                     contentsStatMap.containsKey(content.getContent().getId()) ?
                         contentsStatMap.get(content.getContent().getId()).getRatingAverage() : 0.0,
@@ -146,7 +146,7 @@ public class PlaylistQueryService {
                         content.getContent().getContentType().getValue(),
                         content.getContent().getTitle(),
                         content.getContent().getDescription(),
-                        contentS3Client.getPresignedUrl(content.getContent().getThumbnailUrl()),
+                        contentS3Client.getPresignedUrl(content.getContent().getThumbnailUrl()).get(),
                         contentTagsMap.getOrDefault(content.getContent().getId(), List.of()),
                         contentsStatMap.containsKey(content.getContent().getId()) ?
                             contentsStatMap.get(content.getContent().getId()).getRatingAverage() : 0.0,
