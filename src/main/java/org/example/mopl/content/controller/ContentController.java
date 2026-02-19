@@ -53,7 +53,8 @@ public class ContentController {
       @Valid @RequestPart("request") ContentCreateRequest request,
       @RequestPart("thumbnail") MultipartFile thumbnail
   ) {
-    return ResponseEntity.ok(contentCommandService.createContent(request, thumbnail));
+    return ResponseEntity.status(201)
+        .body(contentCommandService.createContent(request, thumbnail));
   }
 
   // 콘텐츠 수정
