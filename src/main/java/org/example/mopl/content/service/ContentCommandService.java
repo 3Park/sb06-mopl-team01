@@ -123,14 +123,24 @@ public class ContentCommandService {
       }
     }
 
-    //태그 매핑 일괄 삭제
-    contentTagCommandService.deleteByContentId(content.getId());
+    if (request.tags() != null && !request.tags().isEmpty()) {
 
-    // 태그 생성
-    tagCommandService.createTags(request.tags());
+      // 기존 태그 매핑 삭제
+      contentTagCommandService.deleteByContentId(content.getId());
 
-    // 태그 매핑 생성
-    contentTagCommandService.createContentTags(content, request.tags());
+      // 태그 생성
+      tagCommandService.createTags(request.tags());
+
+      // 기존 ContentTag 매핑 삭제
+      contentTagCommandService.deleteByContentId(content.getId());
+
+      // 새로운 ContentTag 매핑 저장
+      contentTagCommandService.createContentTags(
+          content,
+          request.tags()
+      );
+
+    }
 
     // 콘텐츠 저장
     contentCommandRepository.save(content);
