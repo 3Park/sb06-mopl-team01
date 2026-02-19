@@ -11,12 +11,10 @@ import org.example.mopl.auth.exception.AuthErrorCode;
 import org.example.mopl.auth.exception.AuthException;
 import org.example.mopl.auth.jwt.JwtTokenProvider;
 import org.example.mopl.auth.jwt.TokenUtils;
-import org.example.mopl.auth.service.AuthService;
 import org.example.mopl.user.enums.UserRoleType;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.core.user.DefaultOAuth2User;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
-import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -27,7 +25,6 @@ public class OAuthSuccessHandler implements AuthenticationSuccessHandler {
 
     private final JwtTokenProvider jwtTokenProvider;
     private final TokenUtils tokenUtils;
-    private final AuthService authService;
 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException, ServletException {

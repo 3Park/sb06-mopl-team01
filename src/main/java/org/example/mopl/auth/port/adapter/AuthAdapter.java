@@ -15,12 +15,17 @@ public class AuthAdapter implements AuthPort {
     private final TemporaryPasswordService temporaryPasswordService;
 
     @Override
-    public boolean invalidEmail(String email) {
+    public boolean exsistUser(String email) {
         if(StringUtils.hasText(email)
             && userService.existsUserByEmail(email)
         )
             return false;
 
         return true;
+    }
+
+    @Override
+    public boolean blockedUser(String email) {
+       return userService.blockedUSer(email);
     }
 }
