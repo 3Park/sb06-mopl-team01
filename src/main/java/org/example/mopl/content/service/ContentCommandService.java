@@ -106,7 +106,7 @@ public class ContentCommandService {
 
     // 썸네일 업로드한 경우에만 URL 업데이트
     String currentThumbnailUrl = content.getThumbnailUrl();
-    if (!thumbnail.isEmpty()) {
+    if (thumbnail != null && !thumbnail.isEmpty()) {
       try {
         UUID fileUuid = UUID.randomUUID();
         String thumbnailUrl = contentS3Client.putObject(
