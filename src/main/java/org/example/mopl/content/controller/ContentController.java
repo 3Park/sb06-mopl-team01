@@ -63,7 +63,7 @@ public class ContentController {
   public ResponseEntity<ContentDto> updateContentById(
       @PathVariable UUID contentId,
       @Valid @RequestPart("request") ContentUpdateRequest request,
-      @RequestPart("thumbnail") MultipartFile thumbnail
+      @RequestPart(value = "thumbnail", required = false) MultipartFile thumbnail
   ) {
     return ResponseEntity.ok(contentCommandService.updateContent(contentId, request, thumbnail));
   }
