@@ -32,11 +32,6 @@ public class ContentBatchScheduler {
   private final ContentsWatchingCountBatchConfig contentsWatchingCountBatchConfig;
 
   // 데드락 예외 발생 시 재시도 설정
-  @Retryable(
-      retryFor = {PessimisticLockingFailureException.class},
-      maxAttempts = 5, // 실행 간격이 길기 때문에 5회
-      backoff = @Backoff(delay = 5000, multiplier = 2.0)
-  )
   @Async("batchTaskExecutor")
   @Scheduled(cron = "0 5 2 * * ?") // 매일 새벽 2시 5분에 실행
   //@Scheduled(initialDelay = 10000, fixedRate = 86400000) // 24 hours
@@ -66,11 +61,6 @@ public class ContentBatchScheduler {
   }
 
   // 데드락 예외 발생 시 재시도 설정
-  @Retryable(
-      retryFor = {PessimisticLockingFailureException.class},
-      maxAttempts = 3,
-      backoff = @Backoff(delay = 5000, multiplier = 2.0)
-  )
   @Async("batchTaskExecutor")
   @Scheduled(cron = "0 */30 * * * ?") // 매 30분마다 실행
   public void runContentsWatchingCountJob() {
