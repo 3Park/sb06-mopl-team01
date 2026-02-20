@@ -1,6 +1,5 @@
 package org.example.mopl.watchtogether.model;
 
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.example.mopl.user.dto.UserDto;
