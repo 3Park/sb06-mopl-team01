@@ -35,7 +35,7 @@ public class AuthService {
         String userRole = userDetails.getUserDto().getRole();
 
         String newAccessToken = jwtTokenProvider.generateAccessToken(userEmail, userRole);
-        String newRefreshToken = jwtTokenProvider.generateAccessToken(userEmail, userRole);
+        String newRefreshToken = jwtTokenProvider.generateRefreshToken(userEmail, userRole);
 
         repository.save(userEmail, newRefreshToken);
 
