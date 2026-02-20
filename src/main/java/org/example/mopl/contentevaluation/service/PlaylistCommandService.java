@@ -20,6 +20,7 @@ import org.example.mopl.contentevaluation.repository.PlaylistQueryRepository;
 import org.example.mopl.contentevaluation.repository.PlaylistsStatCommandRepository;
 import org.example.mopl.contentevaluation.repository.PlaylistsStatQueryRepository;
 import org.example.mopl.event.message.PlaylistCreatedKafkaEvent;
+import org.example.mopl.profile.repository.FollowRepository;
 import org.example.mopl.user.entity.User;
 import org.example.mopl.user.repository.UserRepository;
 import org.springframework.context.ApplicationEventPublisher;
@@ -36,6 +37,7 @@ public class PlaylistCommandService {
   private final PlaylistContentCommandRepository playlistContentCommandRepository;
   private final PlaylistsStatCommandRepository playlistsStatCommandRepository;
   private final PlaylistsStatQueryRepository playlistsStatQueryRepository;
+  private final FollowRepository followRepository;
   private final UserRepository userRepository;
   private final ApplicationEventPublisher eventPublisher;
 
@@ -57,7 +59,9 @@ public class PlaylistCommandService {
     // 팔로우 중인 사용자에게 플레이리스트 생성 알림
     eventPublisher.publishEvent(
         PlaylistCreatedKafkaEvent.of(
-          user.getUuid(),
+          followRepository.findAllByFolloweeIdWithFollower(
+              user.getId()
+          ).stream().map(follow -> follow.getFollower().getUuid()).toList(),
           user.getProfile().getName(),
           savedPlaylist.getTitle(),
           savedPlaylist.getDescription()
