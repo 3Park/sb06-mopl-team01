@@ -10,6 +10,7 @@ import org.example.mopl.notification.service.NotificationService;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
 import java.util.UUID;
 
 @Slf4j
@@ -78,12 +79,18 @@ public class NotificationRequiredEventListener {
         try {
             PlaylistCreatedKafkaEvent event = objectMapper.readValue(kafkaEvent, PlaylistCreatedKafkaEvent.class);
 
-            UUID receiverId = event.receiverId();
+            List<UUID> receiverIds = event.receiverIds();
+            if (receiverIds == null || receiverIds.isEmpty()) {
+                return;
+            }
+
             String title = event.creatorName() + "님이 플레이리스트를 만들었어요.";
             String content = "[" + event.playlistTitle() + "] " + event.playlistDescription();
             Level level = Level.INFO;
 
-            notificationService.create(receiverId, title, content, level);
+            for (UUID receiverId : receiverIds) {
+                notificationService.create(receiverId, title, content, level);
+            }
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }
