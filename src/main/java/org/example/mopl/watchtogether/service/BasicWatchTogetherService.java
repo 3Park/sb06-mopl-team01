@@ -3,6 +3,7 @@ package org.example.mopl.watchtogether.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.example.mopl.common.exception.MoplException;
+import org.example.mopl.content.dto.response.ContentDto;
 import org.example.mopl.content.entity.Content;
 import org.example.mopl.content.exception.NoSuchContentException;
 import org.example.mopl.content.repository.ContentCommandRepository;
@@ -165,7 +166,7 @@ public class BasicWatchTogetherService implements WatchTogetherService {
                 .id(contentId)
                 .createdAt(session.getCreatedAt())
                 .watcher(session.getWatcher())
-                .content(content)
+                .content(toDto(content))
                 .build();
     }
 
@@ -183,14 +184,11 @@ public class BasicWatchTogetherService implements WatchTogetherService {
                 .orElseThrow(() -> new NoSuchContentException(contentId));
 
         String roomKey = String.format(KEY_ROOM_WATCHERS, contentId);
+        String userKey = String.format(KEY_USER_SESSION,idAfter);
+
         long totalCount = getWatcherCount(contentId);
 
-        Set<String> sessionIds;
-        if (ASCENDING.equals(sortDirection)) {
-            sessionIds = stringRedisTemplate.opsForZSet().range(roomKey, 0, -1);
-        } else {
-            sessionIds = stringRedisTemplate.opsForZSet().reverseRange(roomKey, 0, -1);
-        }
+        List<String> sessionIds = filterSessionIds(roomKey,userKey,limit,sortDirection);
 
         if (sessionIds == null || sessionIds.isEmpty()) {
             return CursorResponseWatchingSessionDto.toDto(Collections.emptyList(), limit, totalCount, sortBy, sortDirection);
@@ -198,7 +196,9 @@ public class BasicWatchTogetherService implements WatchTogetherService {
 
         List<WatchingSession> sessions = getWatchingSessionsByIds(sessionIds);
 
-        List<WatchingSessionDto> data = filterData(sessions, cursor, idAfter, limit, content);
+        List<WatchingSessionDto> data = sessions.stream()
+                .map(watchingSession -> new WatchingSessionDto(watchingSession,toDto(content)))
+                .toList();
 
         return CursorResponseWatchingSessionDto.toDto(data, limit, totalCount, sortBy, sortDirection);
     }
@@ -223,10 +223,10 @@ public class BasicWatchTogetherService implements WatchTogetherService {
         stringRedisTemplate.opsForValue().set(userKey, sessionId, SESSION_TTL);
 
         // 방 명단에 추가 - StringRedisTemplate 사용
-        stringRedisTemplate.opsForZSet().add(roomKey, sessionId, System.currentTimeMillis());
+        stringRedisTemplate.opsForZSet().add(roomKey, sessionId, session.getCreatedAt().toEpochMilli());
     }
 
-    private List<WatchingSession> getWatchingSessionsByIds(Set<String> sessionIds) {
+    private List<WatchingSession> getWatchingSessionsByIds(List<String> sessionIds) {
         List<String> keys = sessionIds.stream()
                 .map(id -> String.format(KEY_SESSION_DATA, id))
                 .collect(Collectors.toList());
@@ -250,7 +250,7 @@ public class BasicWatchTogetherService implements WatchTogetherService {
             Content content,
             long WatcherCount,
             ChangeType type) {
-        WatchingSessionDto watchingSessionDto = new WatchingSessionDto(watcher, content);
+        WatchingSessionDto watchingSessionDto = new WatchingSessionDto(watcher, toDto(content));
         WatchingSessionChange message = WatchingSessionChange.builder()
                 .type(type)
                 .watchingSession(watchingSessionDto)
@@ -260,26 +260,48 @@ public class BasicWatchTogetherService implements WatchTogetherService {
         messagingTemplate.convertAndSend(destination, message);
     }
 
-    private List<WatchingSessionDto> filterData(
-            List<WatchingSession> sortedData,
-            String cursor,
-            String idAfter,
-            Integer limit,
-            Content content
+    private List<String> filterSessionIds(
+        String roomKey,
+        String userKey,
+        Integer limit,
+        String sortDirection
     ) {
-        if (cursor != null || idAfter != null) {
-            return sortedData.stream()
-                    .dropWhile(watchingSession ->
-                            Objects.equals(watchingSession.getWatcher().getName(), cursor) &&
-                                    Objects.equals(watchingSession.getWatcher().getUserId().toString(), idAfter))
-                    .limit(limit + 1)
-                    .map(watchingSession -> new WatchingSessionDto(watchingSession, content))
-                    .toList();
+        Set<String> sessionIds;
+
+        String sessionId = stringRedisTemplate.opsForValue().get(userKey);
+
+        if (ASCENDING.equals(sortDirection)) {
+            sessionIds = stringRedisTemplate.opsForZSet().range(roomKey, 0, -1);
         } else {
-            return sortedData.stream()
-                    .limit(limit + 1)
-                    .map(watchingSession -> new WatchingSessionDto(watchingSession, content))
-                    .toList();
+            sessionIds = stringRedisTemplate.opsForZSet().reverseRange(roomKey, 0, -1);
         }
+
+        if(sessionIds == null) return null;
+
+        if(sessionId != null){
+            return sessionIds.stream()
+                    .dropWhile( id-> !Objects.equals(id,sessionId))
+                    .limit(limit+1)
+                    .collect(Collectors.toList());
+        }else {
+            return sessionIds.stream()
+                    .limit(limit+1)
+                    .collect(Collectors.toList());
+        }
+
+    }
+
+    private ContentDto toDto( Content content ){
+        return ContentDto.of(
+                content.getUuid(),
+                content.getContentType().getValue(),
+                content.getTitle(),
+                content.getDescription(),
+                content.getThumbnailUrl(),
+                null,
+                0.0,
+                0L,
+                0L
+        );
     }
 }
