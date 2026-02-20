@@ -32,45 +32,45 @@ public class FollowController {
     @PostMapping
     public ResponseEntity<FollowResponse> create(
             @RequestBody @Valid FollowCreateRequest request,
-            @RequestHeader(value = "X-User-Id", required = false) Long currentUserId
+            @RequestHeader(value = "X-User-Id", required = false) UUID currentUserUuid
     ) {
-        FollowResponse response = followService.create(currentUserId, request);
+        FollowResponse response = followService.create(currentUserUuid, request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     @DeleteMapping("/{followUuid}")
     public ResponseEntity<Void> delete(
             @PathVariable UUID followUuid,
-            @RequestHeader(value = "X-User-Id", required = false) Long currentUserId
+            @RequestHeader(value = "X-User-Id", required = false) UUID currentUserUuid
     ) {
-        followService.deleteByUuid(followUuid, currentUserId);
+        followService.deleteByUuid(followUuid, currentUserUuid);
         return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/followed-by-me")
     public ResponseEntity<FollowedByMeResponse> isFollowedByMe(
-            @RequestParam Long followeeId,
-            @RequestHeader(value = "X-User-Id", required = false) Long currentUserId
+            @RequestParam UUID followeeUuid,
+            @RequestHeader(value = "X-User-Id", required = false) UUID currentUserUuid
     ) {
-        FollowedByMeResponse response = followService.isFollowedByMe(currentUserId, followeeId);
+        FollowedByMeResponse response = followService.isFollowedByMe(currentUserUuid, followeeUuid);
         return ResponseEntity.ok(response);
     }
 
     @GetMapping("/count")
-    public ResponseEntity<FollowerCountResponse> getFollowerCount(@RequestParam Long followeeId) {
-        FollowerCountResponse response = followService.getFollowerCount(followeeId);
+    public ResponseEntity<FollowerCountResponse> getFollowerCount(@RequestParam UUID followeeUuid) {
+        FollowerCountResponse response = followService.getFollowerCount(followeeUuid);
         return ResponseEntity.ok(response);
     }
 
     @GetMapping("/following")
-    public ResponseEntity<List<FollowUserDto>> getFollowingList(@RequestParam Long userId) {
-        List<FollowUserDto> list = followService.getFollowingList(userId);
+    public ResponseEntity<List<FollowUserDto>> getFollowingList(@RequestParam UUID userUuid) {
+        List<FollowUserDto> list = followService.getFollowingList(userUuid);
         return ResponseEntity.ok(list);
     }
 
     @GetMapping("/followers")
-    public ResponseEntity<List<FollowUserDto>> getFollowerList(@RequestParam Long userId) {
-        List<FollowUserDto> list = followService.getFollowerList(userId);
+    public ResponseEntity<List<FollowUserDto>> getFollowerList(@RequestParam UUID userUuid) {
+        List<FollowUserDto> list = followService.getFollowerList(userUuid);
         return ResponseEntity.ok(list);
     }
 }

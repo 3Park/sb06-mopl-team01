@@ -4,10 +4,12 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.util.UUID;
+
 @Getter
 @NoArgsConstructor
 public class FollowCreateRequest {
 
-    @NotNull(message = "followeeId는 필수입니다.")
-    private Long followeeId;
+    @NotNull(message = "followeeUuid는 필수입니다.")
+    private UUID followeeUuid;
 }

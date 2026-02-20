@@ -12,7 +12,7 @@ public class ProfileDto {
 
     private Long id;
     private UUID uuid;
-    private Long userId;
+    private UUID userUuid;
     private String name;
     private String profileImageUrl;
     private LocalDateTime createdAt;

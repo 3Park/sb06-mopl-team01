@@ -47,55 +47,57 @@ public class ProfileService {
     }
 
     @Transactional(readOnly = true)
-    public ProfileDto getByUserId(Long userId) {
-        Profile profile = profileRepository.findByUserId(userId)
-                .orElseThrow(() -> new ProfileNotFoundException(userId));
-        return toDto(profile, userId);
+    public ProfileDto getByUserUuid(UUID userUuid) {
+        Profile profile = profileRepository.findByUserUuid(userUuid)
+                .orElseThrow(() -> new ProfileNotFoundException(userUuid));
+        return toDto(profile);
     }
 
     @Transactional
-    @CacheEvict(cacheNames = "userSummary", key = "#userId")
-    public ProfileDto update(Long userId, ProfileUpdateRequest request, Long currentUserId) {
-        if (currentUserId == null) {
+    @CacheEvict(cacheNames = "userSummary", key = "#userUuid")
+    public ProfileDto update(UUID userUuid, ProfileUpdateRequest request, UUID currentUserUuid) {
+        if (currentUserUuid == null) {
             throw new ProfileUnauthorizedException();
         }
-        if (!currentUserId.equals(userId)) {
+        Profile profile = profileRepository.findWithUserByUserUuid(userUuid)
+                .orElseThrow(() -> new ProfileNotFoundException(userUuid));
+        if (!profile.getUser().getUuid().equals(currentUserUuid)) {
             throw new ProfileForbiddenException();
         }
-        Profile profile = profileRepository.findByUserId(userId)
-                .orElseThrow(() -> new ProfileNotFoundException(userId));
         profile.update(request.getName(), request.getProfileImageUrl());
-        return toDto(profile, userId);
+        return toDto(profile);
     }
 
     @Transactional
-    @CacheEvict(cacheNames = "userSummary", key = "#userId")
-    public ProfileDto uploadProfileImage(Long userId, MultipartFile file, Long currentUserId) throws IOException {
-        if (currentUserId == null) {
+    @CacheEvict(cacheNames = "userSummary", key = "#userUuid")
+    public ProfileDto uploadProfileImage(UUID userUuid, MultipartFile file, UUID currentUserUuid) throws IOException {
+        if (currentUserUuid == null) {
             throw new ProfileUnauthorizedException();
         }
-        if (!currentUserId.equals(userId)) {
+        Profile profile = profileRepository.findWithUserByUserUuid(userUuid)
+                .orElseThrow(() -> new ProfileNotFoundException(userUuid));
+        if (!profile.getUser().getUuid().equals(currentUserUuid)) {
             throw new ProfileForbiddenException();
         }
-        Profile profile = profileRepository.findByUserId(userId)
-                .orElseThrow(() -> new ProfileNotFoundException(userId));
         String imageUrl = profileImageUploadService.upload(profile, file);
         profile.updateProfileImageUrl(imageUrl);
-        return toDto(profile, userId);
+        return toDto(profile);
     }
 
     @Transactional(readOnly = true)
-    public List<WatchingContentDto> getWatchingContents(Long userId) {
-        List<WatchingSession> sessions = watchingSessionRepository.findActiveByWatcherId(userId);
+    public List<WatchingContentDto> getWatchingContents(UUID userUuid) {
+        Profile profile = profileRepository.findByUserUuid(userUuid)
+                .orElseThrow(() -> new ProfileNotFoundException(userUuid));
+        List<WatchingSession> sessions = watchingSessionRepository.findActiveByWatcherId(profile.getUser().getId());
         return sessions.stream()
                 .map(this::toWatchingContentDto)
                 .collect(Collectors.toList());
     }
 
     @Transactional(readOnly = true)
-    public CursorResponsePlaylistDto getOwnedPlaylists(Long userId, CursorRequestPlaylistDto request) {
-        Profile profile = profileRepository.findWithUserByUserId(userId)
-                .orElseThrow(() -> new ProfileNotFoundException(userId));
+    public CursorResponsePlaylistDto getOwnedPlaylists(UUID userUuid, CursorRequestPlaylistDto request) {
+        Profile profile = profileRepository.findWithUserByUserUuid(userUuid)
+                .orElseThrow(() -> new ProfileNotFoundException(userUuid));
         UUID ownerUuid = profile.getUser().getUuid();
         CursorRequestPlaylistDto requestWithOwner = new CursorRequestPlaylistDto(
                 request.keywordLike(),
@@ -111,9 +113,10 @@ public class ProfileService {
     }
 
     @Transactional(readOnly = true)
-    public SubscribedPlaylistCursorResponse getSubscribedPlaylists(Long userId, CursorRequestPlaylistDto request) {
-        profileRepository.findByUserId(userId)
-                .orElseThrow(() -> new ProfileNotFoundException(userId));
+    public SubscribedPlaylistCursorResponse getSubscribedPlaylists(UUID userUuid, CursorRequestPlaylistDto request) {
+        Profile profile = profileRepository.findByUserUuid(userUuid)
+                .orElseThrow(() -> new ProfileNotFoundException(userUuid));
+        Long userId = profile.getUser().getId();
         Instant cursor = request.cursor() != null && !request.cursor().isBlank()
                 ? Instant.parse(request.cursor())
                 : null;
@@ -151,26 +154,26 @@ public class ProfileService {
      * 단일 사용자 프로필 요약 (알림/DM 연계용). 캐시 적용.
      */
     @Transactional(readOnly = true)
-    @Cacheable(cacheNames = "userSummary", key = "#userId")
-    public UserSummary getUserSummary(Long userId) {
-        Profile profile = profileRepository.findWithUserByUserId(userId)
-                .orElseThrow(() -> new ProfileNotFoundException(userId));
+    @Cacheable(cacheNames = "userSummary", key = "#userUuid")
+    public UserSummary getUserSummary(UUID userUuid) {
+        Profile profile = profileRepository.findWithUserByUserUuid(userUuid)
+                .orElseThrow(() -> new ProfileNotFoundException(userUuid));
         return toUserSummary(profile);
     }
 
     /**
-     * 여러 사용자 프로필 요약 일괄 조회 (알림/DM 연계용). 요청한 userId 순서로 반환.
+     * 여러 사용자 프로필 요약 일괄 조회 (알림/DM 연계용). 요청한 userUuid 순서로 반환.
      */
     @Transactional(readOnly = true)
-    public List<UserSummary> getUserSummaries(List<Long> userIds) {
-        if (userIds == null || userIds.isEmpty()) {
+    public List<UserSummary> getUserSummaries(List<UUID> userUuids) {
+        if (userUuids == null || userUuids.isEmpty()) {
             return List.of();
         }
-        List<Long> distinctIds = userIds.stream().distinct().toList();
-        List<Profile> profiles = profileRepository.findAllWithUserByUserIdIn(distinctIds);
-        return distinctIds.stream()
-                .map(userId -> profiles.stream()
-                        .filter(p -> p.getUser().getId().equals(userId))
+        List<UUID> distinctUuids = userUuids.stream().distinct().toList();
+        List<Profile> profiles = profileRepository.findAllWithUserByUserUuidIn(distinctUuids);
+        return distinctUuids.stream()
+                .map(userUuid -> profiles.stream()
+                        .filter(p -> p.getUser().getUuid().equals(userUuid))
                         .findFirst()
                         .map(this::toUserSummary)
                         .orElse(null))
@@ -204,11 +207,11 @@ public class ProfileService {
                 .build();
     }
 
-    private ProfileDto toDto(Profile profile, Long userId) {
+    private ProfileDto toDto(Profile profile) {
         return ProfileDto.builder()
                 .id(profile.getId())
                 .uuid(profile.getUuid())
-                .userId(userId)
+                .userUuid(profile.getUser().getUuid())
                 .name(profile.getName())
                 .profileImageUrl(profile.getProfileImageUrl())
                 .createdAt(profile.getCreatedAt())
