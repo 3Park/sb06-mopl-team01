@@ -11,4 +11,6 @@ public interface PlaylistContentCommandRepository extends JpaRepository<Playlist
 
   void deleteByPlaylist_IdAndContent_Id(Long playlistId, Long contentId);
 
+  void deleteByContent_Id(Long contentId);
+
 }

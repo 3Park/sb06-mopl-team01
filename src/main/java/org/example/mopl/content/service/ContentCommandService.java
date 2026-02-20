@@ -19,6 +19,7 @@ import org.example.mopl.content.repository.ContentQueryRepository;
 import org.example.mopl.content.repository.ContentsStatCommandRepository;
 import org.example.mopl.content.repository.ContentsWatchingCountCommandRepository;
 import org.example.mopl.content.s3.ContentS3Client;
+import org.example.mopl.contentevaluation.repository.PlaylistContentCommandRepository;
 import org.example.mopl.watchtogether.service.WatchTogetherService;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
@@ -33,6 +34,7 @@ public class ContentCommandService {
   private final ContentQueryRepository contentQueryRepository;
   private final ContentsStatCommandRepository contentsStatCommandRepository;
   private final ContentsWatchingCountCommandRepository contentsWatchingCountCommandRepository;
+  private final PlaylistContentCommandRepository playlistContentCommandRepository;
   private final WatchTogetherService watchTogetherService;
   private final ContentMapper contentMapper;
   public final ApplicationEventPublisher eventPublisher;
@@ -143,7 +145,9 @@ public class ContentCommandService {
 
     // 이전 썸네일 S3에서 삭제하기
     if (thumbnail != null && !thumbnail.isEmpty()) {
-      contentS3Client.deleteObject(currentThumbnailUrl);
+      eventPublisher.publishEvent(
+          DeleteS3ObjectEvent.of(currentThumbnailUrl)
+      );
     }
 
     return ContentDto.of(
@@ -167,9 +171,12 @@ public class ContentCommandService {
         .orElseThrow(() -> new NoSuchContentException(contentUuid.toString()));
 
     // S3 객체 삭제
-    contentS3Client.deleteObject(content.getThumbnailUrl());
+    eventPublisher.publishEvent(
+        DeleteS3ObjectEvent.of(content.getThumbnailUrl())
+    );
 
     // 연관관계 삭제
+    playlistContentCommandRepository.deleteByContent_Id(content.getId());
     contentTagCommandService.deleteByContentId(content.getId());
     contentsStatCommandRepository.deleteByContent_id(content.getId());
     contentsWatchingCountCommandRepository.deleteByContent_id(content.getId());
