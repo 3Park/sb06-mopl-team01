@@ -1,5 +1,7 @@
 package org.example.mopl.user.dto.request;
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import org.example.mopl.user.enums.UserRoleType;
 import org.example.mopl.user.enums.UserSortBy;
 import org.example.mopl.user.enums.UserSortDirection;
@@ -13,8 +15,12 @@ public record UserCursorRequest(
         Boolean isLocked,
         String cursor,
         UUID idAfter,
+
+        @NotNull
         Integer limit,
+        @NotBlank
         UserSortDirection sortDirection,
+        @NotBlank
         UserSortBy sortBy
 ) {
 }
