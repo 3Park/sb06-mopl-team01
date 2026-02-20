@@ -55,6 +55,9 @@ public class TemporaryPasswordBatchDelete {
                 .reader(temporaryPasswordJpaPagingItemReader(null))
                 .writer(temporaryPasswordItemWriter())
                 .listener(temporaryPasswordBatchListener)
+                .faultTolerant()
+                .retry(org.springframework.dao.PessimisticLockingFailureException.class)
+                .retryLimit(3)
                 .build();
     }
 

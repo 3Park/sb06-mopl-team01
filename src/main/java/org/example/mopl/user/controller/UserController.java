@@ -16,7 +16,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -33,34 +32,14 @@ public class UserController {
 
     @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<CursorResponseUserDto> getAllUsers(
-            @RequestParam(required = false) String emailLike,
-            @RequestParam(required = false) UserRoleType roleEqual,
-            @RequestParam(required = false) Boolean isLocked,
-            @RequestParam(required = false) String cursor,
-            @RequestParam(required = false) UUID idAfter,
-            @RequestParam Integer limit,
-            @RequestParam UserSortDirection sortDirection,
-            @RequestParam UserSortBy sortBy) {
-
-        UserCursorRequest request = new UserCursorRequest(
-                emailLike,
-                roleEqual,
-                isLocked,
-                cursor,
-                idAfter,
-                limit,
-                sortDirection,
-                sortBy
-        );
-
-        return ResponseEntity.status(HttpStatus.OK).body(userService.getAllUsers(request));
+    public ResponseEntity<CursorResponseUserDto> getAllUsers(@ModelAttribute UserCursorRequest request) {
+        return ResponseEntity.status(HttpStatus.OK).body(userService.findAllUsers(request));
     }
 
     @PatchMapping("/{userId}/password")
     public ResponseEntity<Void> changePassword(@PathVariable UUID userId, @RequestBody @Valid ChangePasswordRequest request) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        userService.changePassword(authentication, userId, request.getPassword());
+        userService.changePassword(authentication, userId, request.password());
         return ResponseEntity.ok().build();
     }
 
