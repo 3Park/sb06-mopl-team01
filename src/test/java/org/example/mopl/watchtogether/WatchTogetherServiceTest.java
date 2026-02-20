@@ -174,37 +174,35 @@ public class WatchTogetherServiceTest {
     void getWatcherList_SortedAndFiltered() {
         // given
         String contentUuidStr = UUID.randomUUID().toString();
+        String idAfter = UUID.randomUUID().toString();
         Content content = createMockContent(1L, UUID.fromString(contentUuidStr));
 
         given(contentCommandRepository.findByUuid(any())).willReturn(Optional.of(content));
-        given(zSetOps.zCard(anyString())).willReturn(3L);
+        given(zSetOps.zCard(anyString())).willReturn(10L);
 
-        WatchingSession s1 = new WatchingSession("s1", new Watcher(createMockUserDto(UUID.randomUUID(), "User1")));
+        // idAfter에 해당하는 세션 ID 반환
+        given(stringValueOps.get("user:" + idAfter)).willReturn("s1");
+
+        // 전체 명단 (ZSet range)
+        Set<String> allSessionIds = new LinkedHashSet<>(Arrays.asList("s1", "s2", "s3", "s4"));
+        given(zSetOps.reverseRange(anyString(), anyLong(), anyLong())).willReturn(allSessionIds);
+
+        // MultiGet 결과
         WatchingSession s2 = new WatchingSession("s2", new Watcher(createMockUserDto(UUID.randomUUID(), "User2")));
         WatchingSession s3 = new WatchingSession("s3", new Watcher(createMockUserDto(UUID.randomUUID(), "User3")));
-
-        Set<String> sessionIds = new LinkedHashSet<>(Arrays.asList("s1", "s2", "s3"));
-
-        given(zSetOps.range(anyString(), anyLong(), anyLong())).willReturn(sessionIds);
-        given(valueOps.multiGet(anyList())).willReturn(Arrays.asList(s1, s2, s3));
+        given(valueOps.multiGet(anyList())).willReturn(Arrays.asList(s2, s3));
 
         // when
+        // DESCENDING 정렬 시 s1(idAfter)을 찾아서 그 뒤의 데이터를 가져오는지 테스트
         CursorResponseWatchingSessionDto response = watchTogetherService.getWatcherList(
-                contentUuidStr,
-                null,
-                "User1",        // cursor
-                s1.getWatcher().getUserId().toString(), // idAfter
-                10,
-                "ASCENDING",
-                "createdAt"
+                contentUuidStr, null, null, idAfter, 2, "DESCENDING", "createdAt"
         );
 
         // then
+        // s1은 dropWhile에 의해 제거되고 s2, s3만 남아야 함 (limit 2)
         assertThat(response.data()).hasSize(2);
         assertThat(response.data().get(0).watcher().getName()).isEqualTo("User2");
-        assertThat(response.data().get(1).watcher().getName()).isEqualTo("User3");
-
-        verify(zSetOps).range(eq("room:" + contentUuidStr + ":watchers"), eq(0L), eq(-1L));
+        verify(zSetOps).reverseRange(eq("room:" + contentUuidStr + ":watchers"), eq(0L), eq(-1L));
     }
 
     @Test
