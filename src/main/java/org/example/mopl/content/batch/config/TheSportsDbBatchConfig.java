@@ -13,6 +13,8 @@ import org.springframework.batch.repeat.RepeatStatus;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
+import org.springframework.dao.PessimisticLockingFailureException;
+import org.springframework.retry.support.RetryTemplate;
 import org.springframework.transaction.PlatformTransactionManager;
 
 @Configuration
@@ -37,14 +39,21 @@ public class TheSportsDbBatchConfig {
   public Step importSportsStep() {
     return new StepBuilder("importSportsStep", jobRepository)
         .tasklet((contribution, chunkContext) -> {
+          RetryTemplate retryTemplate = RetryTemplate.builder()
+              .maxAttempts(5)
+              .retryOn(PessimisticLockingFailureException.class)
+              .exponentialBackoff(1000, 2, 10000)
+              .build();
 
-          List<String> leagues = theSportsDbBatchService.importSportLeagues();
+          return retryTemplate.execute(context -> {
+            List<String> leagues = theSportsDbBatchService.importSportLeagues();
 
-          for (String league : leagues) {
-            System.out.println("Importing league " + league);
-            theSportsDbBatchService.writeSportEvents(league);
-          }
-          return RepeatStatus.FINISHED;
+            for (String league : leagues) {
+              System.out.println("Importing league " + league);
+              theSportsDbBatchService.writeSportEvents(league);
+            }
+            return RepeatStatus.FINISHED;
+          });
         }, transactionManager)
         .build();
   }

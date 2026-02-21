@@ -11,8 +11,6 @@ import org.springframework.batch.core.launch.JobLauncher;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.dao.PessimisticLockingFailureException;
-import org.springframework.retry.annotation.Backoff;
-import org.springframework.retry.annotation.Retryable;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.annotation.EnableScheduling;
@@ -32,14 +30,9 @@ public class ContentBatchScheduler {
   private final ContentsWatchingCountBatchConfig contentsWatchingCountBatchConfig;
 
   // 데드락 예외 발생 시 재시도 설정
-  @Retryable(
-      retryFor = {PessimisticLockingFailureException.class},
-      maxAttempts = 5, // 실행 간격이 길기 때문에 5회
-      backoff = @Backoff(delay = 5000, multiplier = 2.0)
-  )
   @Async("batchTaskExecutor")
-  @Scheduled(cron = "0 5 2 * * ?") // 매일 새벽 2시 5분에 실행
-  //@Scheduled(initialDelay = 10000, fixedRate = 86400000) // 24 hours
+  //@Scheduled(cron = "0 5 2 * * ?") // 매일 새벽 2시 5분에 실행
+  @Scheduled(initialDelay = 10000, fixedRate = 60000 * 60) // 애플리케이션 시작 후 10초 후에 첫 실행, 이후 매 1시간마다 실행
   public void runContentBatchJob() {
     try {
       log.info("Starting TMDb Content Batch Job");
@@ -66,11 +59,6 @@ public class ContentBatchScheduler {
   }
 
   // 데드락 예외 발생 시 재시도 설정
-  @Retryable(
-      retryFor = {PessimisticLockingFailureException.class},
-      maxAttempts = 3,
-      backoff = @Backoff(delay = 5000, multiplier = 2.0)
-  )
   @Async("batchTaskExecutor")
   @Scheduled(cron = "0 */30 * * * ?") // 매 30분마다 실행
   public void runContentsWatchingCountJob() {

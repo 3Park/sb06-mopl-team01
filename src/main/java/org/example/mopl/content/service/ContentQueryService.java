@@ -9,7 +9,8 @@ import org.example.mopl.content.dto.ContentQueryDto.ContentWithTagsResult;
 import org.example.mopl.content.dto.request.CursorRequestContentDto;
 import org.example.mopl.content.dto.response.ContentDto;
 import org.example.mopl.content.dto.response.CursorResponseContentDto;
-import org.example.mopl.content.exception.NoSuchContentException;
+import org.example.mopl.content.exception.ContentErrorCode;
+import org.example.mopl.content.exception.ContentException;
 import org.example.mopl.content.repository.ContentQueryRepository;
 import org.example.mopl.content.repository.ContentTagQueryRepository;
 import org.example.mopl.content.repository.ContentsStatQueryRepository;
@@ -33,7 +34,7 @@ public class ContentQueryService {
   public ContentDto getContentByUuid(UUID uuid) {
 
     ContentWithTagsResult content = contentQueryRepository.findByUuidWithContentTag(uuid)
-        .orElseThrow(() -> new NoSuchContentException(uuid));
+        .orElseThrow(() -> new ContentException(ContentErrorCode.NO_SUCH_CONTENT));
 
     return ContentDto.of(
         content.uuid(),
