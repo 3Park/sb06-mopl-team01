@@ -9,8 +9,8 @@ import org.example.mopl.content.exception.ContentException;
 import org.example.mopl.content.repository.ContentQueryRepository;
 import org.example.mopl.contentevaluation.entity.Playlist;
 import org.example.mopl.contentevaluation.entity.PlaylistContent;
-import org.example.mopl.contentevaluation.exception.NoSuchPlaylistException;
-import org.example.mopl.contentevaluation.exception.UnauthorizedPlaylistException;
+import org.example.mopl.contentevaluation.exception.ContentEvaluationErrorCode;
+import org.example.mopl.contentevaluation.exception.ContentEvaluationException;
 import org.example.mopl.contentevaluation.repository.PlaylistContentCommandRepository;
 import org.example.mopl.contentevaluation.repository.PlaylistContentQueryRepository;
 import org.example.mopl.contentevaluation.repository.PlaylistQueryRepository;
@@ -41,7 +41,7 @@ public class PlaylistContentCommandService {
         .orElseThrow(() -> new ContentException(ContentErrorCode.NO_SUCH_CONTENT));
 
     Playlist playlist = playlistQueryRepository.findByUuid(playlistId)
-        .orElseThrow(() -> new NoSuchPlaylistException(playlistId));
+        .orElseThrow(() -> new ContentEvaluationException(ContentEvaluationErrorCode.NO_SUCH_PLAYLIST));
 
     User user = userRepository.findByEmail(email)
         .orElseThrow(() -> new ContentException(ContentErrorCode.NO_SUCH_AUTHOR));
@@ -51,7 +51,7 @@ public class PlaylistContentCommandService {
 
     // 플레이리스트 소유자 또는 관리자인지 확인
     if (!isAdmin && !playlist.getUser().getId().equals(user.getId())) {
-      throw new UnauthorizedPlaylistException(email, playlistId);
+      throw new ContentEvaluationException(ContentEvaluationErrorCode.UNAUTHORIZED_PLAYLIST);
     }
 
     playlistContentCommandRepository.save(
@@ -81,7 +81,7 @@ public class PlaylistContentCommandService {
   public void removeContentFromPlaylist(String email, UUID playlistId, UUID contentId) {
 
     Playlist playlist = playlistQueryRepository.findByUuid(playlistId)
-        .orElseThrow(() -> new NoSuchPlaylistException(playlistId));
+        .orElseThrow(() -> new ContentEvaluationException(ContentEvaluationErrorCode.NO_SUCH_PLAYLIST));
 
     User user = userRepository.findByEmail(email)
         .orElseThrow(() -> new ContentException(ContentErrorCode.NO_SUCH_AUTHOR));
@@ -91,7 +91,7 @@ public class PlaylistContentCommandService {
 
     // 플레이리스트 소유자 또는 관리자인지 확인
     if (!isAdmin && !playlist.getUser().getId().equals(user.getId())) {
-      throw new UnauthorizedPlaylistException(email, playlistId);
+      throw new ContentEvaluationException(ContentEvaluationErrorCode.UNAUTHORIZED_PLAYLIST);
     }
 
     Content content = contentQueryRepository.findByUuid(contentId)

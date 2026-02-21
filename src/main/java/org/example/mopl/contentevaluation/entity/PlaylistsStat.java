@@ -12,7 +12,8 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import org.example.mopl.contentevaluation.exception.InvalidSubscribeCountDecreaseException;
+import org.example.mopl.contentevaluation.exception.ContentEvaluationErrorCode;
+import org.example.mopl.contentevaluation.exception.ContentEvaluationException;
 
 @Getter
 @Entity
@@ -48,7 +49,7 @@ public class PlaylistsStat {
   public void decrementSubscribeCount() {
 
     if (this.subscribeCount <= 0) {
-      throw new InvalidSubscribeCountDecreaseException(playlist.getTitle());
+      throw new ContentEvaluationException(ContentEvaluationErrorCode.INVALID_SUBSCRIBE_COUNT_DECREASE);
     }
 
     this.subscribeCount--;

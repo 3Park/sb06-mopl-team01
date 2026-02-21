@@ -7,7 +7,8 @@ import org.example.mopl.content.exception.ContentException;
 import org.example.mopl.contentevaluation.entity.Playlist;
 import org.example.mopl.contentevaluation.entity.Subscribe;
 import org.example.mopl.contentevaluation.event.SubscribeCountEvent;
-import org.example.mopl.contentevaluation.exception.NoSuchPlaylistException;
+import org.example.mopl.contentevaluation.exception.ContentEvaluationErrorCode;
+import org.example.mopl.contentevaluation.exception.ContentEvaluationException;
 import org.example.mopl.contentevaluation.repository.PlaylistQueryRepository;
 import org.example.mopl.contentevaluation.repository.SubscribeCommandRepository;
 import org.example.mopl.event.message.PlaylistSubscriptionCreatedKafkaEvent;
@@ -33,7 +34,7 @@ public class SubscribeCommandService {
         .orElseThrow(() -> new ContentException(ContentErrorCode.NO_SUCH_CONTENT));
 
     Playlist playlist = playlistQueryRepository.findByUuid(playlistId)
-        .orElseThrow(() -> new NoSuchPlaylistException(playlistId));
+        .orElseThrow(() -> new ContentEvaluationException(ContentEvaluationErrorCode.NO_SUCH_PLAYLIST));
 
     subscribeCommandRepository.save(
         Subscribe.of(user, playlist)
@@ -65,7 +66,7 @@ public class SubscribeCommandService {
         .orElseThrow(() -> new ContentException(ContentErrorCode.NO_SUCH_AUTHOR));
 
     Playlist playlist = playlistQueryRepository.findByUuid(playlistId)
-        .orElseThrow(() -> new NoSuchPlaylistException(playlistId));
+        .orElseThrow(() -> new ContentEvaluationException(ContentEvaluationErrorCode.NO_SUCH_PLAYLIST));
 
     subscribeCommandRepository.deleteByUser_IdAndPlaylist_Id(user.getId(), playlist.getId());
 

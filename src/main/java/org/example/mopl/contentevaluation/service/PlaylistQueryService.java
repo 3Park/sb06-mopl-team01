@@ -15,7 +15,8 @@ import org.example.mopl.contentevaluation.dto.response.CursorResponsePlaylistDto
 import org.example.mopl.contentevaluation.dto.response.OwnerDto;
 import org.example.mopl.contentevaluation.dto.response.PlaylistDto;
 import org.example.mopl.contentevaluation.entity.PlaylistContent;
-import org.example.mopl.contentevaluation.exception.NoSuchPlaylistException;
+import org.example.mopl.contentevaluation.exception.ContentEvaluationErrorCode;
+import org.example.mopl.contentevaluation.exception.ContentEvaluationException;
 import org.example.mopl.contentevaluation.repository.PlaylistContentQueryRepository;
 import org.example.mopl.contentevaluation.repository.PlaylistQueryRepository;
 import org.example.mopl.contentevaluation.repository.PlaylistsStatQueryRepository;
@@ -44,7 +45,7 @@ public class PlaylistQueryService {
   public PlaylistDto getPlaylistByUuid(@Nullable String email, UUID uuid) {
 
     PlaylistResult playlist = playlistQueryRepository.findByUuidWithStats(email, uuid)
-        .orElseThrow(() -> new NoSuchPlaylistException(uuid));
+        .orElseThrow(() -> new ContentEvaluationException(ContentEvaluationErrorCode.NO_SUCH_PLAYLIST));
 
     List<PlaylistContent> playlistContents = playlistContentQueryRepository
         .findAllByPlaylistId(playlist.id());
