@@ -17,9 +17,8 @@ import org.example.mopl.content.entity.ContentType;
 import org.example.mopl.content.entity.ContentsStat;
 import org.example.mopl.content.entity.ContentsWatchingCount;
 import org.example.mopl.content.entity.Tag;
-import org.example.mopl.content.exception.NoSuchContentException;
-import org.example.mopl.content.exception.NoSuchTagException;
-import org.example.mopl.content.exception.S3UploadFailedException;
+import org.example.mopl.content.exception.ContentErrorCode;
+import org.example.mopl.content.exception.ContentException;
 import org.example.mopl.content.repository.ContentCommandRepository;
 import org.example.mopl.content.repository.ContentQueryRepository;
 import org.example.mopl.content.repository.ContentTagCommandRepository;
@@ -134,7 +133,7 @@ public class TheSportsDbBatchService {
         );
       } catch (Exception e) {
         log.error(e.getMessage());
-        throw new S3UploadFailedException(sportEvent.title());
+        throw new ContentException(ContentErrorCode.S3_UPLOAD_FAILED, e);
       }
 
       contentList.add(
@@ -155,12 +154,12 @@ public class TheSportsDbBatchService {
       Content content = contentList.stream()
           .filter(c -> c.getExternalId().equals(sportEvent.externalId()))
           .findFirst()
-          .orElseThrow(() -> new NoSuchContentException(sportEvent.externalId()));
+          .orElseThrow(() -> new ContentException(ContentErrorCode.NO_SUCH_CONTENT));
 
       sportEvent.tags().forEach(tagName -> {
 
         Tag tag = tagQueryRepository.findByName(tagName)
-            .orElseThrow(() -> new NoSuchTagException(tagName));
+            .orElseThrow(() -> new ContentException(ContentErrorCode.NO_SUCH_TAG));
 
         contentTagList.add(
             ContentTag.of(content, tag)

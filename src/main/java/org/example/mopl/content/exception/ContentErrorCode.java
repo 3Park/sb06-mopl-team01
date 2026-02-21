@@ -2,11 +2,12 @@ package org.example.mopl.content.exception;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import org.example.mopl.common.exception.ErrorCode;
 import org.springframework.http.HttpStatus;
 
 @Getter
 @RequiredArgsConstructor
-public enum ContentErrorCode {
+public enum ContentErrorCode implements ErrorCode {
 
   DUPLICATE_REVIEW(HttpStatus.BAD_REQUEST, "이미 리뷰를 작성한 콘텐츠입니다."),
   INVALID_RATING_DECREASE(HttpStatus.BAD_REQUEST, "잘못된 리뷰 감소 요청입니다."),

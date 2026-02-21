@@ -1,7 +1,6 @@
 package org.example.mopl.watchtogether;
 
 import org.example.mopl.content.entity.Content;
-import org.example.mopl.content.exception.NoSuchContentException;
 import org.example.mopl.content.repository.ContentCommandRepository;
 import org.example.mopl.user.dto.UserDto;
 import org.example.mopl.watchtogether.dto.CursorResponseWatchingSessionDto;
@@ -12,7 +11,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.redis.core.*;

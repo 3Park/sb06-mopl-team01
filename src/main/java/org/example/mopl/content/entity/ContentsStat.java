@@ -12,7 +12,8 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import org.example.mopl.content.exception.InvalidRatingDecreaseException;
+import org.example.mopl.content.exception.ContentErrorCode;
+import org.example.mopl.content.exception.ContentException;
 
 @Getter
 @Entity
@@ -58,7 +59,7 @@ public class ContentsStat {
   public void removeRating(long rating) {
 
     if (this.ratingCount <= 0) {
-      throw new InvalidRatingDecreaseException(content.getUuid());
+      throw new ContentException(ContentErrorCode.INVALID_RATING_DECREASE);
     }
 
     this.ratingCount -= 1;

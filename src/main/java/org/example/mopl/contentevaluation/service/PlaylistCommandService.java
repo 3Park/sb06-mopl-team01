@@ -4,7 +4,8 @@ import java.util.ArrayList;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.example.mopl.content.exception.NoSuchAuthorException;
+import org.example.mopl.content.exception.ContentErrorCode;
+import org.example.mopl.content.exception.ContentException;
 import org.example.mopl.contentevaluation.dto.request.PlaylistCreateRequest;
 import org.example.mopl.contentevaluation.dto.request.PlaylistUpdateRequest;
 import org.example.mopl.contentevaluation.dto.response.OwnerDto;
@@ -45,7 +46,7 @@ public class PlaylistCommandService {
   public PlaylistDto createPlaylist(String email, PlaylistCreateRequest request) {
 
     User user = userRepository.findByEmail(email)
-        .orElseThrow(() -> new NoSuchAuthorException(email));
+        .orElseThrow(() -> new ContentException(ContentErrorCode.NO_SUCH_AUTHOR));
 
     Playlist playlist = Playlist.of(request.title(), user, request.description());
 
@@ -92,7 +93,7 @@ public class PlaylistCommandService {
         .orElseThrow(() -> new NoSuchPlaylistException(playlistId));
 
     User user = userRepository.findByEmail(email)
-        .orElseThrow(() -> new NoSuchAuthorException(email));
+        .orElseThrow(() -> new ContentException(ContentErrorCode.NO_SUCH_AUTHOR));
 
     boolean isAdmin = user.getUserRoles().stream()
         .anyMatch(role -> role.getRole().getIsAdmin());
@@ -131,7 +132,7 @@ public class PlaylistCommandService {
         .orElseThrow(() -> new NoSuchPlaylistException(playlistId));
 
     User user = userRepository.findByEmail(email)
-        .orElseThrow(() -> new NoSuchAuthorException(email));
+        .orElseThrow(() -> new ContentException(ContentErrorCode.NO_SUCH_AUTHOR));
 
     boolean isAdmin = user.getUserRoles().stream()
         .anyMatch(role -> role.getRole().getIsAdmin());
