@@ -31,8 +31,8 @@ public class ContentBatchScheduler {
 
   // 데드락 예외 발생 시 재시도 설정
   @Async("batchTaskExecutor")
-  @Scheduled(cron = "0 5 2 * * ?") // 매일 새벽 2시 5분에 실행
-  //@Scheduled(initialDelay = 10000, fixedRate = 86400000) // 24 hours
+  //@Scheduled(cron = "0 5 2 * * ?") // 매일 새벽 2시 5분에 실행
+  @Scheduled(initialDelay = 10000, fixedRate = 60000 * 60) // 애플리케이션 시작 후 10초 후에 첫 실행, 이후 매 1시간마다 실행
   public void runContentBatchJob() {
     try {
       log.info("Starting TMDb Content Batch Job");
