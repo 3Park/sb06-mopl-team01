@@ -5,7 +5,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.example.mopl.common.exception.MoplException;
 import org.example.mopl.content.dto.response.ContentDto;
 import org.example.mopl.content.entity.Content;
-import org.example.mopl.content.exception.NoSuchContentException;
+import org.example.mopl.content.exception.ContentErrorCode;
+import org.example.mopl.content.exception.ContentException;
 import org.example.mopl.content.repository.ContentCommandRepository;
 import org.example.mopl.user.dto.UserDto;
 import org.example.mopl.watchtogether.dto.*;
@@ -59,7 +60,7 @@ public class BasicWatchTogetherService implements WatchTogetherService {
         // 방 활성 목록 관리는 문자열이므로 stringRedisTemplate 사용
         if (!stringRedisTemplate.hasKey(roomKey)) {
             contentCommandRepository.findByUuid(UUID.fromString(contentId))
-                    .orElseThrow(() -> new NoSuchContentException(contentId));
+                    .orElseThrow(() -> new ContentException(ContentErrorCode.NO_SUCH_CONTENT));
             stringRedisTemplate.opsForSet().add(KEY_ACTIVE_ROOMS, contentId);
         }
 
@@ -160,7 +161,7 @@ public class BasicWatchTogetherService implements WatchTogetherService {
         if (session == null || contentId == null) throw new MoplException(WatchTogetherErrorCode.NO_VIEWERS);
 
         Content content = contentCommandRepository.findByUuid(UUID.fromString(contentId))
-                .orElseThrow(() -> new NoSuchContentException(contentId));
+                .orElseThrow(() -> new ContentException(ContentErrorCode.NO_SUCH_CONTENT));
 
         return WatchingSessionDto.builder()
                 .id(contentId)
@@ -181,7 +182,7 @@ public class BasicWatchTogetherService implements WatchTogetherService {
             String sortBy
     ) {
         Content content = contentCommandRepository.findByUuid(UUID.fromString(contentId))
-                .orElseThrow(() -> new NoSuchContentException(contentId));
+                .orElseThrow(() -> new ContentException(ContentErrorCode.NO_SUCH_CONTENT));
 
         String roomKey = String.format(KEY_ROOM_WATCHERS, contentId);
         String userKey = String.format(KEY_USER_SESSION,idAfter);

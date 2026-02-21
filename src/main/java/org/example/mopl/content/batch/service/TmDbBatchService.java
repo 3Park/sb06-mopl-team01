@@ -19,9 +19,8 @@ import org.example.mopl.content.entity.ContentType;
 import org.example.mopl.content.entity.ContentsStat;
 import org.example.mopl.content.entity.ContentsWatchingCount;
 import org.example.mopl.content.entity.Tag;
-import org.example.mopl.content.exception.NoSuchContentException;
-import org.example.mopl.content.exception.NoSuchTagException;
-import org.example.mopl.content.exception.S3UploadFailedException;
+import org.example.mopl.content.exception.ContentErrorCode;
+import org.example.mopl.content.exception.ContentException;
 import org.example.mopl.content.repository.ContentCommandRepository;
 import org.example.mopl.content.repository.ContentQueryRepository;
 import org.example.mopl.content.repository.ContentTagCommandRepository;
@@ -199,7 +198,7 @@ public class TmDbBatchService {
            if (existingExternalIds.contains(content.externalId())) {
 
              Content existingContent = contentQueryRepository.findByExternalId(content.externalId())
-                 .orElseThrow(() -> new NoSuchContentException(content.externalId()));
+                 .orElseThrow(() -> new ContentException(ContentErrorCode.NO_SUCH_CONTENT));
 
               existingContent.update(
                   content.title(),
@@ -219,7 +218,7 @@ public class TmDbBatchService {
                );
              } catch (Exception e) {
                log.error(e.getMessage());
-               throw new S3UploadFailedException(content.title());
+               throw new ContentException(ContentErrorCode.S3_UPLOAD_FAILED, e);
              }
 
              return Content.of(
@@ -277,7 +276,7 @@ public class TmDbBatchService {
          if (existingExternalIds.contains(content.externalId())) {
 
            Content existingContent = contentQueryRepository.findByExternalId(content.externalId())
-               .orElseThrow(() -> new NoSuchContentException(content.externalId()));
+               .orElseThrow(() -> new ContentException(ContentErrorCode.NO_SUCH_CONTENT));
 
            existingContent.update(
                content.title(),
@@ -297,7 +296,7 @@ public class TmDbBatchService {
              );
            } catch (Exception e) {
              log.error(e.getMessage());
-             throw new S3UploadFailedException(content.title());
+             throw new ContentException(ContentErrorCode.S3_UPLOAD_FAILED, e);
            }
 
            return Content.of(
@@ -337,12 +336,12 @@ public class TmDbBatchService {
     List<ContentTag> contentTagList = fetchResultDtoList.stream()
         .flatMap(content -> {
           Content existingContent = contentQueryRepository.findByExternalId(content.externalId())
-              .orElseThrow(() -> new NoSuchContentException(content.externalId()));
+              .orElseThrow(() -> new ContentException(ContentErrorCode.NO_SUCH_CONTENT));
 
           return content.tags().stream()
               .map(genre -> {
                 Tag tag = tagQueryRepository.findByName(genre)
-                    .orElseThrow(() -> new NoSuchTagException(genre));
+                    .orElseThrow(() -> new ContentException(ContentErrorCode.NO_SUCH_TAG));
 
                 return ContentTag.of(existingContent, tag);
               });

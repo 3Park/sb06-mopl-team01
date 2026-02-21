@@ -4,8 +4,8 @@ import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.example.mopl.content.entity.Content;
-import org.example.mopl.content.exception.NoSuchAuthorException;
-import org.example.mopl.content.exception.NoSuchContentException;
+import org.example.mopl.content.exception.ContentErrorCode;
+import org.example.mopl.content.exception.ContentException;
 import org.example.mopl.content.repository.ContentQueryRepository;
 import org.example.mopl.contentevaluation.entity.Playlist;
 import org.example.mopl.contentevaluation.entity.PlaylistContent;
@@ -38,13 +38,13 @@ public class PlaylistContentCommandService {
   public void addContentToPlaylist(String email, UUID playlistId, UUID contentId) {
 
     Content content = contentQueryRepository.findByUuid(contentId)
-        .orElseThrow(() -> new NoSuchContentException(contentId));
+        .orElseThrow(() -> new ContentException(ContentErrorCode.NO_SUCH_CONTENT));
 
     Playlist playlist = playlistQueryRepository.findByUuid(playlistId)
         .orElseThrow(() -> new NoSuchPlaylistException(playlistId));
 
     User user = userRepository.findByEmail(email)
-        .orElseThrow(() -> new NoSuchAuthorException(email));
+        .orElseThrow(() -> new ContentException(ContentErrorCode.NO_SUCH_AUTHOR));
 
     boolean isAdmin = user.getUserRoles().stream()
         .anyMatch(role -> role.getRole().getIsAdmin());
@@ -84,7 +84,7 @@ public class PlaylistContentCommandService {
         .orElseThrow(() -> new NoSuchPlaylistException(playlistId));
 
     User user = userRepository.findByEmail(email)
-        .orElseThrow(() -> new NoSuchAuthorException(email));
+        .orElseThrow(() -> new ContentException(ContentErrorCode.NO_SUCH_AUTHOR));
 
     boolean isAdmin = user.getUserRoles().stream()
         .anyMatch(role -> role.getRole().getIsAdmin());
@@ -95,11 +95,11 @@ public class PlaylistContentCommandService {
     }
 
     Content content = contentQueryRepository.findByUuid(contentId)
-        .orElseThrow(() -> new NoSuchContentException(contentId));
+        .orElseThrow(() -> new ContentException(ContentErrorCode.NO_SUCH_CONTENT));
 
     // 삭제할 콘텐츠가 플레이리스트에 존재하는지 확인
     if (!playlistContentQueryRepository.existsByPlaylistIdAndContentId(playlist.getId(), content.getId())) {
-      throw new NoSuchContentException("Content with ID " + contentId + " not found in playlist " + playlistId);
+      throw new ContentException(ContentErrorCode.NO_SUCH_CONTENT);
     }
 
     playlistContentCommandRepository.deleteByPlaylist_IdAndContent_Id(playlist.getId(), content.getId());

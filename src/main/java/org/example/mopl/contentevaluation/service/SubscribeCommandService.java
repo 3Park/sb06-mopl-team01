@@ -2,7 +2,8 @@ package org.example.mopl.contentevaluation.service;
 
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
-import org.example.mopl.content.exception.NoSuchAuthorException;
+import org.example.mopl.content.exception.ContentErrorCode;
+import org.example.mopl.content.exception.ContentException;
 import org.example.mopl.contentevaluation.entity.Playlist;
 import org.example.mopl.contentevaluation.entity.Subscribe;
 import org.example.mopl.contentevaluation.event.SubscribeCountEvent;
@@ -29,7 +30,7 @@ public class SubscribeCommandService {
   public void subscribePlaylist(String email, UUID playlistId) {
 
     User user = userRepository.findByEmail(email)
-        .orElseThrow(() -> new NoSuchAuthorException(email));
+        .orElseThrow(() -> new ContentException(ContentErrorCode.NO_SUCH_CONTENT));
 
     Playlist playlist = playlistQueryRepository.findByUuid(playlistId)
         .orElseThrow(() -> new NoSuchPlaylistException(playlistId));
@@ -61,7 +62,7 @@ public class SubscribeCommandService {
   public void unsubscribePlaylist(String email, UUID playlistId) {
 
     User user = userRepository.findByEmail(email)
-        .orElseThrow(() -> new NoSuchAuthorException(email));
+        .orElseThrow(() -> new ContentException(ContentErrorCode.NO_SUCH_AUTHOR));
 
     Playlist playlist = playlistQueryRepository.findByUuid(playlistId)
         .orElseThrow(() -> new NoSuchPlaylistException(playlistId));

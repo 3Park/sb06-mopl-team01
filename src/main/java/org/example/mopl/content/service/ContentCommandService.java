@@ -11,8 +11,8 @@ import org.example.mopl.content.dto.response.ContentDto;
 import org.example.mopl.content.entity.Content;
 import org.example.mopl.content.event.CreateContentEvent;
 import org.example.mopl.content.event.DeleteS3ObjectEvent;
-import org.example.mopl.content.exception.NoSuchContentException;
-import org.example.mopl.content.exception.S3UploadFailedException;
+import org.example.mopl.content.exception.ContentErrorCode;
+import org.example.mopl.content.exception.ContentException;
 import org.example.mopl.content.mapper.ContentMapper;
 import org.example.mopl.content.repository.ContentCommandRepository;
 import org.example.mopl.content.repository.ContentQueryRepository;
@@ -60,7 +60,7 @@ public class ContentCommandService {
           )
       );
     } catch (IOException e) {
-      throw new S3UploadFailedException(request.title());
+      throw new ContentException(ContentErrorCode.S3_UPLOAD_FAILED);
     }
 
     // DTO를 엔티티로 변환
@@ -103,7 +103,7 @@ public class ContentCommandService {
 
     // content 업데이트
     Content content = contentQueryRepository.findByUuid(contentId)
-        .orElseThrow(() -> new NoSuchContentException(contentId.toString()));
+        .orElseThrow(() -> new ContentException(ContentErrorCode.NO_SUCH_CONTENT));
     content.update(request.title(), request.description());
 
     // 썸네일 업로드한 경우에만 URL 업데이트
@@ -121,7 +121,7 @@ public class ContentCommandService {
         );
         content.updateThumbnailUrl(thumbnailUrl);
       } catch (IOException e) {
-        throw new S3UploadFailedException(request.title());
+        throw new ContentException(ContentErrorCode.S3_UPLOAD_FAILED);
       }
     }
 
@@ -141,7 +141,7 @@ public class ContentCommandService {
     contentCommandRepository.save(content);
 
     ContentWithTagsResult contentWithTagsResult = contentQueryRepository.findByUuidWithContentTag(contentId)
-        .orElseThrow(() -> new NoSuchContentException(contentId.toString()));
+        .orElseThrow(() -> new ContentException(ContentErrorCode.NO_SUCH_CONTENT));
 
     // 이전 썸네일 S3에서 삭제하기
     if (thumbnail != null && !thumbnail.isEmpty()) {
@@ -168,7 +168,7 @@ public class ContentCommandService {
   public void deleteContentByUuid(UUID contentUuid) {
 
     Content content = contentQueryRepository.findByUuid(contentUuid)
-        .orElseThrow(() -> new NoSuchContentException(contentUuid.toString()));
+        .orElseThrow(() -> new ContentException(ContentErrorCode.NO_SUCH_CONTENT));
 
     // S3 객체 삭제
     eventPublisher.publishEvent(
