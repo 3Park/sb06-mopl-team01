@@ -2,10 +2,7 @@ package org.example.mopl.directmessage.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.example.mopl.directmessage.dto.ConversationSearchCondition;
-import org.example.mopl.directmessage.dto.CursorResult;
-import org.example.mopl.directmessage.dto.DirectMessageSearchCondition;
-import org.example.mopl.directmessage.dto.ReadReceiptDto;
+import org.example.mopl.directmessage.dto.*;
 import org.example.mopl.directmessage.dto.data.ConversationDto;
 import org.example.mopl.directmessage.dto.request.ConversationListRequest;
 import org.example.mopl.directmessage.dto.request.DirectMessageListRequest;
@@ -197,6 +194,13 @@ public class DirectMessageService {
                 .build();
     }
 
+    // DM 대화방 내 상대 타이핑 여부 전송
+    @Transactional
+    public void sendTypingEvent(UUID conversationId, UUID senderId, boolean isTyping) {
+
+        TypingDto dto = TypingDto.of(conversationId, senderId, isTyping);
+        messagingTemplate.convertAndSend(resolveDestination(conversationId), dto);
+    }
 
     // ===== helper method =====
 
