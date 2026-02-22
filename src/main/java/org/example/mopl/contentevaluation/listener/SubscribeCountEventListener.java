@@ -2,10 +2,10 @@ package org.example.mopl.contentevaluation.listener;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.example.mopl.content.repository.ContentsStatQueryRepository;
 import org.example.mopl.contentevaluation.entity.PlaylistsStat;
 import org.example.mopl.contentevaluation.event.SubscribeCountEvent;
-import org.example.mopl.contentevaluation.exception.NoSuchPlaylistException;
+import org.example.mopl.contentevaluation.exception.ContentEvaluationErrorCode;
+import org.example.mopl.contentevaluation.exception.ContentEvaluationException;
 import org.example.mopl.contentevaluation.repository.PlaylistsStatCommandRepository;
 import org.example.mopl.contentevaluation.repository.PlaylistsStatQueryRepository;
 import org.springframework.scheduling.annotation.Async;
@@ -27,7 +27,7 @@ public class SubscribeCountEventListener {
     log.info("구독 수 증가 이벤트 수신 for playlistId: {}", event.playlistId());
 
     PlaylistsStat playlistsStat = playlistsStatQueryRepository.findByPlaylistId(event.playlistId())
-        .orElseThrow(() -> new NoSuchPlaylistException(event.playlistUuid()));
+        .orElseThrow(() -> new ContentEvaluationException(ContentEvaluationErrorCode.NO_SUCH_PLAYLIST));
 
     playlistsStat.incrementSubscribeCount();
 
@@ -44,7 +44,7 @@ public class SubscribeCountEventListener {
     log.info("구독 수 감소 이벤트 수신 for playlistId: {}", event.playlistId());
 
     PlaylistsStat playlistsStat = playlistsStatQueryRepository.findByPlaylistId(event.playlistId())
-        .orElseThrow(() -> new NoSuchPlaylistException(event.playlistUuid()));
+        .orElseThrow(() -> new ContentEvaluationException(ContentEvaluationErrorCode.NO_SUCH_PLAYLIST));
 
     playlistsStat.decrementSubscribeCount();
 

@@ -19,6 +19,7 @@ import org.springframework.batch.item.data.builder.RepositoryItemWriterBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
+import org.springframework.dao.PessimisticLockingFailureException;
 import org.springframework.data.domain.Sort;
 import org.springframework.transaction.PlatformTransactionManager;
 
@@ -48,6 +49,9 @@ public class ContentsWatchingCountBatchConfig {
         .reader(contentsWatchingCountItemReader())
         .processor(contentsWatchingCountItemProcessor)
         .writer(contentsWatchingCountItemWriter())
+        .faultTolerant()
+        .retry(PessimisticLockingFailureException.class)
+        .retryLimit(3)
         .build();
   }
 

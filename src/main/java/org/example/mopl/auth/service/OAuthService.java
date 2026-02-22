@@ -148,7 +148,7 @@ public class OAuthService implements OAuth2UserService<OAuth2UserRequest, OAuth2
         }
 
         LinkedHashMap<String,Object> map = (LinkedHashMap<String,Object>)attributes.get("properties");
-        if(map.containsKey("nickname") == false)
+        if(map == null || map.containsKey("nickname") == false)
             return "";
 
         return (String) map.get("nickname");

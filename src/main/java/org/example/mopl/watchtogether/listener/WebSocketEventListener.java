@@ -11,6 +11,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.messaging.SessionDisconnectEvent;
 import org.springframework.web.socket.messaging.SessionSubscribeEvent;
+import org.springframework.web.socket.messaging.SessionUnsubscribeEvent;
 
 import java.security.Principal;
 import java.util.concurrent.ConcurrentHashMap;
@@ -65,12 +66,17 @@ public class WebSocketEventListener {
 
         if (sessionId == null) return;
 
-        String destination = sessionToDestination.remove(sessionId);
+        removeSession(sessionId);
+    }
 
-        if (destination != null && destination.startsWith(CONTENTS)) {
-            watchTogetherService.removeUserFromRoom(sessionId);
-            log.info("Session disconnected: {}", sessionId);
-        }
+    @EventListener
+    public void handleUnsubscribe(SessionUnsubscribeEvent event) {
+        StompHeaderAccessor accessor = StompHeaderAccessor.wrap(event.getMessage());
+        String sessionId = accessor.getSessionId();
+
+        if (sessionId == null) return;
+
+        removeSession(sessionId);
     }
 
     private UserDto extractUserDto(Principal principal) {
@@ -92,5 +98,14 @@ public class WebSocketEventListener {
         if (pathParts.length > 3) {return pathParts[3];}
 
         return null;
+    }
+
+    private void removeSession(String sessionId){
+        String destination = sessionToDestination.remove(sessionId);
+
+        if (destination != null && destination.startsWith(CONTENTS)) {
+            watchTogetherService.removeUserFromRoom(sessionId);
+            log.info("Session Remove: {}", sessionId);
+        }
     }
 }

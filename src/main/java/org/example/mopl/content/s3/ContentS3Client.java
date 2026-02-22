@@ -7,8 +7,8 @@ import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.example.mopl.content.dto.S3FileDto;
-import org.example.mopl.content.exception.NoSuchS3ObjectException;
-import org.example.mopl.content.exception.S3DeleteFailedException;
+import org.example.mopl.content.exception.ContentErrorCode;
+import org.example.mopl.content.exception.ContentException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import software.amazon.awssdk.core.sync.RequestBody;
@@ -65,7 +65,7 @@ public class ContentS3Client {
     } catch (Exception e) {
       log.error("Failed to delete object from S3 with id: {}", id, e);
 
-      throw new S3DeleteFailedException(id);
+      throw new ContentException(ContentErrorCode.S3_DELETE_FAILED, e);
     }
 
   }
@@ -74,7 +74,7 @@ public class ContentS3Client {
 
     try {
       checkIfObjectExists(id);
-    } catch (NoSuchS3ObjectException e) {
+    } catch (ContentException e) {
       return Optional.of("");
     }
 
@@ -99,7 +99,7 @@ public class ContentS3Client {
     try {
       s3Client.headObject(b -> b.bucket(bucket).key(id));
     } catch (S3Exception e) {
-      throw new NoSuchS3ObjectException(id);
+      throw new ContentException(ContentErrorCode.NO_SUCH_S3_OBJECT,e);
     }
   }
 

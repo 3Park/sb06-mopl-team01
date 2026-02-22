@@ -4,7 +4,8 @@ import java.util.ArrayList;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.example.mopl.content.exception.NoSuchAuthorException;
+import org.example.mopl.content.exception.ContentErrorCode;
+import org.example.mopl.content.exception.ContentException;
 import org.example.mopl.contentevaluation.dto.request.PlaylistCreateRequest;
 import org.example.mopl.contentevaluation.dto.request.PlaylistUpdateRequest;
 import org.example.mopl.contentevaluation.dto.response.OwnerDto;
@@ -12,8 +13,8 @@ import org.example.mopl.contentevaluation.dto.response.PlaylistDto;
 import org.example.mopl.contentevaluation.entity.Playlist;
 import org.example.mopl.contentevaluation.entity.PlaylistsStat;
 import org.example.mopl.contentevaluation.event.CreatePlaylistEvent;
-import org.example.mopl.contentevaluation.exception.NoSuchPlaylistException;
-import org.example.mopl.contentevaluation.exception.UnauthorizedPlaylistException;
+import org.example.mopl.contentevaluation.exception.ContentEvaluationErrorCode;
+import org.example.mopl.contentevaluation.exception.ContentEvaluationException;
 import org.example.mopl.contentevaluation.repository.PlaylistCommandRepository;
 import org.example.mopl.contentevaluation.repository.PlaylistContentCommandRepository;
 import org.example.mopl.contentevaluation.repository.PlaylistQueryRepository;
@@ -45,7 +46,7 @@ public class PlaylistCommandService {
   public PlaylistDto createPlaylist(String email, PlaylistCreateRequest request) {
 
     User user = userRepository.findByEmail(email)
-        .orElseThrow(() -> new NoSuchAuthorException(email));
+        .orElseThrow(() -> new ContentException(ContentErrorCode.NO_SUCH_AUTHOR));
 
     Playlist playlist = Playlist.of(request.title(), user, request.description());
 
@@ -89,21 +90,21 @@ public class PlaylistCommandService {
   public PlaylistDto updatePlaylist(String email, UUID playlistId, PlaylistUpdateRequest request) {
 
     Playlist playlist = playlistQueryRepository.findByUuid(playlistId)
-        .orElseThrow(() -> new NoSuchPlaylistException(playlistId));
+        .orElseThrow(() -> new ContentEvaluationException(ContentEvaluationErrorCode.NO_SUCH_PLAYLIST));
 
     User user = userRepository.findByEmail(email)
-        .orElseThrow(() -> new NoSuchAuthorException(email));
+        .orElseThrow(() -> new ContentException(ContentErrorCode.NO_SUCH_AUTHOR));
 
     boolean isAdmin = user.getUserRoles().stream()
         .anyMatch(role -> role.getRole().getIsAdmin());
 
     // 작성자 본인이나 관리자가 아닌 경우 예외 발생
     if (!isAdmin && !playlist.getUser().getId().equals(user.getId())) {
-      throw new UnauthorizedPlaylistException(email, playlistId);
+      throw new ContentEvaluationException(ContentEvaluationErrorCode.UNAUTHORIZED_PLAYLIST);
     }
 
     PlaylistsStat playlistsStat = playlistsStatQueryRepository.findByPlaylistId(playlist.getId())
-        .orElseThrow(() -> new NoSuchPlaylistException(playlistId));
+        .orElseThrow(() -> new ContentEvaluationException(ContentEvaluationErrorCode.NO_SUCH_PLAYLIST));
 
     playlist.update(request.title(), request.description());
 
@@ -128,17 +129,17 @@ public class PlaylistCommandService {
   public void deletePlaylistByUuid(String email, UUID playlistId) {
 
     Playlist playlist = playlistQueryRepository.findByUuid(playlistId)
-        .orElseThrow(() -> new NoSuchPlaylistException(playlistId));
+        .orElseThrow(() -> new ContentEvaluationException(ContentEvaluationErrorCode.NO_SUCH_PLAYLIST));
 
     User user = userRepository.findByEmail(email)
-        .orElseThrow(() -> new NoSuchAuthorException(email));
+        .orElseThrow(() -> new ContentException(ContentErrorCode.NO_SUCH_AUTHOR));
 
     boolean isAdmin = user.getUserRoles().stream()
         .anyMatch(role -> role.getRole().getIsAdmin());
 
     // 작성자 본인이나 관리자가 아닌 경우 예외 발생
     if (!isAdmin && !playlist.getUser().getId().equals(user.getId())) {
-      throw new UnauthorizedPlaylistException(email, playlistId);
+      throw new ContentEvaluationException(ContentEvaluationErrorCode.UNAUTHORIZED_PLAYLIST);
     }
 
     // 연관관계 삭제

@@ -4,7 +4,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.example.mopl.content.entity.ContentsStat;
 import org.example.mopl.content.event.RatingEvent;
-import org.example.mopl.content.exception.NoSuchContentException;
+import org.example.mopl.content.exception.ContentErrorCode;
+import org.example.mopl.content.exception.ContentException;
 import org.example.mopl.content.repository.ContentsStatCommandRepository;
 import org.example.mopl.content.repository.ContentsStatQueryRepository;
 import org.springframework.scheduling.annotation.Async;
@@ -26,7 +27,7 @@ public class RatingEventListener {
     log.info("리뷰 수 증가 이벤트 처리 시작 for contentId: {}", event.contentId());
 
     ContentsStat contentsStat = contentsStatQueryRepository.findByContentId(event.contentId())
-        .orElseThrow(() -> new NoSuchContentException(event.contentUuid()));
+        .orElseThrow(() -> new ContentException(ContentErrorCode.NO_SUCH_CONTENT));
 
     contentsStat.addRating((long) event.rating());
 
@@ -43,7 +44,7 @@ public class RatingEventListener {
     log.info("리뷰 수 감소 이벤트 처리 시작 for contentId: {}", event.contentId());
 
     ContentsStat contentsStat = contentsStatQueryRepository.findByContentId(event.contentId())
-        .orElseThrow(() -> new NoSuchContentException(event.contentUuid()));
+        .orElseThrow(() -> new ContentException(ContentErrorCode.NO_SUCH_CONTENT));
 
     contentsStat.removeRating((long) event.rating());
 

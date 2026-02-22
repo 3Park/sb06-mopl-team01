@@ -61,7 +61,7 @@ public class UserService {
     @Transactional
     public UserDto createUser(UserCreateRequest request)
     {
-        return createUser(request.getEmail(), request.getPassword(), request.getName(), UserRoleType.USER);
+        return createUser(request.email(), request.password(), request.name(), UserRoleType.USER);
     }
 
     private UserDto createUser(String email, String password, String name, UserRoleType type)
@@ -143,7 +143,7 @@ public class UserService {
     }
 
     @Transactional(readOnly = true)
-    public CursorResponseUserDto getAllUsers(UserCursorRequest request)
+    public CursorResponseUserDto findAllUsers(UserCursorRequest request)
     {
         if(request == null)
             throw new UserException(UserErrorCode.INVALID_DATA);
@@ -218,7 +218,7 @@ public class UserService {
 
         String beforeRole = user.getUserRoles().get(0).getRole().getName().name();
 
-        Role role = roleRepository.findByName(request.getRole()).orElseThrow(()-> new UserException(UserErrorCode.INVALID_ROLE));
+        Role role = roleRepository.findByName(request.role()).orElseThrow(()-> new UserException(UserErrorCode.INVALID_ROLE));
         user.getUserRoles().get(0).setRole(role);
         userRoleRepository.save(user.getUserRoles().get(0));
         userRepository.save(user);
@@ -238,7 +238,7 @@ public class UserService {
         if(user.getUserRoles() == null ||  user.getUserRoles().isEmpty())
             throw new UserException(UserErrorCode.INVALID_DATA);
 
-        user.setLocked(request.getLocked());
+        user.setLocked(request.locked());
         userRepository.save(user);
 
         applicationEventPublisher.publishEvent(UserRoleLockStatusChangedEvent.builder()

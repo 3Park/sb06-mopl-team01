@@ -10,11 +10,8 @@ import org.example.mopl.content.dto.response.ReviewDto;
 import org.example.mopl.content.entity.Content;
 import org.example.mopl.content.entity.Review;
 import org.example.mopl.content.event.RatingEvent;
-import org.example.mopl.content.exception.DuplicateReviewException;
-import org.example.mopl.content.exception.NoSuchAuthorException;
-import org.example.mopl.content.exception.NoSuchContentException;
-import org.example.mopl.content.exception.NoSuchReviewException;
-import org.example.mopl.content.exception.UnauthorizedReviewException;
+import org.example.mopl.content.exception.ContentErrorCode;
+import org.example.mopl.content.exception.ContentException;
 import org.example.mopl.content.repository.ContentQueryRepository;
 import org.example.mopl.content.repository.ReviewCommandRepository;
 import org.example.mopl.content.repository.ReviewQueryRepository;
@@ -39,13 +36,13 @@ public class ReviewCommandService {
   public ReviewDto createReview(String email, ReviewCreateRequest request) {
 
     User user = userRepository.findByEmail(email)
-        .orElseThrow(() -> new NoSuchAuthorException(email));
+        .orElseThrow(() -> new ContentException(ContentErrorCode.NO_SUCH_AUTHOR));
 
     Content content = contentQueryRepository.findByUuid(request.contentId())
-        .orElseThrow(() -> new NoSuchContentException(request.contentId().toString()));
+        .orElseThrow(() -> new ContentException(ContentErrorCode.NO_SUCH_CONTENT));
 
     if (reviewQueryRepository.existsByContentIdAndUserId(content.getId(), user.getId())) {
-      throw new DuplicateReviewException(content.getUuid());
+      throw new ContentException(ContentErrorCode.DUPLICATE_REVIEW);
     }
 
     Review review = reviewCommandRepository.save(
@@ -80,17 +77,17 @@ public class ReviewCommandService {
   public ReviewDto updateReview(String email, UUID reviewId, ReviewUpdateRequest request) {
 
     Review review = reviewQueryRepository.findByUuid(reviewId)
-        .orElseThrow(() -> new NoSuchReviewException(reviewId.toString()));
+        .orElseThrow(() -> new ContentException(ContentErrorCode.NO_SUCH_REVIEW));
 
     User user = userRepository.findByEmail(email)
-        .orElseThrow(() -> new NoSuchAuthorException(email));
+        .orElseThrow(() -> new ContentException(ContentErrorCode.NO_SUCH_AUTHOR));
 
     boolean isAdmin = user.getUserRoles().stream()
         .anyMatch(role -> role.getRole().getIsAdmin());
 
     // 작성자 본인이나 관리자가 아닌 경우 예외 발생
     if (!isAdmin && !review.getUser().getUuid().equals(user.getUuid())) {
-      throw new UnauthorizedReviewException(email);
+      throw new ContentException(ContentErrorCode.UNAUTHORIZED_REVIEW);
     }
 
     // 기존 평점 삭제 이벤트 발행
@@ -130,17 +127,17 @@ public class ReviewCommandService {
   public void deleteReviewByUuid(String email, UUID reviewId) {
 
     Review review = reviewQueryRepository.findByUuid(reviewId)
-        .orElseThrow(() -> new NoSuchReviewException(reviewId.toString()));
+        .orElseThrow(() -> new ContentException(ContentErrorCode.NO_SUCH_REVIEW));
 
     User user = userRepository.findByEmail(email)
-        .orElseThrow(() -> new NoSuchAuthorException(email));
+        .orElseThrow(() -> new ContentException(ContentErrorCode.NO_SUCH_AUTHOR));
 
     boolean isAdmin = user.getUserRoles().stream()
         .anyMatch(role -> role.getRole().getIsAdmin());
 
     // 작성자 본인이나 관리자가 아닌 경우 예외 발생
     if (!isAdmin && !review.getUser().getUuid().equals(user.getUuid())) {
-      throw new UnauthorizedReviewException(email);
+      throw new ContentException(ContentErrorCode.UNAUTHORIZED_REVIEW);
     }
 
     // 평점 감소 이벤트 발행

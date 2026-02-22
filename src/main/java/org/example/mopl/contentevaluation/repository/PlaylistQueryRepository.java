@@ -10,7 +10,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
-import org.example.mopl.content.exception.NoSuchAuthorException;
+import org.example.mopl.content.exception.ContentErrorCode;
+import org.example.mopl.content.exception.ContentException;
 import org.example.mopl.contentevaluation.dto.ContentEvaluationQueryDto.PlaylistResult;
 import org.example.mopl.contentevaluation.dto.request.CursorRequestPlaylistDto;
 import org.example.mopl.contentevaluation.entity.Playlist;
@@ -19,7 +20,6 @@ import org.example.mopl.contentevaluation.entity.QPlaylistsStat;
 import org.example.mopl.contentevaluation.entity.QSubscribe;
 import org.example.mopl.profile.entity.QProfile;
 import org.example.mopl.user.entity.QUser;
-import org.example.mopl.user.exception.UserException;
 import org.jspecify.annotations.Nullable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -121,7 +121,7 @@ public class PlaylistQueryRepository {
         .fetchFirst();
 
     if (userId == null) {
-      throw new NoSuchAuthorException(email);
+      throw new ContentException(ContentErrorCode.NO_SUCH_AUTHOR);
     }
 
     List<PlaylistResult> playlists = queryFactory.select(

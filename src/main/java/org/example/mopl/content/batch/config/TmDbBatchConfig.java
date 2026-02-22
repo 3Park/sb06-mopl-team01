@@ -20,6 +20,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
+import org.springframework.dao.PessimisticLockingFailureException;
+import org.springframework.retry.support.RetryTemplate;
 import org.springframework.transaction.PlatformTransactionManager;
 
 @Configuration
@@ -48,9 +50,17 @@ public class TmDbBatchConfig {
   public Step importGenresStep() {
     return new StepBuilder("importGenresStep", jobRepository)
         .tasklet((contribution, chunkContext) -> {
-          tmDbBatchService.importMovieGenres();
-          tmDbBatchService.importTvSeriesGenres();
-          return RepeatStatus.FINISHED;
+          RetryTemplate retryTemplate = RetryTemplate.builder()
+              .maxAttempts(5)
+              .retryOn(PessimisticLockingFailureException.class)
+              .exponentialBackoff(1000, 2, 10000)
+              .build();
+
+          return retryTemplate.execute(context -> {
+            tmDbBatchService.importMovieGenres();
+            tmDbBatchService.importTvSeriesGenres();
+            return RepeatStatus.FINISHED;
+          });
         }, transactionManager)
         .build();
   }
@@ -61,6 +71,9 @@ public class TmDbBatchConfig {
         .<Integer, Integer>chunk(1, transactionManager)
         .reader(tmDbPageReader())
         .writer(tmDbPageWriter())
+        .faultTolerant()
+        .retry(PessimisticLockingFailureException.class)
+        .retryLimit(5)
         .build();
   }
 
