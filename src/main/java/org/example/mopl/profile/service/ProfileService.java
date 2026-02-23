@@ -8,7 +8,6 @@ import org.example.mopl.profile.dto.SubscribedPlaylistItemDto;
 import org.example.mopl.profile.repository.SubscribedPlaylistQueryRepository;
 import org.example.mopl.profile.dto.ProfileDto;
 import org.example.mopl.profile.dto.ProfileUpdateRequest;
-import org.example.mopl.profile.dto.UserSummary;
 import org.example.mopl.profile.dto.WatchingContentDto;
 import org.example.mopl.profile.entity.Profile;
 import org.example.mopl.profile.entity.WatchingSession;
@@ -17,8 +16,6 @@ import org.example.mopl.profile.exception.ProfileNotFoundException;
 import org.example.mopl.profile.exception.ProfileUnauthorizedException;
 import org.example.mopl.profile.repository.ProfileRepository;
 import org.example.mopl.profile.repository.WatchingSessionRepository;
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -54,7 +51,6 @@ public class ProfileService {
     }
 
     @Transactional
-    @CacheEvict(cacheNames = "userSummary", key = "#userUuid")
     public ProfileDto update(UUID userUuid, ProfileUpdateRequest request, UUID currentUserUuid) {
         if (currentUserUuid == null) {
             throw new ProfileUnauthorizedException();
@@ -69,7 +65,6 @@ public class ProfileService {
     }
 
     @Transactional
-    @CacheEvict(cacheNames = "userSummary", key = "#userUuid")
     public ProfileDto uploadProfileImage(UUID userUuid, MultipartFile file, UUID currentUserUuid) throws IOException {
         if (currentUserUuid == null) {
             throw new ProfileUnauthorizedException();
@@ -147,46 +142,6 @@ public class ProfileService {
                 .hasNext(result.hasNext())
                 .sortBy(request.sortBy())
                 .sortDirection(request.sortDirection())
-                .build();
-    }
-
-    /**
-     * 단일 사용자 프로필 요약 (알림/DM 연계용). 캐시 적용.
-     */
-    @Transactional(readOnly = true)
-    @Cacheable(cacheNames = "userSummary", key = "#userUuid")
-    public UserSummary getUserSummary(UUID userUuid) {
-        Profile profile = profileRepository.findWithUserByUserUuid(userUuid)
-                .orElseThrow(() -> new ProfileNotFoundException(userUuid));
-        return toUserSummary(profile);
-    }
-
-    /**
-     * 여러 사용자 프로필 요약 일괄 조회 (알림/DM 연계용). 요청한 userUuid 순서로 반환.
-     */
-    @Transactional(readOnly = true)
-    public List<UserSummary> getUserSummaries(List<UUID> userUuids) {
-        if (userUuids == null || userUuids.isEmpty()) {
-            return List.of();
-        }
-        List<UUID> distinctUuids = userUuids.stream().distinct().toList();
-        List<Profile> profiles = profileRepository.findAllWithUserByUserUuidIn(distinctUuids);
-        return distinctUuids.stream()
-                .map(userUuid -> profiles.stream()
-                        .filter(p -> p.getUser().getUuid().equals(userUuid))
-                        .findFirst()
-                        .map(this::toUserSummary)
-                        .orElse(null))
-                .filter(s -> s != null)
-                .toList();
-    }
-
-    private UserSummary toUserSummary(Profile profile) {
-        return UserSummary.builder()
-                .userId(profile.getUser().getId())
-                .userUuid(profile.getUser().getUuid())
-                .name(profile.getName())
-                .profileImageUrl(profile.getProfileImageUrl())
                 .build();
     }
 

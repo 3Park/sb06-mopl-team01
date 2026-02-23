@@ -5,13 +5,11 @@ import org.example.mopl.contentevaluation.dto.response.CursorResponsePlaylistDto
 import org.example.mopl.profile.dto.SubscribedPlaylistCursorResponse;
 import org.example.mopl.profile.dto.ProfileDto;
 import org.example.mopl.profile.dto.ProfileUpdateRequest;
-import org.example.mopl.profile.dto.UserSummary;
 import org.example.mopl.profile.dto.WatchingContentDto;
 import org.example.mopl.profile.service.ProfileService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -37,70 +35,56 @@ public class ProfileController {
         this.profileService = profileService;
     }
 
-    /** 프로필 기본 정보 조회 */
-    @GetMapping("/{userUuid}/profile")
-    public ResponseEntity<ProfileDto> getByUserUuid(@PathVariable UUID userUuid) {
-        ProfileDto dto = profileService.getByUserUuid(userUuid);
+    /** 사용자 상세 조회 = 프로필 조회 (명세: GET /api/users/{userId}) */
+    @GetMapping("/{userId}")
+    public ResponseEntity<ProfileDto> getByUserUuid(@PathVariable UUID userId) {
+        ProfileDto dto = profileService.getByUserUuid(userId);
         return ResponseEntity.ok(dto);
     }
 
-    /** 프로필 수정 (본인만) */
-    @PatchMapping("/{userUuid}/profile")
+    /* 프로필 변경 */
+    @PatchMapping("/{userId}")
     public ResponseEntity<ProfileDto> update(
-            @PathVariable UUID userUuid,
+            @PathVariable UUID userId,
             @RequestBody @Valid ProfileUpdateRequest request,
             @RequestHeader(value = "X-User-Id", required = false) UUID currentUserUuid
     ) {
-        ProfileDto dto = profileService.update(userUuid, request, currentUserUuid);
+        ProfileDto dto = profileService.update(userId, request, currentUserUuid);
         return ResponseEntity.ok(dto);
     }
 
-    /** 프로필 이미지 업로드 */
-    @PostMapping(value = "/{userUuid}/profile/image", consumes = "multipart/form-data")
+    /* 프로필 이미지 업로드 */
+    @PostMapping(value = "/{userId}/profile/image", consumes = "multipart/form-data")
     public ResponseEntity<ProfileDto> uploadProfileImage(
-            @PathVariable UUID userUuid,
+            @PathVariable UUID userId,
             @RequestPart("file") MultipartFile file,
             @RequestHeader(value = "X-User-Id", required = false) UUID currentUserUuid
     ) throws IOException {
-        ProfileDto dto = profileService.uploadProfileImage(userUuid, file, currentUserUuid);
+        ProfileDto dto = profileService.uploadProfileImage(userId, file, currentUserUuid);
         return ResponseEntity.ok(dto);
     }
 
-    @GetMapping("/{userUuid}/watching")
-    public ResponseEntity<List<WatchingContentDto>> getWatchingContents(@PathVariable UUID userUuid) {
-        List<WatchingContentDto> list = profileService.getWatchingContents(userUuid);
+    @GetMapping("/{userId}/watching")
+    public ResponseEntity<List<WatchingContentDto>> getWatchingContents(@PathVariable UUID userId) {
+        List<WatchingContentDto> list = profileService.getWatchingContents(userId);
         return ResponseEntity.ok(list);
     }
 
-    @GetMapping("/{userUuid}/playlists")
+    @GetMapping("/{userId}/playlists")
     public ResponseEntity<CursorResponsePlaylistDto> getOwnedPlaylists(
-            @PathVariable UUID userUuid,
+            @PathVariable UUID userId,
             @ModelAttribute @Valid CursorRequestPlaylistDto request
     ) {
-        CursorResponsePlaylistDto result = profileService.getOwnedPlaylists(userUuid, request);
+        CursorResponsePlaylistDto result = profileService.getOwnedPlaylists(userId, request);
         return ResponseEntity.ok(result);
     }
 
-    @GetMapping("/{userUuid}/subscribed-playlists")
+    @GetMapping("/{userId}/subscribed-playlists")
     public ResponseEntity<SubscribedPlaylistCursorResponse> getSubscribedPlaylists(
-            @PathVariable UUID userUuid,
+            @PathVariable UUID userId,
             @ModelAttribute @Valid CursorRequestPlaylistDto request
     ) {
-        SubscribedPlaylistCursorResponse result = profileService.getSubscribedPlaylists(userUuid, request);
+        SubscribedPlaylistCursorResponse result = profileService.getSubscribedPlaylists(userId, request);
         return ResponseEntity.ok(result);
-    }
-
-    /** 단일 사용자 프로필 요약 (알림/DM 연계용) */
-    @GetMapping("/{userUuid}/summary")
-    public ResponseEntity<UserSummary> getUserSummary(@PathVariable UUID userUuid) {
-        UserSummary summary = profileService.getUserSummary(userUuid);
-        return ResponseEntity.ok(summary);
-    }
-
-    /** 여러 사용자 프로필 요약 일괄 조회 (알림/DM 연계용). userIds=uuid1&userIds=uuid2 */
-    @GetMapping("/summaries")
-    public ResponseEntity<List<UserSummary>> getUserSummaries(@RequestParam List<UUID> userIds) {
-        List<UserSummary> list = profileService.getUserSummaries(userIds);
-        return ResponseEntity.ok(list);
     }
 }

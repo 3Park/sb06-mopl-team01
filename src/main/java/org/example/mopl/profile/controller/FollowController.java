@@ -1,12 +1,10 @@
 package org.example.mopl.profile.controller;
 
 import jakarta.validation.Valid;
-import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
-import org.example.mopl.profile.dto.FollowCreateRequest;
-import org.example.mopl.profile.dto.FollowResponse;
-import org.example.mopl.profile.dto.FollowUserDto;
+import org.example.mopl.profile.dto.FollowDto;
+import org.example.mopl.profile.dto.FollowRequest;
 import org.example.mopl.profile.dto.FollowedByMeResponse;
 import org.example.mopl.profile.dto.FollowerCountResponse;
 import org.example.mopl.profile.service.FollowService;
@@ -30,12 +28,12 @@ public class FollowController {
     private final FollowService followService;
 
     @PostMapping
-    public ResponseEntity<FollowResponse> create(
-            @RequestBody @Valid FollowCreateRequest request,
+    public ResponseEntity<FollowDto> create(
+            @RequestBody @Valid FollowRequest request,
             @RequestHeader(value = "X-User-Id", required = false) UUID currentUserUuid
     ) {
-        FollowResponse response = followService.create(currentUserUuid, request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        FollowDto dto = followService.create(currentUserUuid, request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(dto);
     }
 
     @DeleteMapping("/{followUuid}")
@@ -62,15 +60,4 @@ public class FollowController {
         return ResponseEntity.ok(response);
     }
 
-    @GetMapping("/following")
-    public ResponseEntity<List<FollowUserDto>> getFollowingList(@RequestParam UUID userUuid) {
-        List<FollowUserDto> list = followService.getFollowingList(userUuid);
-        return ResponseEntity.ok(list);
-    }
-
-    @GetMapping("/followers")
-    public ResponseEntity<List<FollowUserDto>> getFollowerList(@RequestParam UUID userUuid) {
-        List<FollowUserDto> list = followService.getFollowerList(userUuid);
-        return ResponseEntity.ok(list);
-    }
 }

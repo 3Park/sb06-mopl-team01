@@ -8,12 +8,11 @@ import static org.mockito.Mockito.when;
 
 import java.util.Optional;
 import java.util.UUID;
-import org.example.mopl.profile.dto.FollowCreateRequest;
+import org.example.mopl.profile.dto.FollowRequest;
 import org.example.mopl.profile.dto.FollowedByMeResponse;
 import org.example.mopl.profile.dto.FollowerCountResponse;
 import org.example.mopl.profile.exception.FollowSelfForbiddenException;
 import org.example.mopl.profile.repository.FollowRepository;
-import org.example.mopl.profile.repository.ProfileRepository;
 import org.example.mopl.user.entity.User;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -32,8 +31,6 @@ class FollowServiceTest {
     @Mock
     private org.example.mopl.user.repository.UserRepository userRepository;
     @Mock
-    private ProfileRepository profileRepository;
-    @Mock
     private ApplicationEventPublisher eventPublisher;
 
     @InjectMocks
@@ -42,8 +39,8 @@ class FollowServiceTest {
     @Test
     @DisplayName("create: currentUserUuid가 null이면 ProfileUnauthorizedException")
     void create_throwsWhenUnauthorized() {
-        FollowCreateRequest request = new FollowCreateRequest();
-        ReflectionTestUtils.setField(request, "followeeUuid", UUID.randomUUID());
+        FollowRequest request = new FollowRequest();
+        ReflectionTestUtils.setField(request, "followeeId", UUID.randomUUID());
 
         assertThatThrownBy(() -> followService.create(null, request))
                 .isInstanceOf(org.example.mopl.profile.exception.ProfileUnauthorizedException.class);
@@ -53,8 +50,8 @@ class FollowServiceTest {
     @DisplayName("create: 자기 자신을 팔로우하면 FollowSelfForbiddenException")
     void create_throwsWhenSelfFollow() {
         UUID userUuid = UUID.randomUUID();
-        FollowCreateRequest request = new FollowCreateRequest();
-        ReflectionTestUtils.setField(request, "followeeUuid", userUuid);
+        FollowRequest request = new FollowRequest();
+        ReflectionTestUtils.setField(request, "followeeId", userUuid);
 
         assertThatThrownBy(() -> followService.create(userUuid, request))
                 .isInstanceOf(FollowSelfForbiddenException.class);

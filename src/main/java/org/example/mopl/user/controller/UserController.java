@@ -64,11 +64,7 @@ public class UserController {
         return ResponseEntity.ok().build();
     }
 
-    @GetMapping("/{userId}")
-    public ResponseEntity<UserDto> getDetailsUser(@PathVariable UUID userId) {
-        return ResponseEntity.status(HttpStatus.OK).body(userService.getDetailsUser(userId));
-    }
-
+    /* 사용자 상세 조회 = 프로필 조회 → ProfileController GET /api/users/{userId} (ProfileDto) 로 통일 */
     @PreAuthorize("hasRole('ADMIN')")
     @PatchMapping("/{userId}/role")
     public ResponseEntity<Void> updateUserRole(@PathVariable UUID userId, @RequestBody @Valid ChangeRoleRequest request) {
