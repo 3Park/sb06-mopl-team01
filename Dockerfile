@@ -8,10 +8,10 @@ COPY gradlew ./
 COPY gradle ./gradle
 COPY build.gradle settings.gradle ./
 
-# 실행 권한 부여 및 검증
-RUN chmod +x ./gradlew && ls -la ./gradlew
+# CRLF를 LF로 변환 후 실행 권한 부여
+RUN sed -i 's/\r$//' ./gradlew && chmod +x ./gradlew
 
-# 소스 코드 복사 후 바로 빌드
+# 소스 코드 복사 후 빌드
 COPY src ./src
 
 RUN ./gradlew clean build -x test
