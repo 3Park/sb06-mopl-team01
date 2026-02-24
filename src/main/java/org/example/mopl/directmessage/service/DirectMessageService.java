@@ -73,14 +73,6 @@ public class DirectMessageService {
 
     }
 
-    private void updateConversationScoreInCache(Conversation conversation, User sender,
-                                                User receiver, DirectMessage message) {
-        redisTemplate.opsForZSet().add(resolveRedisKey(sender.getUuid()),
-                conversation.getUuid().toString(), toEpochMilli(message.getCreatedAt()));
-        redisTemplate.opsForZSet().add(resolveRedisKey(receiver.getUuid()),
-                conversation.getUuid().toString(), toEpochMilli(message.getCreatedAt()));
-    }
-
     // 대화 생성
     @Transactional
     public ConversationDto create(UUID creatorId, UUID joinId) {
@@ -100,13 +92,6 @@ public class DirectMessageService {
                 conversation, creator, joiner,
                 findLastMessage(conversation).orElse(null)
         );
-    }
-
-    private void cacheConversationForParticipants(Conversation conversation, UUID creatorId, UUID joinId) {
-        redisTemplate.opsForZSet().add(resolveRedisKey(creatorId),
-                conversation.getUuid().toString(), toEpochMilli(conversation.getCreatedAt()));
-        redisTemplate.opsForZSet().add(resolveRedisKey(joinId),
-                conversation.getUuid().toString(), toEpochMilli(conversation.getCreatedAt()));
     }
 
     // DM 읽음 처리
@@ -205,64 +190,6 @@ public class DirectMessageService {
                 .sortBy(request.sortBy()) // 현재 sortBy 파라미터 무시하고 최신순으로 정렬 중
                 .sortDirection(request.sortDirection())
                 .build();
-    }
-
-    private String resolveRedisKey(UUID userId) {
-        return "user:" + userId + ":conversations";
-    }
-
-    private Long resolveMaxScore(UUID conversationId, String redisKey) {
-        // idAfter 파라미터 없으면 지금 시간 (첫 페이지)
-        if (conversationId == null) {
-            return System.currentTimeMillis();
-        }
-        Double cursorScore = redisTemplate.opsForZSet().score(redisKey, conversationId.toString());
-
-        if (cursorScore != null) {
-            return cursorScore.longValue() - 1;
-        } else {
-            return null;
-        }
-    }
-
-    private List<Conversation> fetchConversationsFromRedis(String redisKey, Long maxScore, int limit) {
-        Set<String> conversationIdsStr = Optional.ofNullable(redisTemplate.opsForZSet()
-                .reverseRangeByScore(redisKey, 0, maxScore, 0, limit)
-        ).orElse(Collections.emptySet());
-
-        if (conversationIdsStr.isEmpty()) {
-            return Collections.emptyList();
-        }
-
-        List<UUID> conversationIds = conversationIdsStr.stream().map(UUID::fromString).toList();
-
-        // IN 쿼리 조회 -> 정렬되지 않은 리스트
-        List<Conversation> unorderedConversations = conversationRepository.findByUuidIn(conversationIds);
-        // 재정렬
-        Map<UUID, Conversation> conversationMap = unorderedConversations.stream()
-                .collect(Collectors.toMap(c -> c.getUuid(), c -> c));
-
-        return conversationIds.stream()
-                .map(c -> conversationMap.get(c))
-                .filter(Objects::nonNull)
-                .collect(Collectors.toList());
-    }
-
-    private void cacheConversationsToRedis(String redisKey,
-                                           List<Conversation> conversations,
-                                           List<ConversationDto> conversationDtos) {
-        for (int i = 0; i < conversationDtos.size(); i++) {
-            // 마지막 메시지 존재? 메시지 생성 시각 : 대화방 생성 시각
-            long score = (conversationDtos.get(i).lastestMessage() != null)
-                    ? toEpochMilli(conversationDtos.get(i).lastestMessage().createdAt())
-                    : toEpochMilli(conversations.get(i).getCreatedAt());
-            redisTemplate.opsForZSet().add(redisKey, conversationDtos.get(i).id().toString(), score);
-        }
-        redisTemplate.expire(redisKey, Duration.ofHours(12));
-    }
-
-    private long toEpochMilli(LocalDateTime localDateTime) {
-        return localDateTime.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
     }
 
     // DM 목록 조회
@@ -416,5 +343,73 @@ public class DirectMessageService {
         return new CursorResult<>(
                 itemsAfter, hasNext, nextCursor, nextIdAfter
         );
+    }
+    private long toEpochMilli(LocalDateTime localDateTime) {
+        return localDateTime.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
+    }
+
+    // Redis Caching
+    private String resolveRedisKey(UUID userId) {
+        return "user:" + userId + ":conversations";
+    }
+    private Long resolveMaxScore(UUID conversationId, String redisKey) {
+        // idAfter 파라미터 없으면 지금 시간 (첫 페이지)
+        if (conversationId == null) {
+            return System.currentTimeMillis();
+        }
+        Double cursorScore = redisTemplate.opsForZSet().score(redisKey, conversationId.toString());
+
+        if (cursorScore != null) {
+            return cursorScore.longValue() - 1;
+        } else {
+            return null;
+        }
+    }
+    private List<Conversation> fetchConversationsFromRedis(String redisKey, Long maxScore, int limit) {
+        Set<String> conversationIdsStr = Optional.ofNullable(redisTemplate.opsForZSet()
+                .reverseRangeByScore(redisKey, 0, maxScore, 0, limit)
+        ).orElse(Collections.emptySet());
+
+        if (conversationIdsStr.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        List<UUID> conversationIds = conversationIdsStr.stream().map(UUID::fromString).toList();
+
+        // IN 쿼리 조회 -> 정렬되지 않은 리스트
+        List<Conversation> unorderedConversations = conversationRepository.findByUuidIn(conversationIds);
+        // 재정렬
+        Map<UUID, Conversation> conversationMap = unorderedConversations.stream()
+                .collect(Collectors.toMap(c -> c.getUuid(), c -> c));
+
+        return conversationIds.stream()
+                .map(c -> conversationMap.get(c))
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+    }
+    private void cacheConversationsToRedis(String redisKey,
+                                           List<Conversation> conversations,
+                                           List<ConversationDto> conversationDtos) {
+        for (int i = 0; i < conversationDtos.size(); i++) {
+            // 마지막 메시지 존재? 메시지 생성 시각 : 대화방 생성 시각
+            long score = (conversationDtos.get(i).lastestMessage() != null)
+                    ? toEpochMilli(conversationDtos.get(i).lastestMessage().createdAt())
+                    : toEpochMilli(conversations.get(i).getCreatedAt());
+            redisTemplate.opsForZSet().add(redisKey, conversationDtos.get(i).id().toString(), score);
+        }
+        redisTemplate.expire(redisKey, Duration.ofHours(12));
+    }
+    private void cacheConversationForParticipants(Conversation conversation, UUID creatorId, UUID joinId) {
+        redisTemplate.opsForZSet().add(resolveRedisKey(creatorId),
+                conversation.getUuid().toString(), toEpochMilli(conversation.getCreatedAt()));
+        redisTemplate.opsForZSet().add(resolveRedisKey(joinId),
+                conversation.getUuid().toString(), toEpochMilli(conversation.getCreatedAt()));
+    }
+    private void updateConversationScoreInCache(Conversation conversation, User sender,
+                                                User receiver, DirectMessage message) {
+        redisTemplate.opsForZSet().add(resolveRedisKey(sender.getUuid()),
+                conversation.getUuid().toString(), toEpochMilli(message.getCreatedAt()));
+        redisTemplate.opsForZSet().add(resolveRedisKey(receiver.getUuid()),
+                conversation.getUuid().toString(), toEpochMilli(message.getCreatedAt()));
     }
 }
