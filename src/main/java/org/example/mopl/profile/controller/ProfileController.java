@@ -1,33 +1,24 @@
 package org.example.mopl.profile.controller;
 
-import org.example.mopl.contentevaluation.dto.request.CursorRequestPlaylistDto;
-import org.example.mopl.contentevaluation.dto.response.CursorResponsePlaylistDto;
-import org.example.mopl.profile.dto.SubscribedPlaylistCursorResponse;
+import org.example.mopl.auth.CustomUserDetails;
 import org.example.mopl.profile.dto.ProfileDto;
 import org.example.mopl.profile.dto.ProfileUpdateRequest;
-import org.example.mopl.profile.dto.UserSummary;
-import org.example.mopl.profile.dto.WatchingContentDto;
 import org.example.mopl.profile.service.ProfileService;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import jakarta.validation.Valid;
-import java.io.IOException;
-import java.util.List;
+import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/profiles")
+@RequestMapping("/api/users")
 public class ProfileController {
 
     private final ProfileService profileService;
@@ -36,70 +27,26 @@ public class ProfileController {
         this.profileService = profileService;
     }
 
-    // 프로필 기본 정보 조회 (userId 기준)
-    @GetMapping("/users/{userId}")
-    public ResponseEntity<ProfileDto> getByUserId(@PathVariable Long userId) {
-        ProfileDto dto = profileService.getByUserId(userId);
+    /** 사용자 상세 조회 (명세: GET /api/users/{userId}) */
+    @GetMapping("/{userId}")
+    public ResponseEntity<ProfileDto> getByUserUuid(
+            @PathVariable UUID userId,
+            @AuthenticationPrincipal(expression = "userDto?.id") UUID currentUserUuid
+    ) {
+        ProfileDto dto = profileService.getByUserUuid(userId, currentUserUuid);
         return ResponseEntity.ok(dto);
     }
 
-    // 프로필 수정 (본인만). 
-    @PatchMapping("/users/{userId}")
+    /** 프로필 변경 (명세: PATCH /api/users/{userId}). multipart: request(JSON) + image(선택) */
+    @PatchMapping("/{userId}")
     public ResponseEntity<ProfileDto> update(
-            @PathVariable Long userId,
-            @RequestBody @Valid ProfileUpdateRequest request,
-            @RequestHeader(value = "X-User-Id", required = false) Long currentUserId
+            @PathVariable UUID userId,
+            @RequestPart("request") @Valid ProfileUpdateRequest request,
+            @RequestPart(value = "image", required = false) MultipartFile image,
+            @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
-        ProfileDto dto = profileService.update(userId, request, currentUserId);
+        UUID currentUserUuid = userDetails != null ? userDetails.getUserDto().getId() : null;
+        ProfileDto dto = profileService.update(userId, request, image, currentUserUuid);
         return ResponseEntity.ok(dto);
-    }
-
-    @PostMapping(value = "/users/{userId}/image", consumes = "multipart/form-data")
-    public ResponseEntity<ProfileDto> uploadProfileImage(
-            @PathVariable Long userId,
-            @RequestPart("file") MultipartFile file,
-            @RequestHeader(value = "X-User-Id", required = false) Long currentUserId
-    ) throws IOException {
-        ProfileDto dto = profileService.uploadProfileImage(userId, file, currentUserId);
-        return ResponseEntity.ok(dto);
-    }
-
-    @GetMapping("/users/{userId}/watching")
-    public ResponseEntity<List<WatchingContentDto>> getWatchingContents(@PathVariable Long userId) {
-        List<WatchingContentDto> list = profileService.getWatchingContents(userId);
-        return ResponseEntity.ok(list);
-    }
-
-    @GetMapping("/users/{userId}/playlists")
-    public ResponseEntity<CursorResponsePlaylistDto> getOwnedPlaylists(
-            @PathVariable Long userId,
-            @ModelAttribute @Valid CursorRequestPlaylistDto request
-    ) {
-        CursorResponsePlaylistDto result = profileService.getOwnedPlaylists(userId, request);
-        return ResponseEntity.ok(result);
-    }
-
-    @GetMapping("/users/{userId}/subscribed-playlists")
-    public ResponseEntity<SubscribedPlaylistCursorResponse> getSubscribedPlaylists(
-            @PathVariable Long userId,
-            @ModelAttribute @Valid CursorRequestPlaylistDto request
-    ) {
-        SubscribedPlaylistCursorResponse result = profileService.getSubscribedPlaylists(userId, request);
-        return ResponseEntity.ok(result);
-    }
-
-    /** 단일 사용자 프로필 요약 (알림/DM 연계용) */
-    @GetMapping("/users/{userId}/summary")
-    public ResponseEntity<UserSummary> getUserSummary(@PathVariable Long userId) {
-        UserSummary summary = profileService.getUserSummary(userId);
-        return ResponseEntity.ok(summary);
-    }
-
-    /** 여러 사용자 프로필 요약 일괄 조회 (알림/DM 연계용). userIds=1&userIds=2&userIds=3 */
-    @GetMapping("/summaries")
-    public ResponseEntity<List<UserSummary>> getUserSummaries(@RequestParam List<Long> userIds) {
-        List<UserSummary> list = profileService.getUserSummaries(userIds);
-        return ResponseEntity.ok(list);
     }
 }
-
