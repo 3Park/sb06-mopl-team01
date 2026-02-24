@@ -3,6 +3,9 @@ package org.example.mopl.directmessage.repository;
 
 import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.core.types.dsl.BooleanExpression;
+import com.querydsl.core.types.dsl.Coalesce;
+import com.querydsl.core.types.dsl.DateTimeExpression;
+import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.JPQLQuery;
 import com.querydsl.jpa.impl.JPAQueryFactory;
@@ -17,6 +20,7 @@ import org.example.mopl.profile.entity.QProfile;
 import org.example.mopl.user.entity.QUser;
 import org.hibernate.query.SortDirection;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -64,7 +68,7 @@ public class ConversationRepositoryImpl implements ConversationRepositoryCustom 
                         containsKeyword(condition)
                 )
                 .limit(condition.limit())
-                .orderBy(orderBy(condition))
+                .orderBy(orderBy(condition), conversation.id.desc())
                 .fetch();
     }
 
@@ -143,15 +147,34 @@ public class ConversationRepositoryImpl implements ConversationRepositoryCustom 
 
     // === OrderBy ===
     private OrderSpecifier<?> orderBy(ConversationSearchCondition condition) {
-        boolean isAsc = (condition.sortDirection() == SortDirection.ASCENDING);
-        SortBy sortBy = condition.sortBy();
+        // DM 대화는 UX 개선을 위해 메시지 시간 기준 정렬로 고정
+        // sortBy 기반 정렬은 비활성화함
 
-        switch(sortBy) {
-            case createdAt :
-                return isAsc? conversation.id.asc() : conversation.id.desc();
-            default :
-                throw new IllegalArgumentException("지원하지 않는 sortBy 타입: " + sortBy);
-        }
+//        boolean isAsc = (condition.sortDirection() == SortDirection.ASCENDING);
+//        SortBy sortBy = condition.sortBy();
+//
+//        switch(sortBy) {
+//            case createdAt :
+//                return isAsc? conversation.id.asc() : conversation.id.desc();
+//            default :
+//                throw new IllegalArgumentException("지원하지 않는 sortBy 타입: " + sortBy);
+//        }
+
+        QDirectMessage subMessage = new QDirectMessage("subMessage");
+
+        JPQLQuery<LocalDateTime> lastMessageTime = JPAExpressions
+                .select(subMessage.createdAt.max())
+                .from(subMessage)
+                .where(subMessage.conversation.id.eq(conversation.id));
+
+        DateTimeExpression<LocalDateTime> sortTime = Expressions.dateTimeTemplate(
+                LocalDateTime.class,
+                "COALESCE({0}, {1})",
+                lastMessageTime,
+                conversation.createdAt
+        );
+
+        return sortTime.desc();
     }
 
     // === SubQuery Helper ===
