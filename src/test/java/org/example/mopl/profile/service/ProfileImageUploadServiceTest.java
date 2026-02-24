@@ -6,9 +6,12 @@ import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.UUID;
 import org.example.mopl.common.exception.MoplException;
+import org.example.mopl.profile.config.ProfileImageProperties;
 import org.example.mopl.profile.entity.Profile;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -25,8 +28,18 @@ class ProfileImageUploadServiceTest {
     @Mock
     private S3Client s3Client;
 
+    @Mock
+    private ProfileImageProperties imageProperties;
+
     @InjectMocks
     private ProfileImageUploadService profileImageUploadService;
+
+    @BeforeEach
+    void setUpImageProperties() {
+        lenient().when(imageProperties.getMaxSize()).thenReturn(5 * 1024 * 1024L);
+        lenient().when(imageProperties.getAllowedContentTypes()).thenReturn(List.of("image/jpeg", "image/png"));
+        lenient().when(imageProperties.getKeyPrefix()).thenReturn("profile/");
+    }
 
     @Test
     @DisplayName("upload: 파일이 null이면 PROFILE_IMAGE_REQUIRED")
