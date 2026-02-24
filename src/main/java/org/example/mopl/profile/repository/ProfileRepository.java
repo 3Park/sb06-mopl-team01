@@ -18,5 +18,8 @@ public interface ProfileRepository extends JpaRepository<Profile, Long> {
     @Query("SELECT p FROM Profile p JOIN FETCH p.user WHERE p.user.uuid = :userUuid")
     Optional<Profile> findWithUserByUserUuid(@Param("userUuid") UUID userUuid);
 
+    @Query("SELECT DISTINCT p FROM Profile p JOIN FETCH p.user u LEFT JOIN FETCH u.userRoles ur LEFT JOIN FETCH ur.role WHERE u.uuid = :userUuid")
+    Optional<Profile> findWithUserAndRolesByUserUuid(@Param("userUuid") UUID userUuid);
+
     Optional<Profile> findByUuid(UUID uuid);
 }

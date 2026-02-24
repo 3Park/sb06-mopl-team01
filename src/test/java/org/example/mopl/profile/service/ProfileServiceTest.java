@@ -31,14 +31,6 @@ class ProfileServiceTest {
 
     @Mock
     private ProfileRepository profileRepository;
-    @Mock
-    private ProfileImageUploadService profileImageUploadService;
-    @Mock
-    private org.example.mopl.profile.repository.WatchingSessionRepository watchingSessionRepository;
-    @Mock
-    private org.example.mopl.contentevaluation.service.PlaylistQueryService playlistQueryService;
-    @Mock
-    private org.example.mopl.profile.repository.SubscribedPlaylistQueryRepository subscribedPlaylistQueryRepository;
 
     @InjectMocks
     private ProfileService profileService;
@@ -58,28 +50,29 @@ class ProfileServiceTest {
     }
 
     @Test
-    @DisplayName("getByUserUuid: 프로필이 있으면 ProfileDto")
+    @DisplayName("getByUserUuid: 프로필이 있으면 ProfileDto, id=userUuid")
     void getByUserUuid_returnsDto() {
         UUID userUuid = UUID.randomUUID();
         Profile profile = createMockProfile(userUuid, "테스트유저", "https://example.com/img.jpg");
-        given(profileRepository.findByUserUuid(userUuid)).willReturn(Optional.of(profile));
+        given(profileRepository.findWithUserByUserUuid(userUuid)).willReturn(Optional.of(profile));
 
-        ProfileDto result = profileService.getByUserUuid(userUuid);
+        ProfileDto result = profileService.getByUserUuid(userUuid, userUuid);
 
         assertThat(result).isNotNull();
+        assertThat(result.getId()).isEqualTo(userUuid);
         assertThat(result.getUserUuid()).isEqualTo(userUuid);
         assertThat(result.getName()).isEqualTo("테스트유저");
         assertThat(result.getProfileImageUrl()).isEqualTo("https://example.com/img.jpg");
-        verify(profileRepository).findByUserUuid(userUuid);
+        verify(profileRepository).findWithUserByUserUuid(userUuid);
     }
 
     @Test
     @DisplayName("getByUserUuid: 프로필이 없으면 ProfileNotFoundException")
     void getByUserUuid_throwsWhenNotFound() {
         UUID userUuid = UUID.randomUUID();
-        given(profileRepository.findByUserUuid(userUuid)).willReturn(Optional.empty());
+        given(profileRepository.findWithUserByUserUuid(userUuid)).willReturn(Optional.empty());
 
-        assertThatThrownBy(() -> profileService.getByUserUuid(userUuid))
+        assertThatThrownBy(() -> profileService.getByUserUuid(userUuid, null))
                 .isInstanceOf(ProfileNotFoundException.class);
     }
 
@@ -89,7 +82,7 @@ class ProfileServiceTest {
         ProfileUpdateRequest request = new ProfileUpdateRequest();
         request.setName("새이름");
 
-        assertThatThrownBy(() -> profileService.update(UUID.randomUUID(), request, null))
+        assertThatThrownBy(() -> profileService.update(UUID.randomUUID(), request, null, null))
                 .isInstanceOf(ProfileUnauthorizedException.class);
     }
 
@@ -104,7 +97,7 @@ class ProfileServiceTest {
         ProfileUpdateRequest request = new ProfileUpdateRequest();
         request.setName("새이름");
 
-        assertThatThrownBy(() -> profileService.update(userUuid, request, otherUserUuid))
+        assertThatThrownBy(() -> profileService.update(userUuid, request, null, otherUserUuid))
                 .isInstanceOf(ProfileForbiddenException.class);
     }
 }

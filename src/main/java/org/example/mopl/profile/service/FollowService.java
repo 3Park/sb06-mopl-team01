@@ -8,8 +8,6 @@ import org.example.mopl.profile.dto.FollowRequest;
 import org.example.mopl.profile.dto.FollowedByMeResponse;
 import org.example.mopl.profile.dto.FollowerCountResponse;
 import org.example.mopl.profile.entity.Follow;
-import org.example.mopl.profile.exception.FollowAlreadyExistsException;
-import org.example.mopl.profile.exception.FollowNotFoundException;
 import org.example.mopl.profile.exception.FollowSelfForbiddenException;
 import org.example.mopl.profile.exception.ProfileNotFoundException;
 import org.example.mopl.profile.repository.FollowRepository;
@@ -43,24 +41,26 @@ public class FollowService {
 
         Long followerId = follower.getId();
         Long followeeId = followee.getId();
-        if (followRepository.existsByFollowerIdAndFolloweeId(followerId, followeeId)) {
-            throw new FollowAlreadyExistsException(currentUserUuid, followeeUuid);
-        }
-
-        Follow follow = followRepository.save(Follow.of(follower, followee));
-
-        eventPublisher.publishEvent(
-                UserFollowCreatedKafkaEvent.of(
-                        followee.getUuid(),
-                        follower.getProfile() != null ? follower.getProfile().getName() : ""
-                )
-        );
-
-        return FollowDto.builder()
-                .id(follow.getUuid())
-                .followeeId(followee.getUuid())
-                .followerId(follower.getUuid())
-                .build();
+        return followRepository.findByFollowerIdAndFolloweeId(followerId, followeeId)
+                .map(existing -> FollowDto.builder()
+                        .id(existing.getUuid())
+                        .followeeId(followee.getUuid())
+                        .followerId(follower.getUuid())
+                        .build())
+                .orElseGet(() -> {
+                    Follow follow = followRepository.save(Follow.of(follower, followee));
+                    eventPublisher.publishEvent(
+                            UserFollowCreatedKafkaEvent.of(
+                                    followee.getUuid(),
+                                    follower.getProfile() != null ? follower.getProfile().getName() : ""
+                            )
+                    );
+                    return FollowDto.builder()
+                            .id(follow.getUuid())
+                            .followeeId(followee.getUuid())
+                            .followerId(follower.getUuid())
+                            .build();
+                });
     }
 
     @Transactional
@@ -70,12 +70,12 @@ public class FollowService {
         }
         User currentUser = userRepository.findByUuid(currentUserUuid)
                 .orElseThrow(() -> new ProfileNotFoundException(currentUserUuid));
-        Follow follow = followRepository.findByUuid(followUuid)
-                .orElseThrow(() -> new FollowNotFoundException(followUuid));
-        if (!follow.getFollower().getId().equals(currentUser.getId())) {
-            throw new org.example.mopl.profile.exception.ProfileForbiddenException();
-        }
-        followRepository.delete(follow);
+        followRepository.findByUuid(followUuid).ifPresent(follow -> {
+            if (!follow.getFollower().getId().equals(currentUser.getId())) {
+                throw new org.example.mopl.profile.exception.ProfileForbiddenException();
+            }
+            followRepository.delete(follow);
+        });
     }
 
     @Transactional(readOnly = true)
