@@ -1,6 +1,7 @@
 package org.example.mopl.watchtogether;
 
 import org.example.mopl.content.entity.Content;
+import org.example.mopl.content.exception.ContentException;
 import org.example.mopl.content.repository.ContentCommandRepository;
 import org.example.mopl.user.dto.UserDto;
 import org.example.mopl.watchtogether.dto.CursorResponseWatchingSessionDto;
@@ -213,6 +214,6 @@ public class WatchTogetherServiceTest {
         // when & then
         assertThatThrownBy(() -> watchTogetherService.getWatcherList(
                 contentUuidStr, "", "", "", 10, "DESC", "createdAt"
-        )).isInstanceOf(NoSuchContentException.class);
+        )).isInstanceOf(ContentException.class);
     }
 }
