@@ -8,12 +8,15 @@ import org.example.mopl.content.entity.Content;
 import org.example.mopl.content.exception.ContentErrorCode;
 import org.example.mopl.content.exception.ContentException;
 import org.example.mopl.content.repository.ContentCommandRepository;
+import org.example.mopl.event.message.WatchTogetherStartKafkaEvent;
+import org.example.mopl.profile.repository.FollowRepository;
 import org.example.mopl.user.dto.UserDto;
 import org.example.mopl.watchtogether.dto.*;
 import org.example.mopl.watchtogether.enumeration.ChangeType;
 import org.example.mopl.watchtogether.exception.WatchTogetherErrorCode;
 import org.example.mopl.watchtogether.model.Watcher;
 import org.example.mopl.watchtogether.model.WatchingSession;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.messaging.simp.SimpMessageSendingOperations;
@@ -33,6 +36,8 @@ public class BasicWatchTogetherService implements WatchTogetherService {
     private final StringRedisTemplate stringRedisTemplate;
     private final SimpMessageSendingOperations messagingTemplate;
     private final ContentCommandRepository contentCommandRepository;
+    private final FollowRepository followRepository;
+    private final ApplicationEventPublisher applicationEventPublisher;
 
     private static final String KEY_ROOM_WATCHERS = "room:%s:watchers";
     private static final String KEY_SESSION_DATA = "session:%s";
@@ -48,6 +53,11 @@ public class BasicWatchTogetherService implements WatchTogetherService {
     public void addUserToRoom(UserDto userDto, String contentId, String sessionId) {
         String userKey = String.format(KEY_USER_SESSION, userDto.getId().toString());
         String oldSessionId = stringRedisTemplate.opsForValue().get(userKey);
+        String roomKey = String.format(KEY_ROOM_WATCHERS, contentId);
+
+        // 해당 실시간 컨텐츠가 있는지 확인
+        Content content =contentCommandRepository.findByUuid(UUID.fromString(contentId))
+                .orElseThrow(() -> new ContentException(ContentErrorCode.NO_SUCH_CONTENT));
 
         // 기존 세션이 존재하고, 현재 들어온 세션과 다르다면? -> 기존 세션 강제 퇴장 처리
         if (oldSessionId != null && !oldSessionId.equals(sessionId)) {
@@ -55,12 +65,8 @@ public class BasicWatchTogetherService implements WatchTogetherService {
             removeUserFromRoom(oldSessionId);
         }
 
-        String roomKey = String.format(KEY_ROOM_WATCHERS, contentId);
-
         // 방 활성 목록 관리는 문자열이므로 stringRedisTemplate 사용
         if (!stringRedisTemplate.hasKey(roomKey)) {
-            contentCommandRepository.findByUuid(UUID.fromString(contentId))
-                    .orElseThrow(() -> new ContentException(ContentErrorCode.NO_SUCH_CONTENT));
             stringRedisTemplate.opsForSet().add(KEY_ACTIVE_ROOMS, contentId);
         }
 
@@ -70,9 +76,12 @@ public class BasicWatchTogetherService implements WatchTogetherService {
         saveSessionToRedis(sessionId, session, contentId, userKey, roomKey);
 
         Long count = stringRedisTemplate.opsForZSet().zCard(roomKey);
-        contentCommandRepository.findByUuid(UUID.fromString(contentId)).ifPresent(content ->
-                sendWatchingSessionChangeToRoom(session, content, count != null ? count : 0, ChangeType.JOIN)
-        );
+
+        // 실시간 같이 보기방 입장 응답 발송
+        sendWatchingSessionChangeToRoom(session, content, count != null ? count : 0, ChangeType.JOIN);
+
+        // 나를 팔로우한 사용자에게 알람발송
+        notifyFollowedUserActivity(userDto.getId(),userDto.getName(),content.getTitle());
     }
 
     @Override
@@ -204,6 +213,14 @@ public class BasicWatchTogetherService implements WatchTogetherService {
         return CursorResponseWatchingSessionDto.toDto(data, limit, totalCount, sortBy, sortDirection);
     }
 
+    private void notifyFollowedUserActivity(UUID userUuid, String userName, String contentName) {
+        List<UUID> followees = followRepository.findAllByFolloweeUuidWithFollower(userUuid).
+                stream()
+                .map(follow -> follow.getFollower().getUuid())
+                .toList();
+
+        applicationEventPublisher.publishEvent(WatchTogetherStartKafkaEvent.of(followees,userName,contentName));
+    }
 
     private void saveSessionToRedis(
             String sessionId,

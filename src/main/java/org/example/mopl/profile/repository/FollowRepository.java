@@ -23,4 +23,8 @@ public interface FollowRepository extends JpaRepository<Follow, Long> {
     /* 플레이리스트 생성 알림 등: followee(내가)를 팔로우하는 사람 목록 + follower 조인 */
     @Query("SELECT f FROM Follow f JOIN FETCH f.follower WHERE f.followee.id = :followeeId")
     List<Follow> findAllByFolloweeIdWithFollower(@Param("followeeId") Long followeeId);
+
+    /* (UUID 버전)플레이리스트 생성 알림 등: followee(내가)를 팔로우하는 사람 목록 + follower 조인 */
+    @Query("SELECT f FROM Follow f JOIN FETCH f.follower WHERE f.followee.uuid = :followeeUuid")
+    List<Follow> findAllByFolloweeUuidWithFollower(@Param("followeeUuid") UUID followeeId);
 }

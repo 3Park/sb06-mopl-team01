@@ -38,6 +38,12 @@ public class WebSocketEventListener {
 
         UserDto userDto = extractUserDto(accessor.getUser());
 
+        // putIfAbsent를 사용하여 원자적으로(Atomic) 중복 체크
+        if (sessionToDestination.putIfAbsent(sessionId, destination) != null) {
+            log.info("이미 처리 중인 구독 세션입니다. 중복 무시: {}", sessionId);
+            return;
+        }
+
         if (userDto == null) {
             log.warn("인증되지 않은 사용자의 구독 시도입니다. SessionID: {}", sessionId);
             // 필요시 여기서 예외를 던지거나 연결을 끊을 수 있음
