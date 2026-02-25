@@ -45,8 +45,14 @@ public class OAuthService implements OAuth2UserService<OAuth2UserRequest, OAuth2
         if(type == OAuthType.GOOGLE) {
             user =  googleLogin(attributes);
         }
+        else if(type == OAuthType.KAKAO) {
+            user = kakaoLogin(attributes);
+        }
 
-        user = kakaoLogin(attributes);
+        if(user == null) {
+            OAuth2Error error = new OAuth2Error("invalid_user","OAuth 정보가 없습니다.",null);
+            throw new OAuth2AuthenticationException(error);
+        }
 
         String email = getValue(user.getAttributes(), "email");
         if(authAdapter.blockedUser(email))
