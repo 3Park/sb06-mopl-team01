@@ -129,4 +129,27 @@ public class NotificationRequiredEventListener {
             throw new RuntimeException(e);
         }
     }
+
+    @KafkaListener(topics = WatchTogetherStartKafkaEvent.TOPIC)
+    public void onWatchTogetherStartKafkaEvent(String kafkaEvent) {
+        log.debug("kafka 이벤트 수신 - 실시간 같이 보기 시작");
+        try {
+           WatchTogetherStartKafkaEvent event = objectMapper.readValue(kafkaEvent, WatchTogetherStartKafkaEvent.class);
+
+            List<UUID> receiverIds = event.receiverIds();
+            if (receiverIds == null || receiverIds.isEmpty()) {
+                return;
+            }
+
+            String title = event.watcherName() + "님이 지금 시청 중 \uD83D\uDC40";
+            String content = "[" + event.contentName() + "] 함께 볼래요?";
+            Level level = Level.INFO;
+
+            for (UUID receiverId : receiverIds) {
+                notificationService.create(receiverId, title, content, level);
+            }
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
+    }
 }
