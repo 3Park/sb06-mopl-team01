@@ -3,6 +3,7 @@ package org.example.mopl.watchtogether;
 import org.example.mopl.content.entity.Content;
 import org.example.mopl.content.exception.ContentException;
 import org.example.mopl.content.repository.ContentCommandRepository;
+import org.example.mopl.profile.repository.FollowRepository;
 import org.example.mopl.user.dto.UserDto;
 import org.example.mopl.watchtogether.dto.CursorResponseWatchingSessionDto;
 import org.example.mopl.watchtogether.model.Watcher;
@@ -14,6 +15,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.redis.core.*;
 import org.springframework.messaging.simp.SimpMessageSendingOperations;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -38,6 +40,12 @@ public class WatchTogetherServiceTest {
     private ContentCommandRepository contentCommandRepository;
 
     @Mock
+    private FollowRepository followRepository;
+
+    @Mock
+    private ApplicationEventPublisher applicationEventPublisher;
+
+    @Mock
     private RedisTemplate<String, Object> watchTogetherRedisTemplate;
 
     @Mock
@@ -57,7 +65,6 @@ public class WatchTogetherServiceTest {
 
     @BeforeEach
     void setUp() {
-        // [수정] willReturn -> thenReturn
         lenient().when(watchTogetherRedisTemplate.opsForValue()).thenReturn(valueOps);
         lenient().when(stringRedisTemplate.opsForValue()).thenReturn(stringValueOps);
         lenient().when(stringRedisTemplate.opsForSet()).thenReturn(setOps);
@@ -67,7 +74,9 @@ public class WatchTogetherServiceTest {
                 watchTogetherRedisTemplate,
                 stringRedisTemplate,
                 messagingTemplate,
-                contentCommandRepository
+                contentCommandRepository,
+                followRepository,
+                applicationEventPublisher
         );
 
     }
