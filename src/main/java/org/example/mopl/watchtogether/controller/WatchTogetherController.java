@@ -44,8 +44,4 @@ public class WatchTogetherController {
         return ResponseEntity.ok(res);
     }
 
-
-
-
-
 }

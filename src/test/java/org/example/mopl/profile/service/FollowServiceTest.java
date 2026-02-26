@@ -3,14 +3,17 @@ package org.example.mopl.profile.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
-import org.example.mopl.profile.dto.FollowCreateRequest;
+import java.util.Optional;
+import java.util.UUID;
+import org.example.mopl.profile.dto.FollowRequest;
 import org.example.mopl.profile.dto.FollowedByMeResponse;
 import org.example.mopl.profile.dto.FollowerCountResponse;
 import org.example.mopl.profile.exception.FollowSelfForbiddenException;
 import org.example.mopl.profile.repository.FollowRepository;
-import org.example.mopl.profile.repository.ProfileRepository;
+import org.example.mopl.user.entity.User;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -28,18 +31,16 @@ class FollowServiceTest {
     @Mock
     private org.example.mopl.user.repository.UserRepository userRepository;
     @Mock
-    private ProfileRepository profileRepository;
-    @Mock
     private ApplicationEventPublisher eventPublisher;
 
     @InjectMocks
     private FollowService followService;
 
     @Test
-    @DisplayName("create: currentUserId가 null이면 ProfileUnauthorizedException")
+    @DisplayName("create: currentUserUuid가 null이면 ProfileUnauthorizedException")
     void create_throwsWhenUnauthorized() {
-        FollowCreateRequest request = new FollowCreateRequest();
-        ReflectionTestUtils.setField(request, "followeeId", 2L);
+        FollowRequest request = new FollowRequest();
+        ReflectionTestUtils.setField(request, "followeeId", UUID.randomUUID());
 
         assertThatThrownBy(() -> followService.create(null, request))
                 .isInstanceOf(org.example.mopl.profile.exception.ProfileUnauthorizedException.class);
@@ -48,18 +49,18 @@ class FollowServiceTest {
     @Test
     @DisplayName("create: 자기 자신을 팔로우하면 FollowSelfForbiddenException")
     void create_throwsWhenSelfFollow() {
-        Long userId = 1L;
-        FollowCreateRequest request = new FollowCreateRequest();
-        ReflectionTestUtils.setField(request, "followeeId", userId);
+        UUID userUuid = UUID.randomUUID();
+        FollowRequest request = new FollowRequest();
+        ReflectionTestUtils.setField(request, "followeeId", userUuid);
 
-        assertThatThrownBy(() -> followService.create(userId, request))
+        assertThatThrownBy(() -> followService.create(userUuid, request))
                 .isInstanceOf(FollowSelfForbiddenException.class);
     }
 
     @Test
-    @DisplayName("isFollowedByMe: followerId가 null이면 followed false")
-    void isFollowedByMe_returnsFalseWhenFollowerIdNull() {
-        FollowedByMeResponse result = followService.isFollowedByMe(null, 1L);
+    @DisplayName("isFollowedByMe: followerUuid가 null이면 followed false")
+    void isFollowedByMe_returnsFalseWhenFollowerUuidNull() {
+        FollowedByMeResponse result = followService.isFollowedByMe(null, UUID.randomUUID());
 
         assertThat(result.isFollowed()).isFalse();
     }
@@ -67,24 +68,32 @@ class FollowServiceTest {
     @Test
     @DisplayName("isFollowedByMe: 팔로우 중이면 true")
     void isFollowedByMe_returnsTrueWhenFollowing() {
-        Long followerId = 1L;
-        Long followeeId = 2L;
-        given(followRepository.existsByFollowerIdAndFolloweeId(followerId, followeeId)).willReturn(true);
+        UUID followerUuid = UUID.randomUUID();
+        UUID followeeUuid = UUID.randomUUID();
+        User follower = mock(User.class);
+        User followee = mock(User.class);
+        when(follower.getId()).thenReturn(1L);
+        when(followee.getId()).thenReturn(2L);
+        given(userRepository.findByUuid(followerUuid)).willReturn(Optional.of(follower));
+        given(userRepository.findByUuid(followeeUuid)).willReturn(Optional.of(followee));
+        given(followRepository.existsByFollowerIdAndFolloweeId(1L, 2L)).willReturn(true);
 
-        FollowedByMeResponse result = followService.isFollowedByMe(followerId, followeeId);
+        FollowedByMeResponse result = followService.isFollowedByMe(followerUuid, followeeUuid);
 
         assertThat(result.isFollowed()).isTrue();
     }
 
     @Test
-    @DisplayName("getFollowerCount: followeeId의 팔로워 수를 반환")
+    @DisplayName("getFollowerCount: followeeUuid의 팔로워 수를 반환")
     void getFollowerCount_returnsCount() {
-        Long followeeId = 1L;
-        given(followRepository.countByFolloweeId(followeeId)).willReturn(10L);
+        UUID followeeUuid = UUID.randomUUID();
+        User followee = mock(User.class);
+        when(followee.getId()).thenReturn(1L);
+        given(userRepository.findByUuid(followeeUuid)).willReturn(Optional.of(followee));
+        given(followRepository.countByFolloweeId(1L)).willReturn(10L);
 
-        FollowerCountResponse result = followService.getFollowerCount(followeeId);
+        FollowerCountResponse result = followService.getFollowerCount(followeeUuid);
 
         assertThat(result.getCount()).isEqualTo(10L);
-        verify(followRepository).countByFolloweeId(followeeId);
     }
 }

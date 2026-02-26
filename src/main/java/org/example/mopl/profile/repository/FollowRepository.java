@@ -16,15 +16,15 @@ public interface FollowRepository extends JpaRepository<Follow, Long> {
 
     Optional<Follow> findByFollowerIdAndFolloweeId(Long followerId, Long followeeId);
 
-    void deleteByFollowerIdAndFolloweeId(Long followerId, Long followeeId);
-
     long countByFolloweeId(Long followeeId);
 
-    @Query("SELECT f FROM Follow f JOIN FETCH f.followee JOIN FETCH f.followee.profile WHERE f.follower.id = :followerId ORDER BY f.createdAt DESC")
-    List<Follow> findAllByFollowerIdWithFollowee(@Param("followerId") Long followerId);
+    Optional<Follow> findByUuid(UUID uuid);
 
-    @Query("SELECT f FROM Follow f JOIN FETCH f.follower JOIN FETCH f.follower.profile WHERE f.followee.id = :followeeId ORDER BY f.createdAt DESC")
+    /* 플레이리스트 생성 알림 등: followee(내가)를 팔로우하는 사람 목록 + follower 조인 */
+    @Query("SELECT f FROM Follow f JOIN FETCH f.follower WHERE f.followee.id = :followeeId")
     List<Follow> findAllByFolloweeIdWithFollower(@Param("followeeId") Long followeeId);
 
-    Optional<Follow> findByUuid(UUID uuid);
+    /* (UUID 버전)플레이리스트 생성 알림 등: followee(내가)를 팔로우하는 사람 목록 + follower 조인 */
+    @Query("SELECT f FROM Follow f JOIN FETCH f.follower WHERE f.followee.uuid = :followeeUuid")
+    List<Follow> findAllByFolloweeUuidWithFollower(@Param("followeeUuid") UUID followeeId);
 }

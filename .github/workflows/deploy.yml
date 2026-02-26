@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     branches:
       - main
-      - develop
+      - Develop
     inputs:
       logLevel:
         description: 'Log level'
@@ -17,7 +17,7 @@ on:
           - debug
   push:
     branches:
-      - main
+      - Develop
 
 env:
   AWS_REGION: ap-northeast-2
