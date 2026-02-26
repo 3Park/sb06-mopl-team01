@@ -17,7 +17,7 @@ on:
           - debug
   push:
     branches:
-      - develop
+      - main
 
 env:
   AWS_REGION: ap-northeast-2
