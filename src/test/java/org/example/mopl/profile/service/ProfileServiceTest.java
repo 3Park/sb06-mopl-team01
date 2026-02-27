@@ -60,7 +60,7 @@ class ProfileServiceTest {
 
         assertThat(result).isNotNull();
         assertThat(result.getId()).isEqualTo(userUuid);
-        assertThat(result.getUserUuid()).isEqualTo(userUuid);
+        assertThat(result.getId()).isEqualTo(userUuid);
         assertThat(result.getName()).isEqualTo("테스트유저");
         assertThat(result.getProfileImageUrl()).isEqualTo("https://example.com/img.jpg");
         verify(profileRepository).findWithUserByUserUuid(userUuid);
